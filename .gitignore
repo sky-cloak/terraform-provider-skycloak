@@ -1,0 +1,29 @@
+# Binaries
+terraform-provider-skycloak
+dist/
+*.exe
+*.test
+*.out
+coverage.*
+
+# Go
+vendor/
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+terraform.rc
+.terraformrc
+
+# Local env / secrets
+.env
+.env.*
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
