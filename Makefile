@@ -16,7 +16,7 @@ lint: ## Lint (golangci-lint must be installed)
 	golangci-lint run ./...
 
 docs: ## Generate provider docs from schema + examples
-	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --provider-name skycloak
+	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.25.0 generate --provider-name skycloak
 
 tidy: ## Tidy modules
 	go mod tidy
