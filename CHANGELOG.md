@@ -13,6 +13,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `skycloak_themes` data source listing custom themes uploaded to a cluster.
 - `skycloak_cluster_extension` resource (install a marketplace extension on a cluster, with parameters) and `skycloak_extensions` data source (extension catalog).
 - `skycloak_export` resource — starts a database export and waits for completion, surfacing the presigned `download_url`, checksum, and size.
+- `skycloak_theme` resource — uploads a custom theme archive (ZIP/Keycloakify JAR); detects file-content changes via a computed `content_sha256`.
+- `skycloak_custom_extension` resource — uploads a custom extension JAR with its parameter schema; a JAR/version change publishes a new version, metadata updates in place.
 
 ## [0.1.0] - 2026-05-25
 

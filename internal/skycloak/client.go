@@ -6,11 +6,15 @@
 package skycloak
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"mime/multipart"
 	"net/http"
+	"net/textproto"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -1649,13 +1653,29 @@ type ExtensionInfo struct {
 	DocumentationURL string
 	RepositoryURL    string
 	IconURL          string
+	ParameterType    string
+	ScanStatus       string
+	CreatedAt        string
+	UpdatedAt        string
+}
+
+func nScanStatus(n nullable.Nullable[apiclient.ExtensionScanStatus]) string {
+	if !n.IsSpecified() || n.IsNull() {
+		return ""
+	}
+	v, err := n.Get()
+	if err != nil {
+		return ""
+	}
+	return string(v)
 }
 
 func extensionInfoFromAPI(e *apiclient.Extension) ExtensionInfo {
 	return ExtensionInfo{
 		ID: e.Id.String(), Name: e.Name, Description: nStr(e.Description), Source: string(e.Source),
 		KeycloakVersions: e.KeycloakVersions, DocumentationURL: nStr(e.DocumentationUrl),
-		RepositoryURL: nStr(e.RepositoryUrl), IconURL: nStr(e.IconUrl),
+		RepositoryURL: nStr(e.RepositoryUrl), IconURL: nStr(e.IconUrl), ParameterType: string(e.ParameterType),
+		ScanStatus: nScanStatus(e.ScanStatus), CreatedAt: fmtTime(e.CreatedAt), UpdatedAt: fmtTime(e.UpdatedAt),
 	}
 }
 
@@ -1926,4 +1946,278 @@ func (c *Client) WaitForExport(ctx context.Context, clusterID, exportID string) 
 		case <-ticker.C:
 		}
 	}
+}
+
+// ---- Theme & extension uploads (multipart) ----
+
+// filePart writes a binary file part with an explicit Content-Type.
+func filePart(mw *multipart.Writer, field, filename, contentType string, content []byte) error {
+	h := textproto.MIMEHeader{}
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q; filename=%q`, field, filename))
+	h.Set("Content-Type", contentType)
+	w, err := mw.CreatePart(h)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(content)
+	return err
+}
+
+// jsonPart writes a JSON-encoded form part (Content-Type: application/json).
+func jsonPart(mw *multipart.Writer, field string, v any) error {
+	h := textproto.MIMEHeader{}
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q`, field))
+	h.Set("Content-Type", "application/json")
+	w, err := mw.CreatePart(h)
+	if err != nil {
+		return err
+	}
+	return json.NewEncoder(w).Encode(v)
+}
+
+func themeFileContentType(filename string) string {
+	if strings.HasSuffix(strings.ToLower(filename), ".jar") {
+		return "application/java-archive"
+	}
+	return "application/zip"
+}
+
+// UploadThemeRequest is the body for uploading a theme archive.
+type UploadThemeRequest struct {
+	Name        string
+	Description string
+	Version     string
+	ThemeTypes  []string
+	FileName    string
+	Content     []byte
+}
+
+// UploadTheme uploads a theme archive (ZIP or Keycloakify JAR) to a cluster.
+func (c *Client) UploadTheme(ctx context.Context, clusterID string, req UploadThemeRequest) (*Theme, error) {
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	_ = mw.WriteField("name", req.Name)
+	if req.Description != "" {
+		_ = mw.WriteField("description", req.Description)
+	}
+	if req.Version != "" {
+		_ = mw.WriteField("version", req.Version)
+	}
+	for _, tt := range req.ThemeTypes {
+		_ = mw.WriteField("theme_types", tt)
+	}
+	if err := filePart(mw, "theme_file", req.FileName, themeFileContentType(req.FileName), req.Content); err != nil {
+		return nil, err
+	}
+	if err := mw.Close(); err != nil {
+		return nil, err
+	}
+	resp, err := c.gen.UploadThemeWithBodyWithResponse(ctx, cid(clusterID), mw.FormDataContentType(), &buf)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON201 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	t := themeFromAPI(resp.JSON201)
+	return &t, nil
+}
+
+// UpdateThemeMetadata updates a theme's name/description/version (no re-upload).
+func (c *Client) UpdateThemeMetadata(ctx context.Context, clusterID, themeID, name, description, version string) (*Theme, error) {
+	body := apiclient.UpdateThemeJSONRequestBody{}
+	if name != "" {
+		body.Name = &name
+	}
+	body.Description = strPtr(description)
+	body.Version = strPtr(version)
+	resp, err := c.gen.UpdateThemeWithResponse(ctx, cid(clusterID), uid(themeID), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	t := themeFromAPI(resp.JSON200)
+	return &t, nil
+}
+
+// DeleteTheme removes a theme from a cluster.
+func (c *Client) DeleteTheme(ctx context.Context, clusterID, themeID string) error {
+	resp, err := c.gen.DeleteThemeWithResponse(ctx, cid(clusterID), uid(themeID))
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}
+
+// ExtensionParameterOption is a dropdown choice for an extension parameter.
+type ExtensionParameterOption struct {
+	Label string
+	Value string
+}
+
+// ExtensionParameterDef defines a single extension configuration parameter.
+type ExtensionParameterDef struct {
+	Key          string
+	Label        string
+	Type         string
+	Required     bool
+	DefaultValue string
+	IsSensitive  bool
+	Options      []ExtensionParameterOption
+}
+
+func toAPIParams(in []ExtensionParameterDef) []apiclient.ExtensionParameterInput {
+	out := make([]apiclient.ExtensionParameterInput, 0, len(in))
+	for _, p := range in {
+		ip := apiclient.ExtensionParameterInput{
+			Key: p.Key, Label: p.Label, Type: apiclient.ExtensionParameterFieldType(p.Type), Required: p.Required,
+		}
+		if p.DefaultValue != "" {
+			ip.DefaultValue = strPtr(p.DefaultValue)
+		}
+		if p.IsSensitive {
+			b := true
+			ip.IsSensitive = &b
+		}
+		if len(p.Options) > 0 {
+			opts := make([]apiclient.ExtensionParameterOption, 0, len(p.Options))
+			for _, o := range p.Options {
+				opts = append(opts, apiclient.ExtensionParameterOption{Label: o.Label, Value: o.Value})
+			}
+			ip.Options = &opts
+		}
+		out = append(out, ip)
+	}
+	return out
+}
+
+// UploadExtensionRequest is the body for uploading a custom extension JAR.
+type UploadExtensionRequest struct {
+	Name            string
+	KeycloakVersion string
+	Description     string
+	IconURL         string
+	RepositoryURL   string
+	Version         string
+	ParameterType   string
+	Parameters      []ExtensionParameterDef
+	JarFileName     string
+	Jar             []byte
+}
+
+// UploadExtension uploads a custom extension JAR plus its metadata.
+func (c *Client) UploadExtension(ctx context.Context, req UploadExtensionRequest) (*ExtensionInfo, error) {
+	meta := apiclient.UploadExtensionMetadata{Name: req.Name, KeycloakVersion: req.KeycloakVersion}
+	meta.Description = strPtr(req.Description)
+	meta.IconUrl = strPtr(req.IconURL)
+	meta.RepositoryUrl = strPtr(req.RepositoryURL)
+	meta.Version = strPtr(req.Version)
+	if req.ParameterType != "" {
+		pt := apiclient.ExtensionParameterType(req.ParameterType)
+		meta.ParameterType = &pt
+	}
+	if len(req.Parameters) > 0 {
+		params := toAPIParams(req.Parameters)
+		meta.Parameters = &params
+	}
+
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	if err := filePart(mw, "jar", req.JarFileName, "application/java-archive", req.Jar); err != nil {
+		return nil, err
+	}
+	if err := jsonPart(mw, "metadata", meta); err != nil {
+		return nil, err
+	}
+	if err := mw.Close(); err != nil {
+		return nil, err
+	}
+	resp, err := c.gen.UploadExtensionWithBodyWithResponse(ctx, mw.FormDataContentType(), &buf)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON201 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	e := extensionInfoFromAPI(resp.JSON201)
+	return &e, nil
+}
+
+// UpdateExtensionMetadata updates a custom extension's metadata and parameter
+// schema (no JAR replacement).
+func (c *Client) UpdateExtensionMetadata(ctx context.Context, extensionID string, req UploadExtensionRequest) (*ExtensionInfo, error) {
+	body := apiclient.UpdateExtensionJSONRequestBody{}
+	if req.Name != "" {
+		body.Name = &req.Name
+	}
+	body.Description = nullableStr(req.Description)
+	body.IconUrl = nullableStr(req.IconURL)
+	body.RepositoryUrl = nullableStr(req.RepositoryURL)
+	if req.ParameterType != "" {
+		pt := apiclient.ExtensionParameterType(req.ParameterType)
+		body.ParameterType = &pt
+	}
+	if len(req.Parameters) > 0 {
+		params := toAPIParams(req.Parameters)
+		body.Parameters = &params
+	}
+	resp, err := c.gen.UpdateExtensionWithResponse(ctx, uid(extensionID), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	e := extensionInfoFromAPI(resp.JSON200)
+	return &e, nil
+}
+
+// PublishExtensionVersion uploads a new JAR as a new version of an existing extension.
+func (c *Client) PublishExtensionVersion(ctx context.Context, extensionID, version, jarFileName string, jar []byte) (*ExtensionInfo, error) {
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	if err := filePart(mw, "jar", jarFileName, "application/java-archive", jar); err != nil {
+		return nil, err
+	}
+	if err := jsonPart(mw, "metadata", apiclient.PublishExtensionVersionMetadata{Version: version}); err != nil {
+		return nil, err
+	}
+	if err := mw.Close(); err != nil {
+		return nil, err
+	}
+	resp, err := c.gen.PublishExtensionVersionWithBodyWithResponse(ctx, uid(extensionID), mw.FormDataContentType(), &buf)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	e := extensionInfoFromAPI(resp.JSON200)
+	return &e, nil
+}
+
+// DeleteExtension removes a custom extension from the workspace catalog.
+func (c *Client) DeleteExtension(ctx context.Context, extensionID string) error {
+	resp, err := c.gen.DeleteExtensionWithResponse(ctx, uid(extensionID))
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}
+
+// nullableStr maps "" to explicit null, otherwise to a present value. Used for
+// PATCH bodies where omitting clears the field.
+func nullableStr(s string) nullable.Nullable[string] {
+	if s == "" {
+		return nullable.NewNullNullable[string]()
+	}
+	return nullable.NewNullableWithValue(s)
 }

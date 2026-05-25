@@ -68,6 +68,8 @@ honor the `Retry-After` header.
 | `skycloak_client_theme_assignment` | Per-client login-theme override |
 | `skycloak_cluster_extension` | A marketplace extension installed on a cluster |
 | `skycloak_export` | A database export job (waits for completion) |
+| `skycloak_theme` | Uploads a custom theme archive to a cluster |
+| `skycloak_custom_extension` | Uploads a custom extension JAR to the workspace catalog |
 
 | Data source | Description |
 |---|---|

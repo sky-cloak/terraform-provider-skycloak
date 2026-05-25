@@ -103,6 +103,8 @@ func (p *skycloakProvider) Resources(_ context.Context) []func() resource.Resour
 		NewClientThemeAssignmentResource,
 		NewClusterExtensionResource,
 		NewExportResource,
+		NewThemeResource,
+		NewCustomExtensionResource,
 	}
 }
 
