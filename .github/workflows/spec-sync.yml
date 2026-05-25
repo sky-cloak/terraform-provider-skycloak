@@ -1,12 +1,13 @@
 name: spec-sync
 
-# Detects upstream OpenAPI drift: pulls the latest spec from the backend,
+# Detects upstream OpenAPI drift: pulls the latest published API spec,
 # regenerates the API client, builds/tests, and opens a PR if anything changed.
-# Runs weekly and on demand. Can also be triggered by the backend via
-# repository_dispatch when the spec changes (event type: openapi-updated).
+# Runs weekly, on demand, and when a new spec is published
+# (repository_dispatch: openapi-updated). The spec source is configured via the
+# OPENAPI_SPEC_REPO / OPENAPI_SPEC_PATH repository variables.
 on:
   schedule:
-    - cron: "0 7 * * 1" # Mondays 07:00 UTC
+    - cron: "0 7 * * 1"
   workflow_dispatch: {}
   repository_dispatch:
     types: [openapi-updated]
@@ -24,12 +25,12 @@ jobs:
         with:
           go-version: "1.25"
 
-      - name: Fetch latest OpenAPI spec from the backend
+      - name: Fetch the latest OpenAPI spec
         env:
-          # PAT or GitHub App token with read access to sky-cloak/app.
+          # Token with read access to the spec source repository.
           GH_TOKEN: ${{ secrets.OPENAPI_SOURCE_TOKEN }}
         run: |
-          gh api repos/sky-cloak/app/contents/docs/static/openapi.yaml \
+          gh api "repos/${{ vars.OPENAPI_SPEC_REPO }}/contents/${{ vars.OPENAPI_SPEC_PATH }}" \
             -H "Accept: application/vnd.github.raw" > internal/apiclient/openapi.yaml
 
       - name: Regenerate the API client
@@ -58,14 +59,14 @@ jobs:
           commit-message: "chore: sync OpenAPI spec and regenerate client"
           delete-branch: true
           body: |
-            Automated OpenAPI drift sync from `sky-cloak/app@main`.
+            Automated OpenAPI drift sync.
 
             - Build & tests after regeneration: **${{ steps.verify.outcome }}**
-              (if `failure`, the spec changed in a way that needs the facade/resources updated).
+              (if `failure`, the spec changed in a way that needs the generated-code consumers updated).
 
             ### API operation coverage
             ```
             ${{ steps.coverage.outputs.report }}
             ```
 
-            Operations listed as "not yet exposed" are candidates for new resources/data sources.
+            Operations listed as "not yet exposed" are candidates for new resources/tools.
