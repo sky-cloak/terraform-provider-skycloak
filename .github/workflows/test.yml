@@ -3,10 +3,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "0 6 * * *" # daily read-only acceptance smoke against dev
   workflow_dispatch:
     inputs:
       test_run:
-        description: "Acceptance test filter (go test -run). Use TestAccClusterLocations for a fast read-only smoke test."
+        description: "Acceptance test filter (go test -run). Default is the read-only smoke; pass '.' to run the full create/destroy suite."
         default: "TestAccClusterLocations"
 
 permissions:
@@ -73,7 +75,7 @@ jobs:
   # Defaults to the read-only TestAccClusterLocations smoke test; pass
   # test_run=. to run the full suite (creates real clusters).
   acceptance:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -88,4 +90,4 @@ jobs:
           TF_ACC: "1"
           SKYCLOAK_API_KEY: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_API_KEY }}
           SKYCLOAK_ENDPOINT: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_ENDPOINT }}
-        run: go test ./internal/provider/... -v -timeout 120m -run "${{ inputs.test_run }}"
+        run: go test ./internal/provider/... -v -timeout 120m -run "${{ inputs.test_run || 'TestAccClusterLocations' }}"
