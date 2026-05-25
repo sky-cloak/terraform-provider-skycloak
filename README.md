@@ -66,6 +66,7 @@ honor the `Retry-After` header.
 | `skycloak_email_branding` | Email-template branding for a realm |
 | `skycloak_theme_assignment` | Realm-level custom theme per Keycloak theme type |
 | `skycloak_client_theme_assignment` | Per-client login-theme override |
+| `skycloak_cluster_extension` | A marketplace extension installed on a cluster |
 
 | Data source | Description |
 |---|---|
@@ -74,6 +75,7 @@ honor the `Retry-After` header.
 | `skycloak_cluster_types` | Supported cluster types |
 | `skycloak_cluster_features` | Available Keycloak feature flags |
 | `skycloak_themes` | Custom themes uploaded to a cluster |
+| `skycloak_extensions` | Extension catalog available to the workspace |
 
 Full reference docs are generated under [`docs/`](./docs) and published on the Terraform Registry.
 

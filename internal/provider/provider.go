@@ -101,6 +101,7 @@ func (p *skycloakProvider) Resources(_ context.Context) []func() resource.Resour
 		NewEmailBrandingResource,
 		NewThemeAssignmentResource,
 		NewClientThemeAssignmentResource,
+		NewClusterExtensionResource,
 	}
 }
 
@@ -111,6 +112,7 @@ func (p *skycloakProvider) DataSources(_ context.Context) []func() datasource.Da
 		NewClusterTypesDataSource,
 		NewClusterFeaturesDataSource,
 		NewThemesDataSource,
+		NewExtensionsDataSource,
 	}
 }
 

@@ -11,6 +11,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `skycloak_login_branding` and `skycloak_email_branding` resources (per-realm branding: colors, logos, footer, plus nested `internationalization` and `sso` blocks).
 - `skycloak_theme_assignment` (realm-level theme per Keycloak theme type) and `skycloak_client_theme_assignment` (per-client login theme) resources.
 - `skycloak_themes` data source listing custom themes uploaded to a cluster.
+- `skycloak_cluster_extension` resource (install a marketplace extension on a cluster, with parameters) and `skycloak_extensions` data source (extension catalog).
 
 ## [0.1.0] - 2026-05-25
 
