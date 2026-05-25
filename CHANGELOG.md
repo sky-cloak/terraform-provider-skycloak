@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-05-25
+
 ### Added
 - Provider configuration: `endpoint`, `api_key` (sensitive), `api_version`, with environment-variable fallbacks.
 - Resources: `skycloak_cluster` (async create + import), `skycloak_realm`, `skycloak_application`, `skycloak_identity_provider`, `skycloak_smtp`.
@@ -22,4 +24,5 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `skycloak_application`: `type` is immutable (changing it replaces the resource) and `service_account_enabled` is read-only, matching the API contract.
 - `skycloak_identity_provider`: `config` is a structured block (`oidc` / `ldap` / `saml` sub-objects plus `attribute_mappings`, `button_text`, `icon_url`, `sync_mode`, `trust_email`), matching the API contract.
 
-[Unreleased]: https://github.com/sky-cloak/terraform-provider-skycloak/commits/main
+[Unreleased]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/sky-cloak/terraform-provider-skycloak/releases/tag/v0.1.0
