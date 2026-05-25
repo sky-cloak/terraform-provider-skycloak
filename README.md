@@ -67,6 +67,7 @@ honor the `Retry-After` header.
 | `skycloak_theme_assignment` | Realm-level custom theme per Keycloak theme type |
 | `skycloak_client_theme_assignment` | Per-client login-theme override |
 | `skycloak_cluster_extension` | A marketplace extension installed on a cluster |
+| `skycloak_export` | A database export job (waits for completion) |
 
 | Data source | Description |
 |---|---|

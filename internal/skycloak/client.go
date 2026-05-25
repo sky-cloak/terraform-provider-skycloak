@@ -1780,3 +1780,150 @@ func (c *Client) UninstallExtension(ctx context.Context, clusterID, extensionID 
 	}
 	return nil
 }
+
+// ---- Database exports ----
+
+func nTime(n nullable.Nullable[time.Time]) string {
+	if !n.IsSpecified() || n.IsNull() {
+		return ""
+	}
+	v, err := n.Get()
+	if err != nil {
+		return ""
+	}
+	return fmtTime(v)
+}
+
+func nInt(n nullable.Nullable[int]) int64 {
+	if !n.IsSpecified() || n.IsNull() {
+		return 0
+	}
+	v, err := n.Get()
+	if err != nil {
+		return 0
+	}
+	return int64(v)
+}
+
+// Export is a database export job.
+type Export struct {
+	ID                 string
+	ClusterID          string
+	Format             string
+	Status             string
+	Progress           int64
+	IncludeCredentials bool
+	IsEncrypted        bool
+	FileSizeBytes      int64
+	Sha256Checksum     string
+	DownloadURL        string
+	ErrorMessage       string
+	CreatedAt          string
+	StartedAt          string
+	CompletedAt        string
+	ExpiresAt          string
+}
+
+func exportFromAPI(e *apiclient.Export) *Export {
+	return &Export{
+		ID: e.Id.String(), ClusterID: e.ClusterId.String(), Format: string(e.Format), Status: string(e.Status),
+		Progress: int64(e.Progress), IncludeCredentials: e.IncludeCredentials, IsEncrypted: e.IsEncrypted,
+		FileSizeBytes: nInt(e.FileSizeBytes), Sha256Checksum: nStr(e.Sha256Checksum), DownloadURL: nStr(e.DownloadUrl),
+		ErrorMessage: nStr(e.ErrorMessage), CreatedAt: fmtTime(e.CreatedAt), StartedAt: nTime(e.StartedAt),
+		CompletedAt: nTime(e.CompletedAt), ExpiresAt: nTime(e.ExpiresAt),
+	}
+}
+
+// CreateExportRequest is the body for starting a database export.
+type CreateExportRequest struct {
+	Format             string
+	IncludeCredentials bool
+	EncryptionPassword string
+}
+
+// CreateExport starts a database export job (asynchronous).
+func (c *Client) CreateExport(ctx context.Context, clusterID string, req CreateExportRequest) (*Export, error) {
+	body := apiclient.CreateExportJSONRequestBody{Format: apiclient.ExportFormat(req.Format)}
+	if req.IncludeCredentials {
+		inc := true
+		body.IncludeCredentials = &inc
+	}
+	if req.EncryptionPassword != "" {
+		body.EncryptionPassword = &req.EncryptionPassword
+	}
+	resp, err := c.gen.CreateExportWithResponse(ctx, cid(clusterID), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON202 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return exportFromAPI(resp.JSON202), nil
+}
+
+// GetExport returns a single export job by ID.
+func (c *Client) GetExport(ctx context.Context, clusterID, exportID string) (*Export, error) {
+	resp, err := c.gen.GetExportWithResponse(ctx, cid(clusterID), uid(exportID))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return exportFromAPI(resp.JSON200), nil
+}
+
+// ListExports returns the export jobs for a cluster.
+func (c *Client) ListExports(ctx context.Context, clusterID string) ([]Export, error) {
+	resp, err := c.gen.ListExportsWithResponse(ctx, cid(clusterID))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]Export, 0, len(*resp.JSON200))
+	for _, s := range *resp.JSON200 {
+		out = append(out, Export{
+			ID: s.Id.String(), ClusterID: s.ClusterId.String(), Format: string(s.Format), Status: string(s.Status),
+			CreatedAt: fmtTime(s.CreatedAt), StartedAt: nTime(s.StartedAt), CompletedAt: nTime(s.CompletedAt), ExpiresAt: nTime(s.ExpiresAt),
+		})
+	}
+	return out, nil
+}
+
+// DeleteExport removes an export archive.
+func (c *Client) DeleteExport(ctx context.Context, clusterID, exportID string) error {
+	resp, err := c.gen.DeleteExportWithResponse(ctx, cid(clusterID), uid(exportID))
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}
+
+// WaitForExport polls an export job until it reaches a terminal state
+// (completed/failed) or the context is cancelled.
+func (c *Client) WaitForExport(ctx context.Context, clusterID, exportID string) (*Export, error) {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+	for {
+		e, err := c.GetExport(ctx, clusterID, exportID)
+		if err != nil {
+			return nil, err
+		}
+		switch e.Status {
+		case "completed":
+			return e, nil
+		case "failed":
+			return e, fmt.Errorf("export %s failed: %s", exportID, e.ErrorMessage)
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+		}
+	}
+}
