@@ -77,7 +77,8 @@ func (r *applicationResource) Schema(_ context.Context, _ resource.SchemaRequest
 			},
 			"type": schema.StringAttribute{
 				Required:            true,
-				MarkdownDescription: "Client type: `confidential` or `public`.",
+				MarkdownDescription: "Client type: `confidential` or `public`. Immutable.",
+				PlanModifiers:       requiresReplace,
 			},
 			"protocol": schema.StringAttribute{
 				Optional:            true,
@@ -100,7 +101,7 @@ func (r *applicationResource) Schema(_ context.Context, _ resource.SchemaRequest
 			},
 			"pkce_required":           schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(false), MarkdownDescription: "Require PKCE. Defaults to `false`."},
 			"consent_required":        schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(false), MarkdownDescription: "Require user consent. Defaults to `false`."},
-			"service_account_enabled": schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(false), MarkdownDescription: "Enable a service account (client credentials). Defaults to `false`."},
+			"service_account_enabled": schema.BoolAttribute{Computed: true, MarkdownDescription: "Whether a service account (client credentials) is enabled. Read-only."},
 			"client_secret": schema.StringAttribute{
 				Computed:            true,
 				Sensitive:           true,

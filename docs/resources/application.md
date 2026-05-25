@@ -39,7 +39,7 @@ output "web_client_secret" {
 - `client_id` (String) OAuth client ID (unique within the realm). Immutable.
 - `cluster_id` (String) Cluster ID. Immutable.
 - `realm_name` (String) Realm name. Immutable.
-- `type` (String) Client type: `confidential` or `public`.
+- `type` (String) Client type: `confidential` or `public`. Immutable.
 
 ### Optional
 
@@ -50,12 +50,12 @@ output "web_client_secret" {
 - `pkce_required` (Boolean) Require PKCE. Defaults to `false`.
 - `protocol` (String) Protocol: `openid-connect` or `saml`. Immutable.
 - `redirect_uris` (List of String) Allowed redirect URIs.
-- `service_account_enabled` (Boolean) Enable a service account (client credentials). Defaults to `false`.
 
 ### Read-Only
 
 - `client_secret` (String, Sensitive) Client secret (confidential clients). Returned on create; use a rotate operation to change it.
 - `created_at` (String) Creation timestamp.
 - `id` (String) Composite ID `cluster_id/realm_name/client_id`.
+- `service_account_enabled` (Boolean) Whether a service account (client credentials) is enabled. Read-only.
 - `status` (String) Status (`active`/`inactive`).
 - `updated_at` (String) Last update timestamp.
