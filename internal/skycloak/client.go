@@ -1016,3 +1016,208 @@ func (c *Client) DeleteIdentityProvider(ctx context.Context, clusterID, realm, p
 	}
 	return nil
 }
+
+// ---- Custom domains ----
+
+func uid(s string) uuid.UUID { id, _ := uuid.Parse(s); return id }
+
+// DNSRecord is a DNS record the customer must create to verify/route a domain.
+type DNSRecord struct {
+	Type  string
+	Name  string
+	Value string
+}
+
+// Domain mirrors the public API custom-domain resource.
+type Domain struct {
+	ID                 string
+	ClusterID          string
+	Domain             string
+	Subdomain          string
+	CnameTarget        string
+	SSLStatus          string
+	VerificationStatus string
+	IsActive           bool
+	DNSRecords         []DNSRecord
+	CreatedAt          string
+	UpdatedAt          string
+}
+
+// CreateDomainRequest is the body for adding a custom domain.
+type CreateDomainRequest struct {
+	Domain    string
+	Subdomain string
+}
+
+func domainFromAPI(d *apiclient.Domain) *Domain {
+	out := &Domain{
+		ID: d.Id.String(), ClusterID: d.ClusterId.String(), Domain: string(d.Domain),
+		CnameTarget: d.CnameTarget, SSLStatus: string(d.SslStatus), VerificationStatus: string(d.VerificationStatus),
+		IsActive: d.IsActive, CreatedAt: fmtTime(d.CreatedAt), UpdatedAt: fmtTime(d.UpdatedAt),
+	}
+	if d.Subdomain != nil {
+		out.Subdomain = *d.Subdomain
+	}
+	for _, r := range d.DnsRecords {
+		out.DNSRecords = append(out.DNSRecords, DNSRecord{Type: string(r.Type), Name: r.Name, Value: r.Value})
+	}
+	return out
+}
+
+// ListDomains returns the custom domains on a cluster.
+func (c *Client) ListDomains(ctx context.Context, clusterID string) ([]Domain, error) {
+	resp, err := c.gen.ListDomainsWithResponse(ctx, cid(clusterID), nil)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]Domain, 0, len(*resp.JSON200))
+	for i := range *resp.JSON200 {
+		out = append(out, *domainFromAPI(&(*resp.JSON200)[i]))
+	}
+	return out, nil
+}
+
+// GetDomain returns a single custom domain by ID.
+func (c *Client) GetDomain(ctx context.Context, clusterID, domainID string) (*Domain, error) {
+	resp, err := c.gen.GetDomainWithResponse(ctx, cid(clusterID), uid(domainID))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return domainFromAPI(resp.JSON200), nil
+}
+
+// CreateDomain adds a custom domain to a cluster.
+func (c *Client) CreateDomain(ctx context.Context, clusterID string, req CreateDomainRequest) (*Domain, error) {
+	body := apiclient.CreateDomainJSONRequestBody{Domain: req.Domain}
+	if req.Subdomain != "" {
+		body.Subdomain = &req.Subdomain
+	}
+	resp, err := c.gen.CreateDomainWithResponse(ctx, cid(clusterID), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON201 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return domainFromAPI(resp.JSON201), nil
+}
+
+// DeleteDomain removes a custom domain.
+func (c *Client) DeleteDomain(ctx context.Context, clusterID, domainID string) error {
+	resp, err := c.gen.DeleteDomainWithResponse(ctx, cid(clusterID), uid(domainID))
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}
+
+// VerifyDomain triggers DNS verification for a domain and returns its updated state.
+func (c *Client) VerifyDomain(ctx context.Context, clusterID, domainID string) (*Domain, error) {
+	resp, err := c.gen.VerifyDomainWithResponse(ctx, cid(clusterID), uid(domainID))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return domainFromAPI(resp.JSON200), nil
+}
+
+// DomainRoute maps a realm onto a custom domain.
+type DomainRoute struct {
+	ID                 string
+	ClusterID          string
+	DomainID           string
+	Realm              string
+	AllowAdminAccess   bool
+	HideRealmPath      bool
+	CorsAllowedOrigins []string
+	CreatedAt          string
+	UpdatedAt          string
+}
+
+// DomainRouteInput holds the mutable fields for creating/updating a route.
+type DomainRouteInput struct {
+	Realm              string
+	AllowAdminAccess   bool
+	HideRealmPath      bool
+	CorsAllowedOrigins []string
+}
+
+func domainRouteFromAPI(r *apiclient.DomainRoute) *DomainRoute {
+	return &DomainRoute{
+		ID: r.Id.String(), ClusterID: r.ClusterId.String(), DomainID: r.DomainId.String(), Realm: string(r.Realm),
+		AllowAdminAccess: r.AllowAdminAccess, HideRealmPath: r.HideRealmPath, CorsAllowedOrigins: r.CorsAllowedOrigins,
+		CreatedAt: fmtTime(r.CreatedAt), UpdatedAt: fmtTime(r.UpdatedAt),
+	}
+}
+
+// GetDomainRoute returns a single route.
+func (c *Client) GetDomainRoute(ctx context.Context, clusterID, domainID, routeID string) (*DomainRoute, error) {
+	resp, err := c.gen.GetDomainRouteWithResponse(ctx, cid(clusterID), uid(domainID), uid(routeID))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return domainRouteFromAPI(resp.JSON200), nil
+}
+
+// CreateDomainRoute adds a realm route to a domain.
+func (c *Client) CreateDomainRoute(ctx context.Context, clusterID, domainID string, in DomainRouteInput) (*DomainRoute, error) {
+	admin := in.AllowAdminAccess
+	hide := in.HideRealmPath
+	body := apiclient.CreateDomainRouteJSONRequestBody{
+		Realm: apiclient.RealmName(in.Realm), AllowAdminAccess: &admin, HideRealmPath: &hide,
+	}
+	if len(in.CorsAllowedOrigins) > 0 {
+		o := in.CorsAllowedOrigins
+		body.CorsAllowedOrigins = &o
+	}
+	resp, err := c.gen.CreateDomainRouteWithResponse(ctx, cid(clusterID), uid(domainID), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON201 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return domainRouteFromAPI(resp.JSON201), nil
+}
+
+// UpdateDomainRoute updates a route's mutable fields.
+func (c *Client) UpdateDomainRoute(ctx context.Context, clusterID, domainID, routeID string, in DomainRouteInput) (*DomainRoute, error) {
+	admin := in.AllowAdminAccess
+	o := in.CorsAllowedOrigins
+	// hide_realm_path is create-only on the API; it is not updatable.
+	body := apiclient.UpdateDomainRouteJSONRequestBody{AllowAdminAccess: &admin, CorsAllowedOrigins: &o}
+	resp, err := c.gen.UpdateDomainRouteWithResponse(ctx, cid(clusterID), uid(domainID), uid(routeID), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return domainRouteFromAPI(resp.JSON200), nil
+}
+
+// DeleteDomainRoute removes a route.
+func (c *Client) DeleteDomainRoute(ctx context.Context, clusterID, domainID, routeID string) error {
+	resp, err := c.gen.DeleteDomainRouteWithResponse(ctx, cid(clusterID), uid(domainID), uid(routeID))
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}

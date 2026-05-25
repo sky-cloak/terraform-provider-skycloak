@@ -6,6 +6,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- `skycloak_domain` and `skycloak_domain_route` resources (custom domains + realm routing; `dns_records` surfaced for verification).
+
 ## [0.1.0] - 2026-05-25
 
 ### Added

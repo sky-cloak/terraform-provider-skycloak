@@ -60,6 +60,8 @@ honor the `Retry-After` header.
 | `skycloak_application_secret` | Rotates an application's client secret |
 | `skycloak_identity_provider` | An SSO connection (OIDC/LDAP/SAML) |
 | `skycloak_smtp` | Realm SMTP configuration |
+| `skycloak_domain` | A custom domain on a cluster |
+| `skycloak_domain_route` | Maps a realm onto a custom domain |
 
 | Data source | Description |
 |---|---|

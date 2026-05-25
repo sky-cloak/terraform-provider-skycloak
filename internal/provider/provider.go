@@ -95,6 +95,8 @@ func (p *skycloakProvider) Resources(_ context.Context) []func() resource.Resour
 		NewApplicationSecretResource,
 		NewIdentityProviderResource,
 		NewSMTPResource,
+		NewDomainResource,
+		NewDomainRouteResource,
 	}
 }
 

@@ -270,6 +270,53 @@ func TestIdentityProviderCRUD(t *testing.T) {
 	}
 }
 
+func TestDomainAndRouteCRUD(t *testing.T) {
+	const dom = "22222222-2222-2222-2222-222222222222"
+	const route = "33333333-3333-3333-3333-333333333333"
+	domBody := `{"id":"` + dom + `","cluster_id":"` + cuid + `","domain":"app.example.com","cname_target":"t.skycloak.io","ssl_status":"pending","verification_status":"pending","is_active":false,"dns_records":[{"type":"CNAME","name":"app","value":"t.skycloak.io"}],"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}`
+	routeBody := `{"id":"` + route + `","cluster_id":"` + cuid + `","domain_id":"` + dom + `","realm":"app","allow_admin_access":false,"hide_realm_path":true,"cors_allowed_origins":["https://app.example.com"],"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}`
+	base := "/clusters/" + cuid + "/domains"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == base:
+			writeJSON(w, http.StatusCreated, domBody)
+		case r.Method == http.MethodGet && r.URL.Path == base+"/"+dom:
+			writeJSON(w, 200, domBody)
+		case r.Method == http.MethodPost && r.URL.Path == base+"/"+dom+"/routes":
+			writeJSON(w, http.StatusCreated, routeBody)
+		case (r.Method == http.MethodPut || r.Method == http.MethodPatch) && r.URL.Path == base+"/"+dom+"/routes/"+route:
+			writeJSON(w, 200, routeBody)
+		case r.Method == http.MethodDelete:
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c := newTestClient(srv.URL)
+	d, err := c.CreateDomain(context.Background(), cuid, CreateDomainRequest{Domain: "app.example.com"})
+	if err != nil || d.ID != dom || len(d.DNSRecords) != 1 {
+		t.Fatalf("CreateDomain: %+v, %v", d, err)
+	}
+	if _, err := c.GetDomain(context.Background(), cuid, dom); err != nil {
+		t.Fatalf("GetDomain: %v", err)
+	}
+	rt, err := c.CreateDomainRoute(context.Background(), cuid, dom, DomainRouteInput{Realm: "app", HideRealmPath: true, CorsAllowedOrigins: []string{"https://app.example.com"}})
+	if err != nil || rt.Realm != "app" || !rt.HideRealmPath {
+		t.Fatalf("CreateDomainRoute: %+v, %v", rt, err)
+	}
+	if _, err := c.UpdateDomainRoute(context.Background(), cuid, dom, route, DomainRouteInput{Realm: "app", AllowAdminAccess: true}); err != nil {
+		t.Fatalf("UpdateDomainRoute: %v", err)
+	}
+	if err := c.DeleteDomainRoute(context.Background(), cuid, dom, route); err != nil {
+		t.Fatalf("DeleteDomainRoute: %v", err)
+	}
+	if err := c.DeleteDomain(context.Background(), cuid, dom); err != nil {
+		t.Fatalf("DeleteDomain: %v", err)
+	}
+}
+
 func TestProblemError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/problem+json")
