@@ -39,10 +39,8 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.25"
-      - uses: golangci/golangci-lint-action@v6
-        with:
-          version: v2.12.2
-          install-mode: goinstall
+      - name: golangci-lint
+        run: go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2 run ./...
 
   generate:
     runs-on: ubuntu-latest
