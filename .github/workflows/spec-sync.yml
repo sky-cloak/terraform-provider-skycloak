@@ -1,0 +1,71 @@
+name: spec-sync
+
+# Detects upstream OpenAPI drift: pulls the latest spec from the backend,
+# regenerates the API client, builds/tests, and opens a PR if anything changed.
+# Runs weekly and on demand. Can also be triggered by the backend via
+# repository_dispatch when the spec changes (event type: openapi-updated).
+on:
+  schedule:
+    - cron: "0 7 * * 1" # Mondays 07:00 UTC
+  workflow_dispatch: {}
+  repository_dispatch:
+    types: [openapi-updated]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Fetch latest OpenAPI spec from the backend
+        env:
+          # PAT or GitHub App token with read access to sky-cloak/app.
+          GH_TOKEN: ${{ secrets.OPENAPI_SOURCE_TOKEN }}
+        run: |
+          gh api repos/sky-cloak/app/contents/docs/static/openapi.yaml \
+            -H "Accept: application/vnd.github.raw" > internal/apiclient/openapi.yaml
+
+      - name: Regenerate the API client
+        run: make generate
+
+      - name: Build & test against the new client
+        id: verify
+        continue-on-error: true
+        run: |
+          go build ./... && go test ./...
+
+      - name: Compute API coverage report
+        id: coverage
+        run: |
+          {
+            echo "report<<EOF"
+            bash scripts/check-api-coverage.sh
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open PR if the spec changed
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/openapi-sync
+          title: "chore: sync OpenAPI spec"
+          commit-message: "chore: sync OpenAPI spec and regenerate client"
+          delete-branch: true
+          body: |
+            Automated OpenAPI drift sync from `sky-cloak/app@main`.
+
+            - Build & tests after regeneration: **${{ steps.verify.outcome }}**
+              (if `failure`, the spec changed in a way that needs the facade/resources updated).
+
+            ### API operation coverage
+            ```
+            ${{ steps.coverage.outputs.report }}
+            ```
+
+            Operations listed as "not yet exposed" are candidates for new resources/data sources.

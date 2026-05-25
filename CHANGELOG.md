@@ -12,6 +12,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Data sources: `skycloak_cluster`, `skycloak_cluster_locations`, `skycloak_cluster_types`, `skycloak_cluster_features`.
 - Typed API client generated from the Skycloak OpenAPI specification (oapi-codegen) with a `make generate` workflow.
 - Generated documentation, unit tests, an acceptance-test harness, CI, and a signed release pipeline.
+- Automatic `Retry-After`-aware retries on `429`/`5xx` responses.
+- `spec-sync` workflow + `scripts/check-api-coverage.sh` that detect upstream OpenAPI drift and report API operations not yet exposed.
 
 ### Changed
 - Resources and data sources call the generated API client directly, so they stay in sync with the OpenAPI spec on `make generate`.

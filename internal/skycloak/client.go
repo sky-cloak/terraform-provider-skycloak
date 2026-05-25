@@ -49,6 +49,8 @@ func New(endpoint, apiKey, apiVersion string, opts ...Option) *Client {
 	if endpoint == "" {
 		endpoint = defaultEndpoint
 	}
+	// Retry 429/5xx with Retry-After-aware backoff.
+	cfg.httpClient.Transport = &retryTransport{base: cfg.httpClient.Transport, maxRetries: 4}
 
 	editor := func(_ context.Context, req *http.Request) error {
 		req.Header.Set("apikey", apiKey)
