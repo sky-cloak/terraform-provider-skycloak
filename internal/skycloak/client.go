@@ -769,3 +769,225 @@ func (c *Client) ListClusterFeatures(ctx context.Context) ([]ClusterFeatureInfo,
 	}
 	return out, nil
 }
+
+// ---- Identity providers ----
+
+// IdentityProvider mirrors the public API identity-provider resource with its
+// structured configuration.
+type IdentityProvider struct {
+	ProviderID        string
+	Type              string
+	DisplayName       string
+	Enabled           bool
+	ClientID          string
+	ClientSecret      string // write-only; never returned on read
+	ExternallyManaged bool
+	Config            ProviderConfig
+	CreatedAt         string
+	UpdatedAt         string
+}
+
+// ProviderConfig is the structured identity-provider configuration.
+type ProviderConfig struct {
+	ButtonText        string
+	IconURL           string
+	SyncMode          string
+	TrustEmail        *bool
+	AttributeMappings map[string]string
+	OIDC              *OIDCConfig
+	LDAP              *LDAPConfig
+	SAML              *SAMLConfig
+}
+
+// OIDCConfig holds OIDC endpoint configuration.
+type OIDCConfig struct {
+	AuthorizationURL string
+	Issuer           string
+	LogoutURL        string
+	TokenURL         string
+	UserinfoURL      string
+}
+
+// LDAPConfig holds LDAP directory configuration.
+type LDAPConfig struct {
+	BaseDN    string
+	BindDN    string
+	ServerURL string
+}
+
+// SAMLConfig holds SAML provider configuration.
+type SAMLConfig struct {
+	EntityID    string
+	MetadataURL string
+	MetadataXML string
+	SSOURL      string
+}
+
+func deref(p *string) string {
+	if p != nil {
+		return *p
+	}
+	return ""
+}
+
+func toAPIProviderConfig(c ProviderConfig) *apiclient.ProviderConfig {
+	out := &apiclient.ProviderConfig{
+		ButtonText: strPtr(c.ButtonText),
+		IconUrl:    strPtr(c.IconURL),
+		TrustEmail: c.TrustEmail,
+	}
+	if c.SyncMode != "" {
+		sm := apiclient.SyncMode(c.SyncMode)
+		out.SyncMode = &sm
+	}
+	if len(c.AttributeMappings) > 0 {
+		m := c.AttributeMappings
+		out.AttributeMappings = &m
+	}
+	if c.OIDC != nil {
+		out.Oidc = &apiclient.OIDCConfig{
+			AuthorizationUrl: strPtr(c.OIDC.AuthorizationURL),
+			Issuer:           strPtr(c.OIDC.Issuer),
+			LogoutUrl:        strPtr(c.OIDC.LogoutURL),
+			TokenUrl:         strPtr(c.OIDC.TokenURL),
+			UserinfoUrl:      strPtr(c.OIDC.UserinfoURL),
+		}
+	}
+	if c.LDAP != nil {
+		out.Ldap = &apiclient.LDAPConfig{
+			BaseDn:    strPtr(c.LDAP.BaseDN),
+			BindDn:    strPtr(c.LDAP.BindDN),
+			ServerUrl: strPtr(c.LDAP.ServerURL),
+		}
+	}
+	if c.SAML != nil {
+		out.Saml = &apiclient.SAMLIdPConfig{
+			EntityId:    strPtr(c.SAML.EntityID),
+			MetadataUrl: strPtr(c.SAML.MetadataURL),
+			MetadataXml: strPtr(c.SAML.MetadataXML),
+			SsoUrl:      strPtr(c.SAML.SSOURL),
+		}
+	}
+	return out
+}
+
+func providerConfigFromAPI(c apiclient.ProviderConfig) ProviderConfig {
+	out := ProviderConfig{
+		ButtonText: deref(c.ButtonText),
+		IconURL:    deref(c.IconUrl),
+		TrustEmail: c.TrustEmail,
+	}
+	if c.SyncMode != nil {
+		out.SyncMode = string(*c.SyncMode)
+	}
+	if c.AttributeMappings != nil {
+		out.AttributeMappings = *c.AttributeMappings
+	}
+	if c.Oidc != nil {
+		out.OIDC = &OIDCConfig{
+			AuthorizationURL: deref(c.Oidc.AuthorizationUrl), Issuer: deref(c.Oidc.Issuer),
+			LogoutURL: deref(c.Oidc.LogoutUrl), TokenURL: deref(c.Oidc.TokenUrl), UserinfoURL: deref(c.Oidc.UserinfoUrl),
+		}
+	}
+	if c.Ldap != nil {
+		out.LDAP = &LDAPConfig{BaseDN: deref(c.Ldap.BaseDn), BindDN: deref(c.Ldap.BindDn), ServerURL: deref(c.Ldap.ServerUrl)}
+	}
+	if c.Saml != nil {
+		out.SAML = &SAMLConfig{EntityID: deref(c.Saml.EntityId), MetadataURL: deref(c.Saml.MetadataUrl), MetadataXML: deref(c.Saml.MetadataXml), SSOURL: deref(c.Saml.SsoUrl)}
+	}
+	return out
+}
+
+func idpFromAPI(p *apiclient.IdentityProvider) *IdentityProvider {
+	return &IdentityProvider{
+		ProviderID: string(p.ProviderId), Type: string(p.Type), DisplayName: p.DisplayName,
+		Enabled: p.Enabled, ClientID: deref(p.ClientId), ExternallyManaged: p.ExternallyManaged,
+		Config: providerConfigFromAPI(p.Config), CreatedAt: fmtTime(p.CreatedAt), UpdatedAt: fmtTime(p.UpdatedAt),
+	}
+}
+
+// ListIdentityProviders returns the identity providers in a realm.
+func (c *Client) ListIdentityProviders(ctx context.Context, clusterID, realm string) ([]IdentityProvider, error) {
+	resp, err := c.gen.ListIdentityProvidersWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]IdentityProvider, 0, len(*resp.JSON200))
+	for i := range *resp.JSON200 {
+		out = append(out, *idpFromAPI(&(*resp.JSON200)[i]))
+	}
+	return out, nil
+}
+
+// GetIdentityProvider returns a single identity provider by its provider ID.
+func (c *Client) GetIdentityProvider(ctx context.Context, clusterID, realm, providerID string) (*IdentityProvider, error) {
+	resp, err := c.gen.GetIdentityProviderWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), apiclient.ProviderId(providerID))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return idpFromAPI(resp.JSON200), nil
+}
+
+// CreateIdentityProvider creates an identity provider. Create does not accept
+// `enabled`, so it is applied with a follow-up update.
+func (c *Client) CreateIdentityProvider(ctx context.Context, clusterID, realm string, idp IdentityProvider) (*IdentityProvider, error) {
+	body := apiclient.CreateIdentityProviderJSONRequestBody{
+		ProviderId:   apiclient.SkycloakProviderId(idp.ProviderID),
+		Type:         apiclient.ProviderType(idp.Type),
+		DisplayName:  idp.DisplayName,
+		ClientId:     strPtr(idp.ClientID),
+		ClientSecret: strPtr(idp.ClientSecret),
+		Config:       toAPIProviderConfig(idp.Config),
+	}
+	resp, err := c.gen.CreateIdentityProviderWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON201 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return c.UpdateIdentityProvider(ctx, clusterID, realm, idp.ProviderID, idp)
+}
+
+// UpdateIdentityProvider updates an identity provider's mutable fields.
+func (c *Client) UpdateIdentityProvider(ctx context.Context, clusterID, realm, providerID string, idp IdentityProvider) (*IdentityProvider, error) {
+	enabled := idp.Enabled
+	displayName := idp.DisplayName
+	body := apiclient.UpdateIdentityProviderJSONRequestBody{
+		Enabled:     &enabled,
+		DisplayName: &displayName,
+		Config:      toAPIProviderConfig(idp.Config),
+	}
+	if idp.ClientID != "" {
+		body.ClientId = &idp.ClientID
+	}
+	if idp.ClientSecret != "" {
+		body.ClientSecret = &idp.ClientSecret
+	}
+	resp, err := c.gen.UpdateIdentityProviderWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), apiclient.ProviderId(providerID), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return idpFromAPI(resp.JSON200), nil
+}
+
+// DeleteIdentityProvider deletes an identity provider.
+func (c *Client) DeleteIdentityProvider(ctx context.Context, clusterID, realm, providerID string) error {
+	resp, err := c.gen.DeleteIdentityProviderWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), apiclient.ProviderId(providerID))
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}

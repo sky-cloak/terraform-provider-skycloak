@@ -188,6 +188,42 @@ func TestListClusterMetadata(t *testing.T) {
 	}
 }
 
+func TestIdentityProviderCRUD(t *testing.T) {
+	base := "/clusters/" + cuid + "/realms/app/identity-providers"
+	body := `{"provider_id":"google","type":"oidc","display_name":"Google","enabled":true,"externally_managed":false,"config":{"button_text":"Sign in with Google","oidc":{"issuer":"https://accounts.google.com","token_url":"https://oauth2.googleapis.com/token"},"attribute_mappings":{"email":"email"}}}`
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == base:
+			writeJSON(w, http.StatusCreated, body)
+		case r.Method == http.MethodPatch && r.URL.Path == base+"/google":
+			writeJSON(w, 200, body)
+		case r.Method == http.MethodGet && r.URL.Path == base+"/google":
+			writeJSON(w, 200, body)
+		case r.Method == http.MethodDelete && r.URL.Path == base+"/google":
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c := newTestClient(srv.URL)
+	created, err := c.CreateIdentityProvider(context.Background(), cuid, "app", IdentityProvider{
+		ProviderID: "google", Type: "oidc", DisplayName: "Google", Enabled: true,
+		Config: ProviderConfig{ButtonText: "Sign in with Google", OIDC: &OIDCConfig{Issuer: "https://accounts.google.com", TokenURL: "https://oauth2.googleapis.com/token"}},
+	})
+	if err != nil || created.Config.OIDC == nil || created.Config.OIDC.Issuer != "https://accounts.google.com" {
+		t.Fatalf("CreateIdentityProvider: %+v, %v", created, err)
+	}
+	got, err := c.GetIdentityProvider(context.Background(), cuid, "app", "google")
+	if err != nil || got.Config.AttributeMappings["email"] != "email" {
+		t.Fatalf("GetIdentityProvider: %+v, %v", got, err)
+	}
+	if err := c.DeleteIdentityProvider(context.Background(), cuid, "app", "google"); err != nil {
+		t.Fatalf("DeleteIdentityProvider: %v", err)
+	}
+}
+
 func TestProblemError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/problem+json")
