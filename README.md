@@ -62,6 +62,10 @@ honor the `Retry-After` header.
 | `skycloak_smtp` | Realm SMTP configuration |
 | `skycloak_domain` | A custom domain on a cluster |
 | `skycloak_domain_route` | Maps a realm onto a custom domain |
+| `skycloak_login_branding` | Login-page branding for a realm |
+| `skycloak_email_branding` | Email-template branding for a realm |
+| `skycloak_theme_assignment` | Realm-level custom theme per Keycloak theme type |
+| `skycloak_client_theme_assignment` | Per-client login-theme override |
 
 | Data source | Description |
 |---|---|
@@ -69,6 +73,7 @@ honor the `Retry-After` header.
 | `skycloak_cluster_locations` | Supported regions |
 | `skycloak_cluster_types` | Supported cluster types |
 | `skycloak_cluster_features` | Available Keycloak feature flags |
+| `skycloak_themes` | Custom themes uploaded to a cluster |
 
 Full reference docs are generated under [`docs/`](./docs) and published on the Terraform Registry.
 

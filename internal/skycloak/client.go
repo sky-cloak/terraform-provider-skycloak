@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/oapi-codegen/nullable"
 	openapitypes "github.com/oapi-codegen/runtime/types"
 
 	"github.com/sky-cloak/terraform-provider-skycloak/internal/apiclient"
@@ -1220,4 +1221,406 @@ func (c *Client) DeleteDomainRoute(ctx context.Context, clusterID, domainID, rou
 		return statusError(resp.HTTPResponse, resp.Body)
 	}
 	return nil
+}
+
+// ---- Branding & themes ----
+
+// LoginI18n configures login-page internationalization.
+type LoginI18n struct {
+	Enabled                  bool
+	DefaultLocale            string
+	SupportedLocales         []string
+	LanguageSelectionMode    string
+	LanguageSelectorPosition string
+	LanguageSelectorStyle    string
+}
+
+// SSOConfig configures identity-provider button display on the login page.
+type SSOConfig struct {
+	Enabled      bool
+	ButtonSize   string
+	DisplayStyle string
+	Layout       string
+}
+
+// LoginBranding mirrors the public API login-branding resource.
+type LoginBranding struct {
+	ClusterID, Realm                    string
+	PrimaryColor, BackgroundColor       string
+	LogoURL, FaviconURL, FontURL        string
+	PrivacyPolicyURL, TermsOfServiceURL string
+	ForgotPasswordEnabled               bool
+	RegistrationEnabled                 bool
+	RememberMeEnabled                   bool
+	ShowPoweredBy                       bool
+	Internationalization                *LoginI18n
+	SSO                                 *SSOConfig
+	Status                              string
+	AppliedAt, CreatedAt, UpdatedAt     string
+}
+
+// UpsertLoginBrandingRequest is the body for creating/updating login branding.
+// The toggle pointers are nil when the caller leaves them unset, so the API
+// applies its own default rather than being forced to a value.
+type UpsertLoginBrandingRequest struct {
+	PrimaryColor, BackgroundColor       string
+	LogoURL, FaviconURL, FontURL        string
+	PrivacyPolicyURL, TermsOfServiceURL string
+	ForgotPasswordEnabled               *bool
+	RegistrationEnabled                 *bool
+	RememberMeEnabled                   *bool
+	ShowPoweredBy                       *bool
+	Internationalization                *LoginI18n
+	SSO                                 *SSOConfig
+}
+
+func loginBrandingFromAPI(b *apiclient.LoginBranding) *LoginBranding {
+	out := &LoginBranding{
+		ClusterID: b.ClusterId.String(), Realm: string(b.Realm),
+		ForgotPasswordEnabled: b.ForgotPasswordEnabled, RegistrationEnabled: b.RegistrationEnabled,
+		RememberMeEnabled: b.RememberMeEnabled, ShowPoweredBy: b.ShowPoweredBy,
+		Status: string(b.Status), CreatedAt: fmtTime(b.CreatedAt), UpdatedAt: fmtTime(b.UpdatedAt),
+	}
+	if b.AppliedAt != nil {
+		out.AppliedAt = fmtTime(*b.AppliedAt)
+	}
+	out.PrimaryColor = derefStr(b.PrimaryColor)
+	out.BackgroundColor = derefStr(b.BackgroundColor)
+	out.LogoURL = derefStr(b.LogoUrl)
+	out.FaviconURL = derefStr(b.FaviconUrl)
+	out.FontURL = derefStr(b.FontUrl)
+	out.PrivacyPolicyURL = derefStr(b.PrivacyPolicyUrl)
+	out.TermsOfServiceURL = derefStr(b.TermsOfServiceUrl)
+	if i := b.Internationalization; i != nil {
+		out.Internationalization = &LoginI18n{
+			Enabled: i.Enabled, DefaultLocale: i.DefaultLocale, SupportedLocales: i.SupportedLocales,
+			LanguageSelectionMode:    string(i.LanguageSelectionMode),
+			LanguageSelectorPosition: string(i.LanguageSelectorPosition),
+			LanguageSelectorStyle:    string(i.LanguageSelectorStyle),
+		}
+	}
+	if s := b.Sso; s != nil {
+		out.SSO = &SSOConfig{Enabled: s.Enabled, ButtonSize: string(s.ButtonSize), DisplayStyle: string(s.DisplayStyle), Layout: string(s.Layout)}
+	}
+	return out
+}
+
+// GetLoginBranding returns the login-branding configuration for a realm.
+func (c *Client) GetLoginBranding(ctx context.Context, clusterID, realm string) (*LoginBranding, error) {
+	resp, err := c.gen.GetLoginBrandingWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return loginBrandingFromAPI(resp.JSON200), nil
+}
+
+// UpsertLoginBranding creates or updates the login-branding configuration.
+func (c *Client) UpsertLoginBranding(ctx context.Context, clusterID, realm string, req UpsertLoginBrandingRequest) (*LoginBranding, error) {
+	body := apiclient.UpsertLoginBrandingJSONRequestBody{
+		ForgotPasswordEnabled: req.ForgotPasswordEnabled,
+		RegistrationEnabled:   req.RegistrationEnabled,
+		RememberMeEnabled:     req.RememberMeEnabled,
+		ShowPoweredBy:         req.ShowPoweredBy,
+		PrimaryColor:          strPtr(req.PrimaryColor),
+		BackgroundColor:       strPtr(req.BackgroundColor),
+		LogoUrl:               strPtr(req.LogoURL),
+		FaviconUrl:            strPtr(req.FaviconURL),
+		FontUrl:               strPtr(req.FontURL),
+		PrivacyPolicyUrl:      strPtr(req.PrivacyPolicyURL),
+		TermsOfServiceUrl:     strPtr(req.TermsOfServiceURL),
+	}
+	if i := req.Internationalization; i != nil {
+		body.Internationalization = &apiclient.LoginInternationalizationConfig{
+			Enabled: i.Enabled, DefaultLocale: i.DefaultLocale, SupportedLocales: i.SupportedLocales,
+			LanguageSelectionMode:    apiclient.LanguageSelectionMode(i.LanguageSelectionMode),
+			LanguageSelectorPosition: apiclient.LanguageSelectorPosition(i.LanguageSelectorPosition),
+			LanguageSelectorStyle:    apiclient.LanguageSelectorStyle(i.LanguageSelectorStyle),
+		}
+	}
+	if s := req.SSO; s != nil {
+		body.Sso = &apiclient.SsoConfig{
+			Enabled: s.Enabled, ButtonSize: apiclient.SsoButtonSize(s.ButtonSize),
+			DisplayStyle: apiclient.SsoDisplayStyle(s.DisplayStyle), Layout: apiclient.SsoLayout(s.Layout),
+		}
+	}
+	resp, err := c.gen.UpsertLoginBrandingWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return loginBrandingFromAPI(resp.JSON200), nil
+}
+
+// DeleteLoginBranding removes the login-branding configuration (reverts to defaults).
+func (c *Client) DeleteLoginBranding(ctx context.Context, clusterID, realm string) error {
+	resp, err := c.gen.DeleteLoginBrandingWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm))
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}
+
+// EmailI18n configures email-template internationalization.
+type EmailI18n struct {
+	Enabled          bool
+	DefaultLocale    string
+	SupportedLocales []string
+}
+
+// EmailBranding mirrors the public API email-branding resource.
+type EmailBranding struct {
+	ClusterID, Realm                          string
+	PrimaryColor                              string
+	HeaderLogoLightURL, HeaderLogoDarkURL     string
+	FooterText, FooterCompanyName, CompanyURL string
+	Internationalization                      *EmailI18n
+	Status                                    string
+	AppliedAt, CreatedAt, UpdatedAt           string
+}
+
+// UpsertEmailBrandingRequest is the body for creating/updating email branding.
+type UpsertEmailBrandingRequest struct {
+	PrimaryColor                              string
+	HeaderLogoLightURL, HeaderLogoDarkURL     string
+	FooterText, FooterCompanyName, CompanyURL string
+	Internationalization                      *EmailI18n
+}
+
+func emailBrandingFromAPI(b *apiclient.EmailBranding) *EmailBranding {
+	out := &EmailBranding{
+		ClusterID: b.ClusterId.String(), Realm: string(b.Realm),
+		Status: string(b.Status), CreatedAt: fmtTime(b.CreatedAt), UpdatedAt: fmtTime(b.UpdatedAt),
+	}
+	if b.AppliedAt != nil {
+		out.AppliedAt = fmtTime(*b.AppliedAt)
+	}
+	out.PrimaryColor = derefStr(b.PrimaryColor)
+	out.HeaderLogoLightURL = derefStr(b.HeaderLogoLightUrl)
+	out.HeaderLogoDarkURL = derefStr(b.HeaderLogoDarkUrl)
+	out.FooterText = derefStr(b.FooterText)
+	out.FooterCompanyName = derefStr(b.FooterCompanyName)
+	out.CompanyURL = derefStr(b.CompanyUrl)
+	if i := b.Internationalization; i != nil {
+		out.Internationalization = &EmailI18n{Enabled: i.Enabled, DefaultLocale: i.DefaultLocale, SupportedLocales: i.SupportedLocales}
+	}
+	return out
+}
+
+// GetEmailBranding returns the email-branding configuration for a realm.
+func (c *Client) GetEmailBranding(ctx context.Context, clusterID, realm string) (*EmailBranding, error) {
+	resp, err := c.gen.GetEmailBrandingWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return emailBrandingFromAPI(resp.JSON200), nil
+}
+
+// UpsertEmailBranding creates or updates the email-branding configuration.
+func (c *Client) UpsertEmailBranding(ctx context.Context, clusterID, realm string, req UpsertEmailBrandingRequest) (*EmailBranding, error) {
+	body := apiclient.UpsertEmailBrandingJSONRequestBody{
+		PrimaryColor:       strPtr(req.PrimaryColor),
+		HeaderLogoLightUrl: strPtr(req.HeaderLogoLightURL),
+		HeaderLogoDarkUrl:  strPtr(req.HeaderLogoDarkURL),
+		FooterText:         strPtr(req.FooterText),
+		FooterCompanyName:  strPtr(req.FooterCompanyName),
+		CompanyUrl:         strPtr(req.CompanyURL),
+	}
+	if i := req.Internationalization; i != nil {
+		body.Internationalization = &apiclient.InternationalizationConfig{
+			Enabled: i.Enabled, DefaultLocale: i.DefaultLocale, SupportedLocales: i.SupportedLocales,
+		}
+	}
+	resp, err := c.gen.UpsertEmailBrandingWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return emailBrandingFromAPI(resp.JSON200), nil
+}
+
+// DeleteEmailBranding removes the email-branding configuration (reverts to defaults).
+func (c *Client) DeleteEmailBranding(ctx context.Context, clusterID, realm string) error {
+	resp, err := c.gen.DeleteEmailBrandingWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm))
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}
+
+// Theme mirrors the public API custom-theme resource.
+type Theme struct {
+	ID, ClusterID, Name, Description, Version, Status string
+	ThemeTypes                                        []string
+	FileSize                                          int64
+	ErrorMessage                                      string
+	DeployedAt, CreatedAt, UpdatedAt                  string
+}
+
+func themeFromAPI(t *apiclient.Theme) Theme {
+	out := Theme{
+		ID: t.Id.String(), ClusterID: t.ClusterId.String(), Name: t.Name, Status: string(t.Status),
+		FileSize: t.FileSize, CreatedAt: fmtTime(t.CreatedAt), UpdatedAt: fmtTime(t.UpdatedAt),
+	}
+	out.Description = derefStr(t.Description)
+	out.Version = derefStr(t.Version)
+	out.ErrorMessage = derefStr(t.ErrorMessage)
+	if t.DeployedAt != nil {
+		out.DeployedAt = fmtTime(*t.DeployedAt)
+	}
+	for _, tt := range t.ThemeTypes {
+		out.ThemeTypes = append(out.ThemeTypes, string(tt))
+	}
+	return out
+}
+
+// ListThemes returns the custom themes uploaded to a cluster.
+func (c *Client) ListThemes(ctx context.Context, clusterID string) ([]Theme, error) {
+	resp, err := c.gen.ListThemesWithResponse(ctx, cid(clusterID))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]Theme, 0, len(*resp.JSON200))
+	for i := range *resp.JSON200 {
+		out = append(out, themeFromAPI(&(*resp.JSON200)[i]))
+	}
+	return out, nil
+}
+
+// GetTheme returns a single custom theme by ID.
+func (c *Client) GetTheme(ctx context.Context, clusterID, themeID string) (*Theme, error) {
+	resp, err := c.gen.GetThemeWithResponse(ctx, cid(clusterID), uid(themeID))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	t := themeFromAPI(resp.JSON200)
+	return &t, nil
+}
+
+// ThemeAssignment is the active theme per Keycloak theme type for a realm. An
+// empty field means the realm uses Keycloak's built-in default.
+type ThemeAssignment struct {
+	Login, Account, Admin, Email string
+}
+
+func themeAssignmentFromAPI(a *apiclient.ThemeAssignment) *ThemeAssignment {
+	return &ThemeAssignment{
+		Login:   nThemeID(a.Login),
+		Account: nThemeID(a.Account),
+		Admin:   nThemeID(a.Admin),
+		Email:   nThemeID(a.Email),
+	}
+}
+
+// GetThemeAssignment returns the realm-level theme assignment.
+func (c *Client) GetThemeAssignment(ctx context.Context, clusterID, realm string) (*ThemeAssignment, error) {
+	resp, err := c.gen.GetThemeAssignmentWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return themeAssignmentFromAPI(resp.JSON200), nil
+}
+
+// SetThemeAssignment sets the realm-level theme assignment. Empty fields are
+// sent as explicit null (reset to Keycloak's built-in default).
+func (c *Client) SetThemeAssignment(ctx context.Context, clusterID, realm string, a ThemeAssignment) (*ThemeAssignment, error) {
+	body := apiclient.SetThemeAssignmentJSONRequestBody{
+		Login:   themeIDNullable(a.Login),
+		Account: themeIDNullable(a.Account),
+		Admin:   themeIDNullable(a.Admin),
+		Email:   themeIDNullable(a.Email),
+	}
+	resp, err := c.gen.SetThemeAssignmentWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return themeAssignmentFromAPI(resp.JSON200), nil
+}
+
+// ClientThemeAssignment is the login theme override for a single client. An
+// empty field means the client uses the realm default.
+type ClientThemeAssignment struct {
+	Login string
+}
+
+// GetClientThemeAssignment returns a client's login-theme override.
+func (c *Client) GetClientThemeAssignment(ctx context.Context, clusterID, realm, clientID string) (*ClientThemeAssignment, error) {
+	resp, err := c.gen.GetClientThemeAssignmentWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), apiclient.ApplicationClientId(clientID))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return &ClientThemeAssignment{Login: nThemeID(resp.JSON200.Login)}, nil
+}
+
+// SetClientThemeAssignment sets a client's login-theme override. An empty login
+// is sent as explicit null (reset to the realm default).
+func (c *Client) SetClientThemeAssignment(ctx context.Context, clusterID, realm, clientID, login string) (*ClientThemeAssignment, error) {
+	body := apiclient.SetClientThemeAssignmentJSONRequestBody{Login: themeIDNullable(login)}
+	resp, err := c.gen.SetClientThemeAssignmentWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), apiclient.ApplicationClientId(clientID), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return &ClientThemeAssignment{Login: nThemeID(resp.JSON200.Login)}, nil
+}
+
+// derefStr returns the pointed-to string, or "" if nil.
+func derefStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// nThemeID extracts a theme ID string from a nullable, returning "" for
+// null/unspecified.
+func nThemeID(n nullable.Nullable[apiclient.ThemeId]) string {
+	if !n.IsSpecified() || n.IsNull() {
+		return ""
+	}
+	v, err := n.Get()
+	if err != nil {
+		return ""
+	}
+	return v.String()
+}
+
+// themeIDNullable maps "" to explicit null, otherwise to the parsed theme ID.
+func themeIDNullable(s string) nullable.Nullable[apiclient.ThemeId] {
+	if s == "" {
+		return nullable.NewNullNullable[apiclient.ThemeId]()
+	}
+	return nullable.NewNullableWithValue(uid(s))
 }
