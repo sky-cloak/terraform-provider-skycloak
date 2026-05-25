@@ -4,6 +4,10 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      test_run:
+        description: "Acceptance test filter (go test -run). Use TestAccClusterLocations for a fast read-only smoke test."
+        default: "TestAccClusterLocations"
 
 permissions:
   contents: read
@@ -66,8 +70,9 @@ jobs:
           go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --provider-name skycloak
           git diff --exit-code
 
-  # Acceptance tests create real resources; run manually or on a schedule with a
-  # dev-workspace key in the SKYCLOAK_API_KEY secret.
+  # Acceptance tests run against a real dev workspace. Manually dispatched.
+  # Defaults to the read-only TestAccClusterLocations smoke test; pass
+  # test_run=. to run the full suite (creates real clusters).
   acceptance:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -82,6 +87,6 @@ jobs:
       - name: Acceptance tests
         env:
           TF_ACC: "1"
-          SKYCLOAK_API_KEY: ${{ secrets.SKYCLOAK_API_KEY }}
-          SKYCLOAK_ENDPOINT: ${{ secrets.SKYCLOAK_ENDPOINT }}
-        run: go test ./internal/provider/... -v -timeout 120m
+          SKYCLOAK_API_KEY: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_API_KEY }}
+          SKYCLOAK_ENDPOINT: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_ENDPOINT }}
+        run: go test ./internal/provider/... -v -timeout 120m -run "${{ inputs.test_run }}"

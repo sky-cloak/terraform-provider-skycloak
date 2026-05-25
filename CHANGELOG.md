@@ -14,6 +14,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Generated documentation, unit tests, an acceptance-test harness, CI, and a signed release pipeline.
 - Automatic `Retry-After`-aware retries on `429`/`5xx` responses.
 - `spec-sync` workflow + `scripts/check-api-coverage.sh` that detect upstream OpenAPI drift and report API operations not yet exposed.
+- `skycloak_application_secret` resource that rotates an application's client secret (regenerates on create or when `rotate_when` changes).
+- `skycloak_application` list reads now follow pagination across all pages.
 
 ### Changed
 - Resources and data sources call the generated API client directly, so they stay in sync with the OpenAPI spec on `make generate`.

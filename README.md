@@ -57,6 +57,7 @@ honor the `Retry-After` header.
 | `skycloak_cluster` | A managed Keycloak cluster |
 | `skycloak_realm` | A realm within a cluster |
 | `skycloak_application` | An OIDC/SAML client |
+| `skycloak_application_secret` | Rotates an application's client secret |
 | `skycloak_identity_provider` | An SSO connection (OIDC/LDAP/SAML) |
 | `skycloak_smtp` | Realm SMTP configuration |
 

@@ -464,20 +464,43 @@ func grantTypes(in []string) []apiclient.GrantType {
 	return out
 }
 
-// ListApplications returns the applications in a realm.
+// ListApplications returns all applications in a realm, following pagination.
 func (c *Client) ListApplications(ctx context.Context, clusterID, realm string) ([]Application, error) {
-	resp, err := c.gen.ListApplicationsWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), nil)
-	if err != nil {
-		return nil, err
-	}
-	if resp.JSON200 == nil {
-		return nil, statusError(resp.HTTPResponse, resp.Body)
-	}
-	out := make([]Application, 0, len(*resp.JSON200))
-	for i := range *resp.JSON200 {
-		out = append(out, *applicationFromAPI(&(*resp.JSON200)[i]))
+	const limit = 100
+	var out []Application
+	for offset := 0; ; offset += limit {
+		l := apiclient.PaginationLimit(limit)
+		o := apiclient.PaginationOffset(offset)
+		resp, err := c.gen.ListApplicationsWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm),
+			&apiclient.ListApplicationsParams{Limit: &l, Offset: &o})
+		if err != nil {
+			return nil, err
+		}
+		if resp.JSON200 == nil {
+			return nil, statusError(resp.HTTPResponse, resp.Body)
+		}
+		page := *resp.JSON200
+		for i := range page {
+			out = append(out, *applicationFromAPI(&page[i]))
+		}
+		if len(page) < limit {
+			break
+		}
 	}
 	return out, nil
+}
+
+// RotateApplicationSecret rotates an application's client secret and returns the
+// new value (only returned once).
+func (c *Client) RotateApplicationSecret(ctx context.Context, clusterID, realm, clientID string) (string, error) {
+	resp, err := c.gen.RotateApplicationSecretWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), apiclient.ApplicationClientId(clientID))
+	if err != nil {
+		return "", err
+	}
+	if resp.JSON200 == nil {
+		return "", statusError(resp.HTTPResponse, resp.Body)
+	}
+	return resp.JSON200.ClientSecret, nil
 }
 
 // GetApplication returns a single application by client ID.

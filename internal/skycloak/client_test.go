@@ -2,8 +2,10 @@ package skycloak
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -185,6 +187,50 @@ func TestListClusterMetadata(t *testing.T) {
 	feats, err := c.ListClusterFeatures(context.Background())
 	if err != nil || feats[0].Description != nil || feats[0].MaxVersion != nil || feats[0].MinVersion == nil {
 		t.Fatalf("ListClusterFeatures nullable handling: %+v, %v", feats, err)
+	}
+}
+
+func TestRotateApplicationSecret(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost && r.URL.Path == "/clusters/"+cuid+"/realms/app/applications/web/rotate-secret" {
+			writeJSON(w, 200, `{"client_secret":"rotated-secret"}`)
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	secret, err := newTestClient(srv.URL).RotateApplicationSecret(context.Background(), cuid, "app", "web")
+	if err != nil || secret != "rotated-secret" {
+		t.Fatalf("RotateApplicationSecret: %q, %v", secret, err)
+	}
+}
+
+func TestListApplicationsPaginates(t *testing.T) {
+	base := "/clusters/" + cuid + "/realms/app/applications"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// First page returns a full page (100) → triggers a second request.
+		if r.URL.Query().Get("offset") == "0" {
+			var b strings.Builder
+			b.WriteString("[")
+			for i := 0; i < 100; i++ {
+				if i > 0 {
+					b.WriteString(",")
+				}
+				fmt.Fprintf(&b, `{"client_id":"c%d","name":"n","type":"confidential","protocol":"openid-connect","status":"active","grant_types":[]}`, i)
+			}
+			b.WriteString("]")
+			writeJSON(w, 200, b.String())
+			return
+		}
+		writeJSON(w, 200, `[{"client_id":"last","name":"n","type":"confidential","protocol":"openid-connect","status":"active","grant_types":[]}]`)
+		_ = base
+	}))
+	defer srv.Close()
+
+	apps, err := newTestClient(srv.URL).ListApplications(context.Background(), cuid, "app")
+	if err != nil || len(apps) != 101 {
+		t.Fatalf("ListApplications pagination: got %d apps, err %v", len(apps), err)
 	}
 }
 
