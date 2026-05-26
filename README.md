@@ -55,57 +55,57 @@ honor the `Retry-After` header.
 | Resource | Description |
 |---|---|
 | `skycloak_cluster` | A managed Keycloak cluster |
-| `skycloak_realm` | A realm within a cluster |
-| `skycloak_application` | An OIDC/SAML client |
-| `skycloak_application_secret` | Rotates an application's client secret |
-| `skycloak_identity_provider` | An SSO connection (OIDC/LDAP/SAML) |
-| `skycloak_smtp` | Realm SMTP configuration |
+| `skycloak_cluster_security` | Edge security: IP allow-listing, rate limiting, WAF, geo-blocking, bot management |
 | `skycloak_domain` | A custom domain on a cluster |
 | `skycloak_domain_route` | Maps a realm onto a custom domain |
+| `skycloak_realm` | A realm within a cluster |
+| `skycloak_realm_user` | A realm user |
+| `skycloak_realm_role` | A realm-scoped role |
+| `skycloak_realm_group` | A realm group (optionally nested) |
+| `skycloak_realm_user_role_assignment` | Assigns a realm role to a user |
+| `skycloak_realm_group_membership` | Adds a user to a realm group |
+| `skycloak_application` | An OIDC/SAML client |
+| `skycloak_application_secret` | Rotates an application's client secret |
+| `skycloak_application_role_assignment` | Grants a role to an application's service account |
+| `skycloak_identity_provider` | An SSO connection (OIDC/LDAP/SAML) |
 | `skycloak_login_branding` | Login-page branding for a realm |
 | `skycloak_email_branding` | Email-template branding for a realm |
+| `skycloak_theme` | Uploads a custom theme archive to a cluster |
 | `skycloak_theme_assignment` | Realm-level custom theme per Keycloak theme type |
 | `skycloak_client_theme_assignment` | Per-client login-theme override |
 | `skycloak_cluster_extension` | A marketplace extension installed on a cluster |
-| `skycloak_export` | A database export job (waits for completion) |
-| `skycloak_theme` | Uploads a custom theme archive to a cluster |
 | `skycloak_custom_extension` | Uploads a custom extension JAR to the workspace catalog |
-| `skycloak_realm_role` | A realm-scoped role |
-| `skycloak_realm_group` | A realm group (optionally nested) |
-| `skycloak_realm_user` | A realm user |
-| `skycloak_realm_user_role_assignment` | Assigns a realm role to a user |
-| `skycloak_realm_group_membership` | Adds a user to a realm group |
-| `skycloak_application_role_assignment` | Grants a role to an application's service account |
-| `skycloak_cluster_security` | Edge security: IP allow-listing, rate limiting, WAF, geo-blocking, bot management |
+| `skycloak_smtp` | Realm SMTP configuration |
+| `skycloak_export` | A database export job (waits for completion) |
 
 | Data source | Description |
 |---|---|
 | `skycloak_cluster` | Look up a cluster by ID |
 | `skycloak_cluster_locations` | Supported regions |
 | `skycloak_cluster_types` | Supported cluster types |
-| `skycloak_cluster_features` | Available Keycloak feature flags |
-| `skycloak_themes` | Custom themes uploaded to a cluster |
-| `skycloak_extensions` | Extension catalog available to the workspace |
-| `skycloak_realm_roles` | Realm-scoped roles in a realm |
-| `skycloak_realm_groups` | Top-level groups in a realm |
-| `skycloak_realm_users` | Users in a realm |
-| `skycloak_application_roles` | Roles on an application's service account |
-| `skycloak_application_sessions` | Active sessions for an application |
 | `skycloak_cluster_versions` | Keycloak versions for a cluster type |
-| `skycloak_identity_provider_templates` | Identity-provider template catalog |
-| `skycloak_domain_routes` | Realm routes on a custom domain |
+| `skycloak_cluster_features` | Available Keycloak feature flags |
 | `skycloak_cluster_builds` | Image build history for a cluster |
+| `skycloak_cluster_build` | A single image build with its logs |
 | `skycloak_cluster_upgrades` | Version-upgrade history for a cluster |
-| `skycloak_oidc_discovery` | Resolve an OIDC issuer's endpoints |
-| `skycloak_cluster_insights` | Cluster analytics (overview/auth/events/performance/security) as JSON |
-| `skycloak_cluster_credentials` | A cluster's Keycloak admin credentials |
-| `skycloak_realm_group_members` | Users in a realm group |
 | `skycloak_cluster_upgrade_path` | Recommended version-upgrade path |
+| `skycloak_cluster_credentials` | A cluster's Keycloak admin credentials |
+| `skycloak_cluster_insights` | Cluster analytics (overview/auth/events/performance/security) as JSON |
 | `skycloak_cluster_logs` | Recent application logs |
 | `skycloak_cluster_security_logs` | Recent edge-security logs (WAF, geo, rate limiting) |
 | `skycloak_cluster_events` | Recent Keycloak admin/user events |
-| `skycloak_cluster_build` | A single image build with its logs |
 | `skycloak_cluster_events_export` | Exported events document |
+| `skycloak_domain_routes` | Realm routes on a custom domain |
+| `skycloak_realm_users` | Users in a realm |
+| `skycloak_realm_roles` | Realm-scoped roles in a realm |
+| `skycloak_realm_groups` | Top-level groups in a realm |
+| `skycloak_realm_group_members` | Users in a realm group |
+| `skycloak_application_roles` | Roles on an application's service account |
+| `skycloak_application_sessions` | Active sessions for an application |
+| `skycloak_identity_provider_templates` | Identity-provider template catalog |
+| `skycloak_oidc_discovery` | Resolve an OIDC issuer's endpoints |
+| `skycloak_themes` | Custom themes uploaded to a cluster |
+| `skycloak_extensions` | Extension catalog available to the workspace |
 
 Full reference docs are generated under [`docs/`](./docs) and published on the Terraform Registry.
 
