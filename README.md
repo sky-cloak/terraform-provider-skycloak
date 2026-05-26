@@ -70,6 +70,11 @@ honor the `Retry-After` header.
 | `skycloak_export` | A database export job (waits for completion) |
 | `skycloak_theme` | Uploads a custom theme archive to a cluster |
 | `skycloak_custom_extension` | Uploads a custom extension JAR to the workspace catalog |
+| `skycloak_realm_role` | A realm-scoped role |
+| `skycloak_realm_group` | A realm group (optionally nested) |
+| `skycloak_realm_user` | A realm user |
+| `skycloak_realm_user_role_assignment` | Assigns a realm role to a user |
+| `skycloak_realm_group_membership` | Adds a user to a realm group |
 
 | Data source | Description |
 |---|---|
@@ -79,6 +84,9 @@ honor the `Retry-After` header.
 | `skycloak_cluster_features` | Available Keycloak feature flags |
 | `skycloak_themes` | Custom themes uploaded to a cluster |
 | `skycloak_extensions` | Extension catalog available to the workspace |
+| `skycloak_realm_roles` | Realm-scoped roles in a realm |
+| `skycloak_realm_groups` | Top-level groups in a realm |
+| `skycloak_realm_users` | Users in a realm |
 
 Full reference docs are generated under [`docs/`](./docs) and published on the Terraform Registry.
 

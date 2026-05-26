@@ -15,6 +15,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `skycloak_export` resource — starts a database export and waits for completion, surfacing the presigned `download_url`, checksum, and size.
 - `skycloak_theme` resource — uploads a custom theme archive (ZIP/Keycloakify JAR); detects file-content changes via a computed `content_sha256`.
 - `skycloak_custom_extension` resource — uploads a custom extension JAR with its parameter schema; a JAR/version change publishes a new version, metadata updates in place.
+- Realm RBAC: `skycloak_realm_role`, `skycloak_realm_group`, `skycloak_realm_user` resources, plus `skycloak_realm_user_role_assignment` and `skycloak_realm_group_membership` edge resources; `skycloak_realm_roles`, `skycloak_realm_groups`, and `skycloak_realm_users` data sources.
 
 ## [0.1.0] - 2026-05-25
 

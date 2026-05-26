@@ -2221,3 +2221,393 @@ func nullableStr(s string) nullable.Nullable[string] {
 	}
 	return nullable.NewNullableWithValue(s)
 }
+
+// ---- Realm roles ----
+
+// RealmRole mirrors a realm-scoped role.
+type RealmRole struct {
+	Name        string
+	Description string
+	Composite   bool
+	ClientRole  bool
+}
+
+func realmRoleFromAPI(r *apiclient.RealmRole) RealmRole {
+	out := RealmRole{Name: r.Name, Description: nStr(r.Description)}
+	if r.Composite != nil {
+		out.Composite = *r.Composite
+	}
+	if r.ClientRole != nil {
+		out.ClientRole = *r.ClientRole
+	}
+	return out
+}
+
+// ListRealmRoles returns the realm-scoped roles of a realm.
+func (c *Client) ListRealmRoles(ctx context.Context, clusterID, realm string) ([]RealmRole, error) {
+	resp, err := c.gen.ListRealmRolesWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]RealmRole, 0, len(*resp.JSON200))
+	for i := range *resp.JSON200 {
+		out = append(out, realmRoleFromAPI(&(*resp.JSON200)[i]))
+	}
+	return out, nil
+}
+
+// GetRealmRole returns a single realm role by name.
+func (c *Client) GetRealmRole(ctx context.Context, clusterID, realm, name string) (*RealmRole, error) {
+	resp, err := c.gen.GetRealmRoleWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), name)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	r := realmRoleFromAPI(resp.JSON200)
+	return &r, nil
+}
+
+// CreateRealmRole creates a realm role.
+func (c *Client) CreateRealmRole(ctx context.Context, clusterID, realm, name, description string) (*RealmRole, error) {
+	body := apiclient.CreateRealmRoleJSONRequestBody{Name: name}
+	body.Description = strPtr(description)
+	resp, err := c.gen.CreateRealmRoleWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON201 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	r := realmRoleFromAPI(resp.JSON201)
+	return &r, nil
+}
+
+// UpdateRealmRole updates a realm role's description (and optionally renames it).
+func (c *Client) UpdateRealmRole(ctx context.Context, clusterID, realm, name, description string) (*RealmRole, error) {
+	body := apiclient.UpdateRealmRoleJSONRequestBody{}
+	body.Description = strPtr(description)
+	resp, err := c.gen.UpdateRealmRoleWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), name, body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	r := realmRoleFromAPI(resp.JSON200)
+	return &r, nil
+}
+
+// DeleteRealmRole removes a realm role.
+func (c *Client) DeleteRealmRole(ctx context.Context, clusterID, realm, name string) error {
+	resp, err := c.gen.DeleteRealmRoleWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), name)
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}
+
+// ---- Realm groups ----
+
+// RealmGroup mirrors a realm group.
+type RealmGroup struct {
+	ID   string
+	Name string
+	Path string
+}
+
+func realmGroupFromAPI(g *apiclient.RealmGroup) RealmGroup {
+	return RealmGroup{ID: g.Id.String(), Name: g.Name, Path: g.Path}
+}
+
+// ListRealmGroups returns the top-level groups of a realm.
+func (c *Client) ListRealmGroups(ctx context.Context, clusterID, realm string) ([]RealmGroup, error) {
+	resp, err := c.gen.ListRealmGroupsWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), nil)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]RealmGroup, 0, len(*resp.JSON200))
+	for i := range *resp.JSON200 {
+		out = append(out, realmGroupFromAPI(&(*resp.JSON200)[i]))
+	}
+	return out, nil
+}
+
+// GetRealmGroup returns a single realm group by ID.
+func (c *Client) GetRealmGroup(ctx context.Context, clusterID, realm, groupID string) (*RealmGroup, error) {
+	resp, err := c.gen.GetRealmGroupWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), uid(groupID))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	g := realmGroupFromAPI(resp.JSON200)
+	return &g, nil
+}
+
+// CreateRealmGroup creates a realm group, optionally nested under a parent.
+func (c *Client) CreateRealmGroup(ctx context.Context, clusterID, realm, name, parentID string) (*RealmGroup, error) {
+	body := apiclient.CreateRealmGroupJSONRequestBody{Name: name}
+	if parentID != "" {
+		pid := uid(parentID)
+		body.ParentId = &pid
+	}
+	resp, err := c.gen.CreateRealmGroupWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON201 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	g := realmGroupFromAPI(resp.JSON201)
+	return &g, nil
+}
+
+// UpdateRealmGroup renames a realm group.
+func (c *Client) UpdateRealmGroup(ctx context.Context, clusterID, realm, groupID, name string) (*RealmGroup, error) {
+	body := apiclient.UpdateRealmGroupJSONRequestBody{Name: &name}
+	resp, err := c.gen.UpdateRealmGroupWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), uid(groupID), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	g := realmGroupFromAPI(resp.JSON200)
+	return &g, nil
+}
+
+// DeleteRealmGroup removes a realm group.
+func (c *Client) DeleteRealmGroup(ctx context.Context, clusterID, realm, groupID string) error {
+	resp, err := c.gen.DeleteRealmGroupWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), uid(groupID))
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}
+
+// ---- Realm users ----
+
+// RealmUser mirrors a realm user.
+type RealmUser struct {
+	ID            string
+	Username      string
+	Email         string
+	FirstName     string
+	LastName      string
+	Enabled       bool
+	EmailVerified bool
+	CreatedAt     string
+	LastLoginAt   string
+}
+
+func realmUserFromAPI(u *apiclient.RealmUser) RealmUser {
+	out := RealmUser{
+		ID: u.Id, Username: string(u.Username), Email: string(u.Email), Enabled: u.Enabled,
+	}
+	out.FirstName = strDerefPtr(u.FirstName)
+	out.LastName = strDerefPtr(u.LastName)
+	if u.EmailVerified != nil {
+		out.EmailVerified = *u.EmailVerified
+	}
+	if u.CreatedAt != nil {
+		out.CreatedAt = fmtTime(*u.CreatedAt)
+	}
+	if u.LastLoginAt != nil {
+		out.LastLoginAt = fmtTime(*u.LastLoginAt)
+	}
+	return out
+}
+
+func strDerefPtr(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
+// CreateRealmUserRequest is the body for creating a realm user.
+type CreateRealmUserRequest struct {
+	Username          string
+	Email             string
+	FirstName         string
+	LastName          string
+	Enabled           bool
+	TemporaryPassword string
+}
+
+// ListRealmUsers returns the users of a realm.
+func (c *Client) ListRealmUsers(ctx context.Context, clusterID, realm string) ([]RealmUser, error) {
+	resp, err := c.gen.ListRealmUsersWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), nil)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]RealmUser, 0, len(*resp.JSON200))
+	for i := range *resp.JSON200 {
+		out = append(out, realmUserFromAPI(&(*resp.JSON200)[i]))
+	}
+	return out, nil
+}
+
+// GetRealmUser returns a single realm user by ID.
+func (c *Client) GetRealmUser(ctx context.Context, clusterID, realm, userID string) (*RealmUser, error) {
+	resp, err := c.gen.GetRealmUserWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), userID)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	u := realmUserFromAPI(resp.JSON200)
+	return &u, nil
+}
+
+// CreateRealmUser creates a realm user.
+func (c *Client) CreateRealmUser(ctx context.Context, clusterID, realm string, req CreateRealmUserRequest) (*RealmUser, error) {
+	enabled := req.Enabled
+	body := apiclient.CreateRealmUserJSONRequestBody{
+		Username: req.Username, Email: openapitypes.Email(req.Email), TemporaryPassword: req.TemporaryPassword, Enabled: &enabled,
+	}
+	body.FirstName = strPtr(req.FirstName)
+	body.LastName = strPtr(req.LastName)
+	resp, err := c.gen.CreateRealmUserWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON201 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	u := realmUserFromAPI(resp.JSON201)
+	return &u, nil
+}
+
+// UpdateRealmUser updates a realm user's profile fields.
+func (c *Client) UpdateRealmUser(ctx context.Context, clusterID, realm, userID string, req CreateRealmUserRequest, emailVerified bool) (*RealmUser, error) {
+	enabled := req.Enabled
+	ev := emailVerified
+	email := openapitypes.Email(req.Email)
+	body := apiclient.UpdateRealmUserJSONRequestBody{Enabled: &enabled, EmailVerified: &ev, Email: &email}
+	body.FirstName = strPtr(req.FirstName)
+	body.LastName = strPtr(req.LastName)
+	resp, err := c.gen.UpdateRealmUserWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), userID, body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	u := realmUserFromAPI(resp.JSON200)
+	return &u, nil
+}
+
+// DeleteRealmUser removes a realm user.
+func (c *Client) DeleteRealmUser(ctx context.Context, clusterID, realm, userID string) error {
+	resp, err := c.gen.DeleteRealmUserWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), userID)
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}
+
+// ---- Realm user role & group assignments ----
+
+// ListRealmUserRoles returns the realm roles assigned to a user.
+func (c *Client) ListRealmUserRoles(ctx context.Context, clusterID, realm, userID string) ([]RealmRole, error) {
+	resp, err := c.gen.ListRealmUserRolesWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), userID)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]RealmRole, 0, len(*resp.JSON200))
+	for i := range *resp.JSON200 {
+		out = append(out, realmRoleFromAPI(&(*resp.JSON200)[i]))
+	}
+	return out, nil
+}
+
+// AssignRealmUserRole assigns a single realm role to a user.
+func (c *Client) AssignRealmUserRole(ctx context.Context, clusterID, realm, userID, roleName string) error {
+	body := apiclient.AssignRealmUserRolesJSONRequestBody{RoleNames: []apiclient.RealmRoleName{roleName}}
+	resp, err := c.gen.AssignRealmUserRolesWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), userID, body)
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}
+
+// RemoveRealmUserRole removes a realm role from a user.
+func (c *Client) RemoveRealmUserRole(ctx context.Context, clusterID, realm, userID, roleName string) error {
+	resp, err := c.gen.RemoveRealmUserRoleWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), userID, roleName)
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}
+
+// ListRealmUserGroups returns the groups a user belongs to.
+func (c *Client) ListRealmUserGroups(ctx context.Context, clusterID, realm, userID string) ([]RealmGroup, error) {
+	resp, err := c.gen.ListRealmUserGroupsWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), userID)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]RealmGroup, 0, len(*resp.JSON200))
+	for i := range *resp.JSON200 {
+		out = append(out, realmGroupFromAPI(&(*resp.JSON200)[i]))
+	}
+	return out, nil
+}
+
+// AddRealmUserToGroup adds a user to a group.
+func (c *Client) AddRealmUserToGroup(ctx context.Context, clusterID, realm, userID, groupID string) error {
+	resp, err := c.gen.AddRealmUserToGroupWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), userID, uid(groupID))
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}
+
+// RemoveRealmUserFromGroup removes a user from a group.
+func (c *Client) RemoveRealmUserFromGroup(ctx context.Context, clusterID, realm, userID, groupID string) error {
+	resp, err := c.gen.RemoveRealmUserFromGroupWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), userID, uid(groupID))
+	if err != nil {
+		return err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return statusError(resp.HTTPResponse, resp.Body)
+	}
+	return nil
+}
