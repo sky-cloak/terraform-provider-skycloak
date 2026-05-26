@@ -142,6 +142,7 @@ func (p *skycloakProvider) DataSources(_ context.Context) []func() datasource.Da
 		NewClusterSecurityLogsDataSource,
 		NewClusterEventsDataSource,
 		NewClusterBuildDataSource,
+		NewClusterEventsExportDataSource,
 	}
 }
 

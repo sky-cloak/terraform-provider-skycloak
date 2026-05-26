@@ -105,6 +105,7 @@ honor the `Retry-After` header.
 | `skycloak_cluster_security_logs` | Recent edge-security logs (WAF, geo, rate limiting) |
 | `skycloak_cluster_events` | Recent Keycloak admin/user events |
 | `skycloak_cluster_build` | A single image build with its logs |
+| `skycloak_cluster_events_export` | Exported events document |
 
 Full reference docs are generated under [`docs/`](./docs) and published on the Terraform Registry.
 

@@ -3117,3 +3117,15 @@ func (c *Client) GetClusterBuild(ctx context.Context, clusterID, buildID string)
 	}
 	return out, b.Logs, nil
 }
+
+// ExportClusterEvents exports a cluster's events as a raw document (CSV/JSON).
+func (c *Client) ExportClusterEvents(ctx context.Context, clusterID string) ([]byte, error) {
+	resp, err := c.gen.ExportClusterEventsWithResponse(ctx, cid(clusterID), nil)
+	if err != nil {
+		return nil, err
+	}
+	if sc := resp.StatusCode(); sc < 200 || sc >= 300 {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return resp.Body, nil
+}
