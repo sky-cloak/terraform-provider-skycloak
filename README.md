@@ -1,6 +1,6 @@
 # terraform-provider-skycloak
 
-Official [Terraform](https://www.terraform.io) provider for **Skycloak** — manage your entire managed-Keycloak platform as code: clusters and version upgrades, edge security (IP allow-listing, WAF, rate limiting, geo-blocking, bot management), custom domains and routing, realms, users / roles / groups, applications and identity providers, branding and custom themes, marketplace and custom extensions, SMTP, database exports, and analytics.
+Official [Terraform](https://www.terraform.io) provider for **Skycloak** — manage your managed-Keycloak platform as code: clusters, edge security, custom domains, realms, applications, etc.
 
 > **Status:** early release. Resource coverage is growing; see the changelog for what's available.
 
