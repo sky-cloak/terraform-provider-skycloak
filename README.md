@@ -76,6 +76,7 @@ honor the `Retry-After` header.
 | `skycloak_realm_user_role_assignment` | Assigns a realm role to a user |
 | `skycloak_realm_group_membership` | Adds a user to a realm group |
 | `skycloak_application_role_assignment` | Grants a role to an application's service account |
+| `skycloak_cluster_security` | Edge security: IP allow-listing, rate limiting, WAF, geo-blocking, bot management |
 
 | Data source | Description |
 |---|---|
