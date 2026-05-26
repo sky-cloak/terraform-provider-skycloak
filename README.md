@@ -90,6 +90,11 @@ honor the `Retry-After` header.
 | `skycloak_realm_users` | Users in a realm |
 | `skycloak_application_roles` | Roles on an application's service account |
 | `skycloak_application_sessions` | Active sessions for an application |
+| `skycloak_cluster_versions` | Keycloak versions for a cluster type |
+| `skycloak_identity_provider_templates` | Identity-provider template catalog |
+| `skycloak_domain_routes` | Realm routes on a custom domain |
+| `skycloak_cluster_builds` | Image build history for a cluster |
+| `skycloak_cluster_upgrades` | Version-upgrade history for a cluster |
 
 Full reference docs are generated under [`docs/`](./docs) and published on the Terraform Registry.
 

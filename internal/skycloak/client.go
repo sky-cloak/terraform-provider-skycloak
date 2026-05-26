@@ -2700,3 +2700,116 @@ func (c *Client) ListApplicationSessions(ctx context.Context, clusterID, realm, 
 	}
 	return out, nil
 }
+
+// ---- Read-only metadata (versions, templates, builds, upgrades, routes) ----
+
+// ClusterTypeVersions returns the Keycloak versions available for a cluster type.
+func (c *Client) ClusterTypeVersions(ctx context.Context, clusterType string) ([]string, error) {
+	resp, err := c.gen.GetClusterTypeVersionsWithResponse(ctx, apiclient.ClusterType(clusterType))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	return *resp.JSON200, nil
+}
+
+// ProviderTemplate is a pre-configured identity-provider template.
+type ProviderTemplate struct {
+	ID          string
+	Name        string
+	Description string
+	Type        string
+}
+
+// ListIdentityProviderTemplates returns the identity-provider template catalog.
+func (c *Client) ListIdentityProviderTemplates(ctx context.Context) ([]ProviderTemplate, error) {
+	resp, err := c.gen.ListIdentityProviderTemplatesWithResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]ProviderTemplate, 0, len(*resp.JSON200))
+	for _, t := range *resp.JSON200 {
+		out = append(out, ProviderTemplate{ID: t.Id, Name: t.Name, Description: t.Description, Type: string(t.Type)})
+	}
+	return out, nil
+}
+
+// ListDomainRoutes returns the routes configured on a custom domain.
+func (c *Client) ListDomainRoutes(ctx context.Context, clusterID, domainID string) ([]DomainRoute, error) {
+	resp, err := c.gen.ListDomainRoutesWithResponse(ctx, cid(clusterID), uid(domainID))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]DomainRoute, 0, len(*resp.JSON200))
+	for i := range *resp.JSON200 {
+		out = append(out, *domainRouteFromAPI(&(*resp.JSON200)[i]))
+	}
+	return out, nil
+}
+
+// ClusterBuild is a cluster image build job summary.
+type ClusterBuild struct {
+	ID          string
+	Status      string
+	Phase       string
+	Progress    int64
+	Error       string
+	StartedAt   string
+	CompletedAt string
+}
+
+// ListClusterBuilds returns the image build history for a cluster.
+func (c *Client) ListClusterBuilds(ctx context.Context, clusterID string) ([]ClusterBuild, error) {
+	resp, err := c.gen.ListClusterBuildsWithResponse(ctx, cid(clusterID))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]ClusterBuild, 0, len(*resp.JSON200))
+	for _, b := range *resp.JSON200 {
+		out = append(out, ClusterBuild{
+			ID: b.Id.String(), Status: string(b.Status), Phase: b.Phase, Progress: int64(b.Progress),
+			Error: nStr(b.Error), StartedAt: fmtTime(b.StartedAt), CompletedAt: nTime(b.CompletedAt),
+		})
+	}
+	return out, nil
+}
+
+// ClusterUpgrade is a cluster version-upgrade record.
+type ClusterUpgrade struct {
+	ID          string
+	FromVersion string
+	ToVersion   string
+	Phase       string
+	StartedAt   string
+	CompletedAt string
+}
+
+// ListClusterUpgrades returns the upgrade history for a cluster.
+func (c *Client) ListClusterUpgrades(ctx context.Context, clusterID string) ([]ClusterUpgrade, error) {
+	resp, err := c.gen.ListClusterUpgradesWithResponse(ctx, cid(clusterID))
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]ClusterUpgrade, 0, len(*resp.JSON200))
+	for _, u := range *resp.JSON200 {
+		out = append(out, ClusterUpgrade{
+			ID: u.Id, FromVersion: string(u.FromVersion), ToVersion: string(u.ToVersion), Phase: u.Phase,
+			StartedAt: fmtTime(u.StartedAt), CompletedAt: nTime(u.CompletedAt),
+		})
+	}
+	return out, nil
+}
