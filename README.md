@@ -97,6 +97,10 @@ honor the `Retry-After` header.
 | `skycloak_cluster_builds` | Image build history for a cluster |
 | `skycloak_cluster_upgrades` | Version-upgrade history for a cluster |
 | `skycloak_oidc_discovery` | Resolve an OIDC issuer's endpoints |
+| `skycloak_cluster_insights` | Cluster analytics (overview/auth/events/performance/security) as JSON |
+| `skycloak_cluster_credentials` | A cluster's Keycloak admin credentials |
+| `skycloak_realm_group_members` | Users in a realm group |
+| `skycloak_cluster_upgrade_path` | Recommended version-upgrade path |
 
 Full reference docs are generated under [`docs/`](./docs) and published on the Terraform Registry.
 

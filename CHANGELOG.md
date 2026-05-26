@@ -18,7 +18,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Realm RBAC: `skycloak_realm_role`, `skycloak_realm_group`, `skycloak_realm_user` resources, plus `skycloak_realm_user_role_assignment` and `skycloak_realm_group_membership` edge resources; `skycloak_realm_roles`, `skycloak_realm_groups`, and `skycloak_realm_users` data sources.
 - `skycloak_application_role_assignment` resource (grant a role to an application's service account); `skycloak_application_roles` and `skycloak_application_sessions` data sources.
 - `skycloak_cluster_security` resource — edge security: per-path IP allow-listing, rate limiting, WAF (presets, categories, exclusions), geo-blocking, and bot management. CAPTCHA settings are left untouched.
-- Read-only data sources: `skycloak_cluster_versions`, `skycloak_identity_provider_templates`, `skycloak_domain_routes`, `skycloak_cluster_builds`, `skycloak_cluster_upgrades`, `skycloak_oidc_discovery`.
+- Read-only data sources: `skycloak_cluster_versions`, `skycloak_identity_provider_templates`, `skycloak_domain_routes`, `skycloak_cluster_builds`, `skycloak_cluster_upgrades`, `skycloak_oidc_discovery`, `skycloak_cluster_insights`, `skycloak_cluster_credentials`, `skycloak_realm_group_members`, `skycloak_cluster_upgrade_path`.
 
 ## [0.1.0] - 2026-05-25
 
