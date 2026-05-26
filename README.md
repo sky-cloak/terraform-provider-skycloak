@@ -101,6 +101,10 @@ honor the `Retry-After` header.
 | `skycloak_cluster_credentials` | A cluster's Keycloak admin credentials |
 | `skycloak_realm_group_members` | Users in a realm group |
 | `skycloak_cluster_upgrade_path` | Recommended version-upgrade path |
+| `skycloak_cluster_logs` | Recent application logs |
+| `skycloak_cluster_security_logs` | Recent edge-security logs (WAF, geo, rate limiting) |
+| `skycloak_cluster_events` | Recent Keycloak admin/user events |
+| `skycloak_cluster_build` | A single image build with its logs |
 
 Full reference docs are generated under [`docs/`](./docs) and published on the Terraform Registry.
 

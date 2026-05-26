@@ -138,6 +138,10 @@ func (p *skycloakProvider) DataSources(_ context.Context) []func() datasource.Da
 		NewClusterCredentialsDataSource,
 		NewRealmGroupMembersDataSource,
 		NewClusterUpgradePathDataSource,
+		NewClusterLogsDataSource,
+		NewClusterSecurityLogsDataSource,
+		NewClusterEventsDataSource,
+		NewClusterBuildDataSource,
 	}
 }
 

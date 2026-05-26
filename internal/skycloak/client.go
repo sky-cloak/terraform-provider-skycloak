@@ -2951,3 +2951,169 @@ func (c *Client) GetClusterUpgradePath(ctx context.Context, clusterID string) ([
 	}
 	return out, nil
 }
+
+// ---- Cluster logs, security logs, events, single build ----
+
+// LogEntry is one cluster log line.
+type LogEntry struct {
+	Timestamp string
+	Level     string
+	Category  string
+	Message   string
+	Source    string
+}
+
+// LogQuery filters a log query.
+type LogQuery struct {
+	Limit  int
+	Level  string
+	Search string
+}
+
+// ListClusterLogs returns cluster application logs.
+func (c *Client) ListClusterLogs(ctx context.Context, clusterID string, q LogQuery) ([]LogEntry, error) {
+	params := &apiclient.ListClusterLogsParams{}
+	if q.Limit > 0 {
+		l := apiclient.LogPageLimit(q.Limit)
+		params.Limit = &l
+	}
+	if q.Level != "" {
+		lv := apiclient.LogLevel(q.Level)
+		params.Level = &lv
+	}
+	if q.Search != "" {
+		params.Search = &q.Search
+	}
+	resp, err := c.gen.ListClusterLogsWithResponse(ctx, cid(clusterID), params)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]LogEntry, 0, len(*resp.JSON200))
+	for _, l := range *resp.JSON200 {
+		out = append(out, LogEntry{Timestamp: fmtTime(l.Timestamp), Level: string(l.Level), Category: l.Category, Message: l.Message, Source: l.Source})
+	}
+	return out, nil
+}
+
+// SecurityLogEntry is one cluster security-log line.
+type SecurityLogEntry struct {
+	Timestamp string
+	Type      string
+	Action    string
+	SourceIP  string
+	Country   string
+	Method    string
+	URI       string
+	Message   string
+}
+
+// ListClusterSecurityLogs returns cluster edge-security logs (WAF, geo, etc.).
+func (c *Client) ListClusterSecurityLogs(ctx context.Context, clusterID string, limit int, search string) ([]SecurityLogEntry, error) {
+	params := &apiclient.ListClusterSecurityLogsParams{}
+	if limit > 0 {
+		l := apiclient.LogPageLimit(limit)
+		params.Limit = &l
+	}
+	if search != "" {
+		params.Search = &search
+	}
+	resp, err := c.gen.ListClusterSecurityLogsWithResponse(ctx, cid(clusterID), params)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]SecurityLogEntry, 0, len(*resp.JSON200))
+	for _, s := range *resp.JSON200 {
+		out = append(out, SecurityLogEntry{
+			Timestamp: fmtTime(s.Timestamp), Type: string(s.Type), Action: string(s.Action),
+			SourceIP: s.SourceIp, Country: nStr(s.Country), Method: s.Method, URI: s.Uri, Message: s.Message,
+		})
+	}
+	return out, nil
+}
+
+// EventEntry is one Keycloak event.
+type EventEntry struct {
+	Timestamp string
+	Category  string
+	Type      string
+	RealmName string
+	ClientID  string
+	Username  string
+	IPAddress string
+	Error     string
+}
+
+// EventQuery filters an events query.
+type EventQuery struct {
+	Limit    int
+	Category string
+	Realm    string
+	Username string
+	Search   string
+}
+
+// ListClusterEvents returns Keycloak admin/user events.
+func (c *Client) ListClusterEvents(ctx context.Context, clusterID string, q EventQuery) ([]EventEntry, error) {
+	params := &apiclient.ListClusterEventsParams{}
+	if q.Limit > 0 {
+		l := apiclient.PageLimit(q.Limit)
+		params.Limit = &l
+	}
+	if q.Category != "" {
+		cat := apiclient.EventCategory(q.Category)
+		params.Category = &cat
+	}
+	if q.Realm != "" {
+		rn := apiclient.RealmName(q.Realm)
+		params.Realm = &rn
+	}
+	if q.Username != "" {
+		params.Username = &q.Username
+	}
+	if q.Search != "" {
+		params.Search = &q.Search
+	}
+	resp, err := c.gen.ListClusterEventsWithResponse(ctx, cid(clusterID), params)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	out := make([]EventEntry, 0, len(*resp.JSON200))
+	for _, e := range *resp.JSON200 {
+		typ := strDerefPtr((*string)(e.Type))
+		if typ == "" && e.OperationType != nil {
+			typ = string(*e.OperationType)
+		}
+		out = append(out, EventEntry{
+			Timestamp: fmtTime(e.Timestamp), Category: string(e.Category), Type: typ,
+			RealmName: e.RealmName, ClientID: strDerefPtr(e.ClientId), Username: strDerefPtr(e.Username),
+			IPAddress: strDerefPtr(e.IpAddress), Error: strDerefPtr(e.Error),
+		})
+	}
+	return out, nil
+}
+
+// GetClusterBuild returns a single image build, including its log lines.
+func (c *Client) GetClusterBuild(ctx context.Context, clusterID, buildID string) (*ClusterBuild, []string, error) {
+	resp, err := c.gen.GetClusterBuildWithResponse(ctx, cid(clusterID), uid(buildID))
+	if err != nil {
+		return nil, nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	b := resp.JSON200
+	out := &ClusterBuild{
+		ID: b.Id.String(), Status: string(b.Status), Phase: b.Phase, Progress: int64(b.Progress),
+		Error: nStr(b.Error), StartedAt: fmtTime(b.StartedAt), CompletedAt: nTime(b.CompletedAt),
+	}
+	return out, b.Logs, nil
+}
