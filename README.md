@@ -95,6 +95,7 @@ honor the `Retry-After` header.
 | `skycloak_domain_routes` | Realm routes on a custom domain |
 | `skycloak_cluster_builds` | Image build history for a cluster |
 | `skycloak_cluster_upgrades` | Version-upgrade history for a cluster |
+| `skycloak_oidc_discovery` | Resolve an OIDC issuer's endpoints |
 
 Full reference docs are generated under [`docs/`](./docs) and published on the Terraform Registry.
 

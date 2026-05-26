@@ -2813,3 +2813,35 @@ func (c *Client) ListClusterUpgrades(ctx context.Context, clusterID string) ([]C
 	}
 	return out, nil
 }
+
+// ---- OIDC discovery ----
+
+// OIDCDiscovery is the subset of an OIDC discovery document used to pre-fill an
+// identity provider.
+type OIDCDiscovery struct {
+	Issuer                string
+	AuthorizationEndpoint string
+	TokenEndpoint         string
+	UserinfoEndpoint      string
+	JwksURI               string
+	ScopesSupported       []string
+}
+
+// DiscoverOIDC fetches the OIDC discovery document for an issuer URL.
+func (c *Client) DiscoverOIDC(ctx context.Context, issuerURL string) (*OIDCDiscovery, error) {
+	resp, err := c.gen.DiscoverOIDCWithResponse(ctx, apiclient.DiscoverOIDCJSONRequestBody{IssuerUrl: issuerURL})
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	d := resp.JSON200
+	out := &OIDCDiscovery{Issuer: d.Issuer, AuthorizationEndpoint: d.AuthorizationEndpoint, TokenEndpoint: d.TokenEndpoint}
+	out.UserinfoEndpoint = strDerefPtr(d.UserinfoEndpoint)
+	out.JwksURI = strDerefPtr(d.JwksUri)
+	if d.ScopesSupported != nil {
+		out.ScopesSupported = *d.ScopesSupported
+	}
+	return out, nil
+}
