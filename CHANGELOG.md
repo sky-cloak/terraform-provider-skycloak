@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-26
+
 ### Added
 - `skycloak_domain` and `skycloak_domain_route` resources (custom domains + realm routing; `dns_records` surfaced for verification).
 - `skycloak_login_branding` and `skycloak_email_branding` resources (per-realm branding: colors, logos, footer, plus nested `internationalization` and `sso` blocks).
@@ -38,5 +40,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `skycloak_application`: `type` is immutable (changing it replaces the resource) and `service_account_enabled` is read-only, matching the API contract.
 - `skycloak_identity_provider`: `config` is a structured block (`oidc` / `ldap` / `saml` sub-objects plus `attribute_mappings`, `button_text`, `icon_url`, `sync_mode`, `trust_email`), matching the API contract.
 
-[Unreleased]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/sky-cloak/terraform-provider-skycloak/releases/tag/v0.1.0
