@@ -110,6 +110,7 @@ func (p *skycloakProvider) Resources(_ context.Context) []func() resource.Resour
 		NewRealmUserResource,
 		NewRealmUserRoleAssignmentResource,
 		NewRealmGroupMembershipResource,
+		NewApplicationRoleAssignmentResource,
 	}
 }
 
@@ -124,6 +125,8 @@ func (p *skycloakProvider) DataSources(_ context.Context) []func() datasource.Da
 		NewRealmRolesDataSource,
 		NewRealmGroupsDataSource,
 		NewRealmUsersDataSource,
+		NewApplicationRolesDataSource,
+		NewApplicationSessionsDataSource,
 	}
 }
 

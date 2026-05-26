@@ -75,6 +75,7 @@ honor the `Retry-After` header.
 | `skycloak_realm_user` | A realm user |
 | `skycloak_realm_user_role_assignment` | Assigns a realm role to a user |
 | `skycloak_realm_group_membership` | Adds a user to a realm group |
+| `skycloak_application_role_assignment` | Grants a role to an application's service account |
 
 | Data source | Description |
 |---|---|
@@ -87,6 +88,8 @@ honor the `Retry-After` header.
 | `skycloak_realm_roles` | Realm-scoped roles in a realm |
 | `skycloak_realm_groups` | Top-level groups in a realm |
 | `skycloak_realm_users` | Users in a realm |
+| `skycloak_application_roles` | Roles on an application's service account |
+| `skycloak_application_sessions` | Active sessions for an application |
 
 Full reference docs are generated under [`docs/`](./docs) and published on the Terraform Registry.
 
