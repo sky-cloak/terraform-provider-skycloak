@@ -109,8 +109,8 @@ const (
 
 // Defines values for ClusterType.
 const (
-	Keycloak  ClusterType = "keycloak"
-	Tidecloak ClusterType = "tidecloak"
+	ClusterTypeKeycloak  ClusterType = "keycloak"
+	ClusterTypeTidecloak ClusterType = "tidecloak"
 )
 
 // Defines values for DnsRecordType.
@@ -199,6 +199,13 @@ const (
 	GrantTypeRefreshToken      GrantType = "refresh_token"
 )
 
+// Defines values for HTTPAuthType.
+const (
+	HTTPAuthTypeBasic  HTTPAuthType = "basic"
+	HTTPAuthTypeBearer HTTPAuthType = "bearer"
+	HTTPAuthTypeNone   HTTPAuthType = "none"
+)
+
 // Defines values for LanguageSelectionMode.
 const (
 	AutomaticOnly         LanguageSelectionMode = "automatic_only"
@@ -261,9 +268,39 @@ const (
 
 // Defines values for RealmUserStatus.
 const (
-	All      RealmUserStatus = "all"
-	Disabled RealmUserStatus = "disabled"
-	Enabled  RealmUserStatus = "enabled"
+	RealmUserStatusAll      RealmUserStatus = "all"
+	RealmUserStatusDisabled RealmUserStatus = "disabled"
+	RealmUserStatusEnabled  RealmUserStatus = "enabled"
+)
+
+// Defines values for S3AuthType.
+const (
+	AccessKey  S3AuthType = "access_key"
+	AssumeRole S3AuthType = "assume_role"
+	IamRole    S3AuthType = "iam_role"
+	Irsa       S3AuthType = "irsa"
+)
+
+// Defines values for SIEMDestinationType.
+const (
+	Http   SIEMDestinationType = "http"
+	S3     SIEMDestinationType = "s3"
+	Syslog SIEMDestinationType = "syslog"
+)
+
+// Defines values for SIEMHealthStatus.
+const (
+	SIEMHealthStatusDegraded SIEMHealthStatus = "degraded"
+	SIEMHealthStatusFailed   SIEMHealthStatus = "failed"
+	SIEMHealthStatusHealthy  SIEMHealthStatus = "healthy"
+)
+
+// Defines values for SIEMSourceType.
+const (
+	ApplicationLogs SIEMSourceType = "application_logs"
+	KeycloakEvents  SIEMSourceType = "keycloak_events"
+	SecurityLogs    SIEMSourceType = "security_logs"
+	SkycloakAudit   SIEMSourceType = "skycloak_audit"
 )
 
 // Defines values for SecurityEventAction.
@@ -383,12 +420,27 @@ const (
 	Legacy SyncMode = "legacy"
 )
 
+// Defines values for SyslogFormat.
+const (
+	Cef     SyslogFormat = "cef"
+	Json    SyslogFormat = "json"
+	Leef    SyslogFormat = "leef"
+	Rfc5424 SyslogFormat = "rfc5424"
+)
+
+// Defines values for SyslogProtocol.
+const (
+	Tcp SyslogProtocol = "tcp"
+	Tls SyslogProtocol = "tls"
+	Udp SyslogProtocol = "udp"
+)
+
 // Defines values for ThemeStatus.
 const (
-	ThemeStatusDeployed    ThemeStatus = "deployed"
-	ThemeStatusDeploying   ThemeStatus = "deploying"
-	ThemeStatusFailed      ThemeStatus = "failed"
-	ThemeStatusUndeploying ThemeStatus = "undeploying"
+	Deployed    ThemeStatus = "deployed"
+	Deploying   ThemeStatus = "deploying"
+	Failed      ThemeStatus = "failed"
+	Undeploying ThemeStatus = "undeploying"
 )
 
 // Defines values for ThemeType.
@@ -426,11 +478,39 @@ const (
 	VERIFYEMAIL                UserEventType = "VERIFY_EMAIL"
 )
 
+// Defines values for Versions.
+const (
+	N20260601Beta Versions = "2026-06-01.beta"
+)
+
 // Defines values for WAFPreset.
 const (
 	WAFPresetCustom     WAFPreset = "custom"
 	WAFPresetFullCrs    WAFPreset = "full_crs"
 	WAFPresetOwaspTop10 WAFPreset = "owasp_top_10"
+)
+
+// Defines values for WebhookEventTypeCategory.
+const (
+	WebhookEventTypeCategoryAdmin     WebhookEventTypeCategory = "admin"
+	WebhookEventTypeCategoryAuth      WebhookEventTypeCategory = "auth"
+	WebhookEventTypeCategoryCluster   WebhookEventTypeCategory = "cluster"
+	WebhookEventTypeCategoryDomain    WebhookEventTypeCategory = "domain"
+	WebhookEventTypeCategoryEmail     WebhookEventTypeCategory = "email"
+	WebhookEventTypeCategoryExport    WebhookEventTypeCategory = "export"
+	WebhookEventTypeCategoryExtension WebhookEventTypeCategory = "extension"
+	WebhookEventTypeCategoryFederated WebhookEventTypeCategory = "federated"
+	WebhookEventTypeCategoryMfa       WebhookEventTypeCategory = "mfa"
+	WebhookEventTypeCategoryMigration WebhookEventTypeCategory = "migration"
+	WebhookEventTypeCategoryTheme     WebhookEventTypeCategory = "theme"
+	WebhookEventTypeCategoryTokens    WebhookEventTypeCategory = "tokens"
+	WebhookEventTypeCategoryUser      WebhookEventTypeCategory = "user"
+)
+
+// Defines values for WebhookSource.
+const (
+	WebhookSourceKeycloak WebhookSource = "keycloak"
+	WebhookSourcePlatform WebhookSource = "platform"
 )
 
 // ActiveUserCounts Active user counts across fixed rolling time windows.
@@ -1087,6 +1167,35 @@ type CreateRealmUserRequest struct {
 	Username          RealmUsername `json:"username"`
 }
 
+// CreateSIEMDestinationRequest defines model for CreateSIEMDestinationRequest.
+type CreateSIEMDestinationRequest struct {
+	Batch   *SIEMBatchConfig    `json:"batch,omitempty"`
+	Enabled *bool               `json:"enabled,omitempty"`
+	Http    *SIEMHTTPConfig     `json:"http,omitempty"`
+	Name    SIEMDestinationName `json:"name"`
+	S3      *SIEMS3Config       `json:"s3,omitempty"`
+	Source  SIEMSourceConfig    `json:"source"`
+	Syslog  *SIEMSyslogConfig   `json:"syslog,omitempty"`
+
+	// Type External SIEM destination type.
+	Type SIEMDestinationType `json:"type"`
+}
+
+// CreateWebhookSubscriptionRequest defines model for CreateWebhookSubscriptionRequest.
+type CreateWebhookSubscriptionRequest struct {
+	AuthorizationHeader *WebhookAuthorizationHeader `json:"authorization_header,omitempty"`
+	ClusterId           *ClusterId                  `json:"cluster_id,omitempty"`
+	Enabled             *bool                       `json:"enabled,omitempty"`
+	EventTypes          []string                    `json:"event_types"`
+	Name                WebhookSubscriptionName     `json:"name"`
+
+	// RealmId Keycloak realm ID. This is a UUID generated by Keycloak.
+	RealmId       *RealmId             `json:"realm_id,omitempty"`
+	SigningSecret WebhookSigningSecret `json:"signing_secret"`
+	Source        WebhookSource        `json:"source"`
+	Url           WebhookUrl           `json:"url" validate:"url"`
+}
+
 // CustomDomain A fully-qualified domain name.
 type CustomDomain = string
 
@@ -1503,6 +1612,9 @@ type GeoBlockingMode string
 // GrantType OAuth 2.0 grant type (flow).
 type GrantType string
 
+// HTTPAuthType defines model for HTTPAuthType.
+type HTTPAuthType string
+
 // HexColor CSS hex color code.
 type HexColor = string
 
@@ -1850,7 +1962,8 @@ type Realm struct {
 	DuplicateEmailsAllowed bool `json:"duplicate_emails_allowed"`
 
 	// Enabled Whether users can sign in to this realm.
-	Enabled bool `json:"enabled"`
+	Enabled bool    `json:"enabled"`
+	Id      RealmId `json:"id"`
 
 	// LoginWithEmailAllowed Whether users can sign in with their email address instead of username.
 	LoginWithEmailAllowed bool      `json:"login_with_email_allowed"`
@@ -1889,6 +2002,9 @@ type RealmGroupId = openapi_types.UUID
 
 // RealmGroupPath Canonical realm group path.
 type RealmGroupPath = string
+
+// RealmId Keycloak realm ID. This is a UUID generated by Keycloak.
+type RealmId = openapi_types.UUID
 
 // RealmName Keycloak realm name (not ID). Must start with a letter; allows letters, digits, and hyphens.
 type RealmName = string
@@ -1984,6 +2100,9 @@ type ResponseTimeMetrics struct {
 	P99        MetricSeries   `json:"p99"`
 }
 
+// S3AuthType defines model for S3AuthType.
+type S3AuthType string
+
 // SAMLConfiguration SAML 2.0 configuration for a SAML application.
 type SAMLConfiguration struct {
 	// AssertionConsumerUrls Assertion Consumer Service URLs (ACS endpoints).
@@ -2033,6 +2152,140 @@ type SAMLIdPConfig struct {
 
 	// SsoUrl SAML Single Sign-On service URL.
 	SsoUrl *string `json:"sso_url,omitempty"`
+}
+
+// SIEMBatchConfig defines model for SIEMBatchConfig.
+type SIEMBatchConfig struct {
+	MaxEvents          *SIEMBatchMaxEvents          `json:"max_events,omitempty"`
+	MaxIntervalSeconds *SIEMBatchMaxIntervalSeconds `json:"max_interval_seconds,omitempty"`
+}
+
+// SIEMBatchMaxEvents defines model for SIEMBatchMaxEvents.
+type SIEMBatchMaxEvents = int
+
+// SIEMBatchMaxIntervalSeconds defines model for SIEMBatchMaxIntervalSeconds.
+type SIEMBatchMaxIntervalSeconds = int
+
+// SIEMDestination Saved SIEM forwarding destination for a workspace.
+type SIEMDestination struct {
+	Batch           SIEMBatchConfig            `json:"batch"`
+	CreatedAt       time.Time                  `json:"created_at"`
+	Enabled         bool                       `json:"enabled"`
+	FailureCount    int                        `json:"failure_count"`
+	HealthStatus    SIEMHealthStatus           `json:"health_status"`
+	Http            *SIEMHTTPDestinationConfig `json:"http,omitempty"`
+	Id              SIEMDestinationId          `json:"id"`
+	LastError       *string                    `json:"last_error,omitempty" validate:"omitnil,max=500"`
+	LastSentAt      *time.Time                 `json:"last_sent_at,omitempty"`
+	Name            SIEMDestinationName        `json:"name"`
+	S3              *SIEMS3DestinationConfig   `json:"s3,omitempty"`
+	Source          SIEMSourceConfig           `json:"source"`
+	Syslog          *SIEMSyslogConfig          `json:"syslog,omitempty"`
+	TotalBytesSent  int64                      `json:"total_bytes_sent"`
+	TotalEventsSent int64                      `json:"total_events_sent"`
+	TotalLogsSent   int64                      `json:"total_logs_sent"`
+
+	// Type External SIEM destination type.
+	Type      SIEMDestinationType `json:"type"`
+	UpdatedAt time.Time           `json:"updated_at"`
+}
+
+// SIEMDestinationId defines model for SIEMDestinationId.
+type SIEMDestinationId = openapi_types.UUID
+
+// SIEMDestinationName defines model for SIEMDestinationName.
+type SIEMDestinationName = string
+
+// SIEMDestinationTestResult defines model for SIEMDestinationTestResult.
+type SIEMDestinationTestResult struct {
+	Message *string `json:"message,omitempty" validate:"omitnil,max=500"`
+	Success bool    `json:"success"`
+}
+
+// SIEMDestinationType External SIEM destination type.
+type SIEMDestinationType string
+
+// SIEMHTTPConfig defines model for SIEMHTTPConfig.
+type SIEMHTTPConfig struct {
+	AuthType HTTPAuthType `json:"auth_type"`
+
+	// BearerToken Required when `auth_type` is `bearer`. Write-only.
+	BearerToken *string `json:"bearer_token,omitempty" validate:"omitnil,max=500"`
+
+	// Headers Optional HTTP headers to include in the request. Values are write-only and are never returned.
+	Headers *map[string]string `json:"headers,omitempty"`
+
+	// Password Required when `auth_type` is `basic`. Write-only.
+	Password *string `json:"password,omitempty" validate:"omitnil,max=500"`
+	Url      string  `json:"url" validate:"url"`
+
+	// Username Required when `auth_type` is `basic`. Write-only.
+	Username *string `json:"username,omitempty" validate:"omitnil,max=500"`
+}
+
+// SIEMHTTPDestinationConfig defines model for SIEMHTTPDestinationConfig.
+type SIEMHTTPDestinationConfig struct {
+	AuthType           HTTPAuthType `json:"auth_type"`
+	HasAuthCredentials bool         `json:"has_auth_credentials"`
+	HeaderNames        []string     `json:"header_names"`
+	Url                string       `json:"url" validate:"omitnil,max=500"`
+}
+
+// SIEMHealthStatus defines model for SIEMHealthStatus.
+type SIEMHealthStatus string
+
+// SIEMS3Config defines model for SIEMS3Config.
+type SIEMS3Config struct {
+	// AccessKeyId Required when `auth_type` is `access_key`. Write-only.
+	AccessKeyId *string    `json:"access_key_id,omitempty" validate:"omitnil,max=500"`
+	AuthType    S3AuthType `json:"auth_type"`
+	Bucket      string     `json:"bucket" validate:"omitnil,max=500"`
+	ExternalId  *string    `json:"external_id,omitempty" validate:"omitnil,max=500"`
+	Prefix      *string    `json:"prefix,omitempty" validate:"omitnil,max=500"`
+	Region      string     `json:"region" validate:"omitnil,max=500"`
+
+	// RoleArn Required when `auth_type` is `assume_role`.
+	RoleArn *string `json:"role_arn,omitempty" validate:"omitnil,max=500"`
+
+	// SecretAccessKey Required when `auth_type` is `access_key`. Write-only.
+	SecretAccessKey *string `json:"secret_access_key,omitempty" validate:"omitnil,max=500"`
+}
+
+// SIEMS3DestinationConfig defines model for SIEMS3DestinationConfig.
+type SIEMS3DestinationConfig struct {
+	AuthType           S3AuthType `json:"auth_type"`
+	Bucket             string     `json:"bucket" validate:"omitnil,max=500"`
+	ExternalId         *string    `json:"external_id,omitempty" validate:"omitnil,max=500"`
+	HasAccessKeySecret bool       `json:"has_access_key_secret"`
+	Prefix             *string    `json:"prefix,omitempty" validate:"omitnil,max=500"`
+	Region             string     `json:"region" validate:"omitnil,max=500"`
+	RoleArn            *string    `json:"role_arn,omitempty" validate:"omitnil,max=500"`
+}
+
+// SIEMSourceConfig defines model for SIEMSourceConfig.
+type SIEMSourceConfig struct {
+	// ClusterIds Cluster IDs to include. Omit to include all clusters in the workspace.
+	ClusterIds *[]ClusterId `json:"cluster_ids,omitempty"`
+
+	// KeycloakEventTypes Keycloak event type codes to include. Required when `type` is `keycloak_events`; rejected for other source types.
+	KeycloakEventTypes *[]string `json:"keycloak_event_types,omitempty"`
+
+	// Realms Realm names to include. Omit to include all realms in the selected clusters.
+	Realms *[]RealmName `json:"realms,omitempty"`
+
+	// Type Workspace data stream forwarded to the destination.
+	Type SIEMSourceType `json:"type"`
+}
+
+// SIEMSourceType Workspace data stream forwarded to the destination.
+type SIEMSourceType string
+
+// SIEMSyslogConfig defines model for SIEMSyslogConfig.
+type SIEMSyslogConfig struct {
+	Format   SyslogFormat   `json:"format"`
+	Host     string         `json:"host" validate:"hostname|ip"`
+	Port     int            `json:"port"`
+	Protocol SyslogProtocol `json:"protocol"`
 }
 
 // SecurityEventAction defines model for SecurityEventAction.
@@ -2224,6 +2477,12 @@ type SuspiciousIP struct {
 // SyncMode Controls how Keycloak imports and synchronises user attributes from the provider on login.
 type SyncMode string
 
+// SyslogFormat defines model for SyslogFormat.
+type SyslogFormat string
+
+// SyslogProtocol defines model for SyslogProtocol.
+type SyslogProtocol string
+
 // TestProviderConnectionRequest Optional credential overrides for a connectivity test. When omitted, the provider's stored credentials are used.
 type TestProviderConnectionRequest struct {
 	// ClientId Override client identifier for this test only. Not persisted.
@@ -2231,6 +2490,11 @@ type TestProviderConnectionRequest struct {
 
 	// ClientSecret Override client secret or LDAP bind password for this test only. Not persisted.
 	ClientSecret *string `json:"client_secret,omitempty"`
+}
+
+// TestWebhookSubscriptionRequest defines model for TestWebhookSubscriptionRequest.
+type TestWebhookSubscriptionRequest struct {
+	EventType string `json:"event_type" validate:"omitnil,max=500"`
 }
 
 // Theme A custom Keycloak theme package deployed to a cluster.
@@ -2421,11 +2685,35 @@ type UpdateRealmUserRequest struct {
 	LastName  *string `json:"last_name,omitempty"`
 }
 
+// UpdateSIEMDestinationRequest Patch request for updating a SIEM destination. At least one field should be provided.
+type UpdateSIEMDestinationRequest struct {
+	Batch   *SIEMBatchConfig     `json:"batch,omitempty"`
+	Enabled *bool                `json:"enabled,omitempty"`
+	Http    *SIEMHTTPConfig      `json:"http,omitempty"`
+	Name    *SIEMDestinationName `json:"name,omitempty"`
+	S3      *SIEMS3Config        `json:"s3,omitempty"`
+	Source  *SIEMSourceConfig    `json:"source,omitempty"`
+	Syslog  *SIEMSyslogConfig    `json:"syslog,omitempty"`
+}
+
 // UpdateThemeRequest defines model for UpdateThemeRequest.
 type UpdateThemeRequest struct {
 	Description *string `json:"description,omitempty" validate:"omitnil,max=500"`
 	Name        *string `json:"name,omitempty" validate:"omitnil,max=500"`
 	Version     *string `json:"version,omitempty" validate:"omitnil,max=500"`
+}
+
+// UpdateWebhookSubscriptionRequest Patch request for updating a webhook subscription. At least one field should be provided.
+type UpdateWebhookSubscriptionRequest struct {
+	AuthorizationHeader nullable.Nullable[WebhookAuthorizationHeader] `json:"authorization_header,omitempty"`
+	ClusterId           nullable.Nullable[ClusterId]                  `json:"cluster_id,omitempty"`
+	Enabled             *bool                                         `json:"enabled,omitempty"`
+	EventTypes          *[]string                                     `json:"event_types,omitempty"`
+	Name                *WebhookSubscriptionName                      `json:"name,omitempty"`
+	RealmId             nullable.Nullable[RealmId]                    `json:"realm_id,omitempty"`
+	SigningSecret       *WebhookSigningSecret                         `json:"signing_secret,omitempty"`
+	Source              *WebhookSource                                `json:"source,omitempty"`
+	Url                 *WebhookUrl                                   `json:"url,omitempty" validate:"url"`
 }
 
 // UploadExtensionMetadata Extension metadata submitted as the `metadata` part of a `multipart/form-data` upload.
@@ -2533,6 +2821,9 @@ type ValidationErrorBody struct {
 	Type     string       `json:"type"`
 }
 
+// Versions defines model for Versions.
+type Versions string
+
 // WAFCategories OWASP CRS rule categories available for selection when `preset` is `custom`.
 type WAFCategories struct {
 	// CrossSiteScripting Cross-Site Scripting (rules 941xxx, ~50–60 rules) — Script injection, event handlers, and DOM-based XSS.
@@ -2607,11 +2898,130 @@ type WAFRuleExclusion struct {
 	RuleIds []string `json:"rule_ids"`
 }
 
+// WebhookAuthorizationHeader defines model for WebhookAuthorizationHeader.
+type WebhookAuthorizationHeader = string
+
+// WebhookEventType defines model for WebhookEventType.
+type WebhookEventType struct {
+	Category      WebhookEventTypeCategory `json:"category"`
+	Description   string                   `json:"description" validate:"omitnil,max=500"`
+	SamplePayload map[string]interface{}   `json:"sample_payload"`
+	Type          string                   `json:"type" validate:"omitnil,max=500"`
+}
+
+// WebhookEventTypeCategory defines model for WebhookEventTypeCategory.
+type WebhookEventTypeCategory string
+
+// WebhookId defines model for WebhookId.
+type WebhookId = openapi_types.UUID
+
+// WebhookSigningSecret defines model for WebhookSigningSecret.
+type WebhookSigningSecret = string
+
+// WebhookSource defines model for WebhookSource.
+type WebhookSource string
+
+// WebhookSubscription Saved webhook subscription for the authenticated workspace.
+type WebhookSubscription struct {
+	ClusterId              *ClusterId              `json:"cluster_id,omitempty"`
+	CreatedAt              time.Time               `json:"created_at"`
+	Enabled                bool                    `json:"enabled"`
+	EventTypes             []string                `json:"event_types"`
+	HasAuthorizationHeader bool                    `json:"has_authorization_header"`
+	HasSigningSecret       bool                    `json:"has_signing_secret"`
+	Id                     WebhookId               `json:"id"`
+	Name                   WebhookSubscriptionName `json:"name"`
+	RealmId                *string                 `json:"realm_id,omitempty" validate:"omitnil,max=500"`
+	Source                 WebhookSource           `json:"source"`
+	UpdatedAt              time.Time               `json:"updated_at"`
+	Url                    string                  `json:"url" validate:"omitnil,max=500"`
+}
+
+// WebhookSubscriptionName defines model for WebhookSubscriptionName.
+type WebhookSubscriptionName = string
+
+// WebhookTestResult defines model for WebhookTestResult.
+type WebhookTestResult struct {
+	AttemptedAt  time.Time `json:"attempted_at"`
+	DeliveryId   string    `json:"delivery_id" validate:"omitnil,max=500"`
+	DurationMs   int64     `json:"duration_ms"`
+	ErrorMessage *string   `json:"error_message,omitempty" validate:"omitnil,max=500"`
+	ResponseBody *string   `json:"response_body,omitempty" validate:"omitnil,max=500"`
+	ResponseCode *int      `json:"response_code,omitempty"`
+	Success      bool      `json:"success"`
+}
+
+// WebhookUrl defines model for WebhookUrl.
+type WebhookUrl = string
+
+// CommonParameters defines model for CommonParameters.
+type CommonParameters = Versions
+
 // PaginationLimit defines model for Pagination.limit.
 type PaginationLimit = PageLimit
 
 // PaginationOffset defines model for Pagination.offset.
 type PaginationOffset = PageOffset
+
+// ListClusterFeaturesParams defines parameters for ListClusterFeatures.
+type ListClusterFeaturesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListClusterLocationsParams defines parameters for ListClusterLocations.
+type ListClusterLocationsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListClusterTypesParams defines parameters for ListClusterTypes.
+type ListClusterTypesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetClusterTypeVersionsParams defines parameters for GetClusterTypeVersions.
+type GetClusterTypeVersionsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListClustersParams defines parameters for ListClusters.
+type ListClustersParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// CreateClusterParams defines parameters for CreateCluster.
+type CreateClusterParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteClusterParams defines parameters for DeleteCluster.
+type DeleteClusterParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetClusterParams defines parameters for GetCluster.
+type GetClusterParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateClusterParams defines parameters for UpdateCluster.
+type UpdateClusterParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListClusterBuildsParams defines parameters for ListClusterBuilds.
+type ListClusterBuildsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetClusterBuildParams defines parameters for GetClusterBuild.
+type GetClusterBuildParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetClusterCredentialsParams defines parameters for GetClusterCredentials.
+type GetClusterCredentialsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
 
 // ListDomainsParams defines parameters for ListDomains.
 type ListDomainsParams struct {
@@ -2623,6 +3033,52 @@ type ListDomainsParams struct {
 
 	// VerificationStatus Filter by verification status.
 	VerificationStatus *DomainVerificationStatus `form:"verification_status,omitempty" json:"verification_status,omitempty"`
+	APIVersion         CommonParameters          `json:"API-Version"`
+}
+
+// CreateDomainParams defines parameters for CreateDomain.
+type CreateDomainParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteDomainParams defines parameters for DeleteDomain.
+type DeleteDomainParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetDomainParams defines parameters for GetDomain.
+type GetDomainParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListDomainRoutesParams defines parameters for ListDomainRoutes.
+type ListDomainRoutesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// CreateDomainRouteParams defines parameters for CreateDomainRoute.
+type CreateDomainRouteParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteDomainRouteParams defines parameters for DeleteDomainRoute.
+type DeleteDomainRouteParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetDomainRouteParams defines parameters for GetDomainRoute.
+type GetDomainRouteParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateDomainRouteParams defines parameters for UpdateDomainRoute.
+type UpdateDomainRouteParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// VerifyDomainParams defines parameters for VerifyDomain.
+type VerifyDomainParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // ListClusterEventsParams defines parameters for ListClusterEvents.
@@ -2670,7 +3126,8 @@ type ListClusterEventsParams struct {
 	Search *string `form:"search,omitempty" json:"search,omitempty"`
 
 	// Order Sort order by `timestamp`. Defaults to `desc` (newest first).
-	Order *SortOrder `form:"order,omitempty" json:"order,omitempty"`
+	Order      *SortOrder       `form:"order,omitempty" json:"order,omitempty"`
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // ExportClusterEventsParams defines parameters for ExportClusterEvents.
@@ -2712,7 +3169,48 @@ type ExportClusterEventsParams struct {
 	Search *string `form:"search,omitempty" json:"search,omitempty"`
 
 	// Order Sort order by `timestamp`. Defaults to `desc` (newest first).
-	Order *SortOrder `form:"order,omitempty" json:"order,omitempty"`
+	Order      *SortOrder       `form:"order,omitempty" json:"order,omitempty"`
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListExportsParams defines parameters for ListExports.
+type ListExportsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// CreateExportParams defines parameters for CreateExport.
+type CreateExportParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteExportParams defines parameters for DeleteExport.
+type DeleteExportParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetExportParams defines parameters for GetExport.
+type GetExportParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListClusterExtensionsParams defines parameters for ListClusterExtensions.
+type ListClusterExtensionsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// InstallExtensionParams defines parameters for InstallExtension.
+type InstallExtensionParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UninstallExtensionParams defines parameters for UninstallExtension.
+type UninstallExtensionParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpgradeClusterExtensionParams defines parameters for UpgradeClusterExtension.
+type UpgradeClusterExtensionParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // GetClusterInsightsAuthenticationParams defines parameters for GetClusterInsightsAuthentication.
@@ -2724,7 +3222,8 @@ type GetClusterInsightsAuthenticationParams struct {
 	StartTime *time.Time `form:"start_time,omitempty" json:"start_time,omitempty"`
 
 	// EndTime Inclusive end time (ISO 8601). Defaults to the current time when omitted.
-	EndTime *time.Time `form:"end_time,omitempty" json:"end_time,omitempty"`
+	EndTime    *time.Time       `form:"end_time,omitempty" json:"end_time,omitempty"`
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // GetClusterInsightsEventsParams defines parameters for GetClusterInsightsEvents.
@@ -2733,7 +3232,8 @@ type GetClusterInsightsEventsParams struct {
 	StartTime *time.Time `form:"start_time,omitempty" json:"start_time,omitempty"`
 
 	// EndTime Inclusive end time (ISO 8601). Defaults to the current time when omitted.
-	EndTime *time.Time `form:"end_time,omitempty" json:"end_time,omitempty"`
+	EndTime    *time.Time       `form:"end_time,omitempty" json:"end_time,omitempty"`
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // GetClusterInsightsOverviewParams defines parameters for GetClusterInsightsOverview.
@@ -2745,7 +3245,8 @@ type GetClusterInsightsOverviewParams struct {
 	StartTime *time.Time `form:"start_time,omitempty" json:"start_time,omitempty"`
 
 	// EndTime Inclusive end time (ISO 8601). Defaults to the current time when omitted.
-	EndTime *time.Time `form:"end_time,omitempty" json:"end_time,omitempty"`
+	EndTime    *time.Time       `form:"end_time,omitempty" json:"end_time,omitempty"`
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // GetClusterInsightsPerformanceParams defines parameters for GetClusterInsightsPerformance.
@@ -2757,7 +3258,8 @@ type GetClusterInsightsPerformanceParams struct {
 	StartTime *time.Time `form:"start_time,omitempty" json:"start_time,omitempty"`
 
 	// EndTime Inclusive end time (ISO 8601). Defaults to the current time when omitted.
-	EndTime *time.Time `form:"end_time,omitempty" json:"end_time,omitempty"`
+	EndTime    *time.Time       `form:"end_time,omitempty" json:"end_time,omitempty"`
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // GetClusterInsightsSecurityParams defines parameters for GetClusterInsightsSecurity.
@@ -2769,7 +3271,8 @@ type GetClusterInsightsSecurityParams struct {
 	StartTime *time.Time `form:"start_time,omitempty" json:"start_time,omitempty"`
 
 	// EndTime Inclusive end time (ISO 8601). Defaults to the current time when omitted.
-	EndTime *time.Time `form:"end_time,omitempty" json:"end_time,omitempty"`
+	EndTime    *time.Time       `form:"end_time,omitempty" json:"end_time,omitempty"`
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // ListClusterLogsParams defines parameters for ListClusterLogs.
@@ -2797,7 +3300,33 @@ type ListClusterLogsParams struct {
 	ThreadName *string `form:"thread_name,omitempty" json:"thread_name,omitempty"`
 
 	// Order Sort order by `created_at`. Defaults to `desc` (newest first).
-	Order *SortOrder `form:"order,omitempty" json:"order,omitempty"`
+	Order      *SortOrder       `form:"order,omitempty" json:"order,omitempty"`
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListRealmsParams defines parameters for ListRealms.
+type ListRealmsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// CreateRealmParams defines parameters for CreateRealm.
+type CreateRealmParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteRealmParams defines parameters for DeleteRealm.
+type DeleteRealmParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetRealmParams defines parameters for GetRealm.
+type GetRealmParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateRealmParams defines parameters for UpdateRealm.
+type UpdateRealmParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // ListApplicationsParams defines parameters for ListApplications.
@@ -2806,35 +3335,285 @@ type ListApplicationsParams struct {
 	Limit *PaginationLimit `form:"limit,omitempty" json:"limit,omitempty"`
 
 	// Offset Number of results to skip from the start.
-	Offset *PaginationOffset `form:"offset,omitempty" json:"offset,omitempty"`
-	Search *string           `form:"search,omitempty" json:"search,omitempty"`
+	Offset     *PaginationOffset `form:"offset,omitempty" json:"offset,omitempty"`
+	Search     *string           `form:"search,omitempty" json:"search,omitempty"`
+	APIVersion CommonParameters  `json:"API-Version"`
+}
+
+// CreateApplicationParams defines parameters for CreateApplication.
+type CreateApplicationParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteApplicationParams defines parameters for DeleteApplication.
+type DeleteApplicationParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetApplicationParams defines parameters for GetApplication.
+type GetApplicationParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateApplicationParams defines parameters for UpdateApplication.
+type UpdateApplicationParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListApplicationRolesParams defines parameters for ListApplicationRoles.
+type ListApplicationRolesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// AssignApplicationRoleParams defines parameters for AssignApplicationRole.
+type AssignApplicationRoleParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // RemoveApplicationRoleParams defines parameters for RemoveApplicationRole.
 type RemoveApplicationRoleParams struct {
 	// RoleClientId OAuth client_id of the owning client. Required when removing a client role.
-	RoleClientId *string `form:"role_client_id,omitempty" json:"role_client_id,omitempty"`
+	RoleClientId *string          `form:"role_client_id,omitempty" json:"role_client_id,omitempty"`
+	APIVersion   CommonParameters `json:"API-Version"`
+}
+
+// RotateApplicationSecretParams defines parameters for RotateApplicationSecret.
+type RotateApplicationSecretParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListApplicationSessionsParams defines parameters for ListApplicationSessions.
+type ListApplicationSessionsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // ListRealmGroupsParams defines parameters for ListRealmGroups.
 type ListRealmGroupsParams struct {
 	// IncludeSubgroups When true, each group includes its direct child groups in `subgroups`.
-	IncludeSubgroups *bool `form:"include_subgroups,omitempty" json:"include_subgroups,omitempty"`
+	IncludeSubgroups *bool            `form:"include_subgroups,omitempty" json:"include_subgroups,omitempty"`
+	APIVersion       CommonParameters `json:"API-Version"`
+}
+
+// CreateRealmGroupParams defines parameters for CreateRealmGroup.
+type CreateRealmGroupParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteRealmGroupParams defines parameters for DeleteRealmGroup.
+type DeleteRealmGroupParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetRealmGroupParams defines parameters for GetRealmGroup.
+type GetRealmGroupParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateRealmGroupParams defines parameters for UpdateRealmGroup.
+type UpdateRealmGroupParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // ListRealmGroupMembersParams defines parameters for ListRealmGroupMembers.
 type ListRealmGroupMembersParams struct {
-	Limit  *PageLimit  `form:"limit,omitempty" json:"limit,omitempty"`
-	Offset *PageOffset `form:"offset,omitempty" json:"offset,omitempty"`
+	Limit      *PageLimit       `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset     *PageOffset      `form:"offset,omitempty" json:"offset,omitempty"`
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListIdentityProvidersParams defines parameters for ListIdentityProviders.
+type ListIdentityProvidersParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// CreateIdentityProviderParams defines parameters for CreateIdentityProvider.
+type CreateIdentityProviderParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteIdentityProviderParams defines parameters for DeleteIdentityProvider.
+type DeleteIdentityProviderParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetIdentityProviderParams defines parameters for GetIdentityProvider.
+type GetIdentityProviderParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateIdentityProviderParams defines parameters for UpdateIdentityProvider.
+type UpdateIdentityProviderParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// TestIdentityProviderConnectionParams defines parameters for TestIdentityProviderConnection.
+type TestIdentityProviderConnectionParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListRealmRolesParams defines parameters for ListRealmRoles.
+type ListRealmRolesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// CreateRealmRoleParams defines parameters for CreateRealmRole.
+type CreateRealmRoleParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteRealmRoleParams defines parameters for DeleteRealmRole.
+type DeleteRealmRoleParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetRealmRoleParams defines parameters for GetRealmRole.
+type GetRealmRoleParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateRealmRoleParams defines parameters for UpdateRealmRole.
+type UpdateRealmRoleParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // ListRealmUsersParams defines parameters for ListRealmUsers.
 type ListRealmUsersParams struct {
-	Search *string          `form:"search,omitempty" json:"search,omitempty"`
-	Status *RealmUserStatus `form:"status,omitempty" json:"status,omitempty"`
-	Limit  *PageLimit       `form:"limit,omitempty" json:"limit,omitempty"`
-	Offset *PageOffset      `form:"offset,omitempty" json:"offset,omitempty"`
-	Order  *SortOrder       `form:"order,omitempty" json:"order,omitempty"`
+	Search     *string          `form:"search,omitempty" json:"search,omitempty"`
+	Status     *RealmUserStatus `form:"status,omitempty" json:"status,omitempty"`
+	Limit      *PageLimit       `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset     *PageOffset      `form:"offset,omitempty" json:"offset,omitempty"`
+	Order      *SortOrder       `form:"order,omitempty" json:"order,omitempty"`
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// CreateRealmUserParams defines parameters for CreateRealmUser.
+type CreateRealmUserParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteRealmUserParams defines parameters for DeleteRealmUser.
+type DeleteRealmUserParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetRealmUserParams defines parameters for GetRealmUser.
+type GetRealmUserParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateRealmUserParams defines parameters for UpdateRealmUser.
+type UpdateRealmUserParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListRealmUserGroupsParams defines parameters for ListRealmUserGroups.
+type ListRealmUserGroupsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// RemoveRealmUserFromGroupParams defines parameters for RemoveRealmUserFromGroup.
+type RemoveRealmUserFromGroupParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// AddRealmUserToGroupParams defines parameters for AddRealmUserToGroup.
+type AddRealmUserToGroupParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListRealmUserRolesParams defines parameters for ListRealmUserRoles.
+type ListRealmUserRolesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// AssignRealmUserRolesParams defines parameters for AssignRealmUserRoles.
+type AssignRealmUserRolesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// RemoveRealmUserRoleParams defines parameters for RemoveRealmUserRole.
+type RemoveRealmUserRoleParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetClientThemeAssignmentParams defines parameters for GetClientThemeAssignment.
+type GetClientThemeAssignmentParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// SetClientThemeAssignmentParams defines parameters for SetClientThemeAssignment.
+type SetClientThemeAssignmentParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteEmailBrandingParams defines parameters for DeleteEmailBranding.
+type DeleteEmailBrandingParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetEmailBrandingParams defines parameters for GetEmailBranding.
+type GetEmailBrandingParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpsertEmailBrandingParams defines parameters for UpsertEmailBranding.
+type UpsertEmailBrandingParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteLoginBrandingParams defines parameters for DeleteLoginBranding.
+type DeleteLoginBrandingParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetLoginBrandingParams defines parameters for GetLoginBranding.
+type GetLoginBrandingParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpsertLoginBrandingParams defines parameters for UpsertLoginBranding.
+type UpsertLoginBrandingParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteSmtpConfigParams defines parameters for DeleteSmtpConfig.
+type DeleteSmtpConfigParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetSmtpConfigParams defines parameters for GetSmtpConfig.
+type GetSmtpConfigParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpsertSmtpConfigParams defines parameters for UpsertSmtpConfig.
+type UpsertSmtpConfigParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// TestSmtpConfigParams defines parameters for TestSmtpConfig.
+type TestSmtpConfigParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetThemeAssignmentParams defines parameters for GetThemeAssignment.
+type GetThemeAssignmentParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// SetThemeAssignmentParams defines parameters for SetThemeAssignment.
+type SetThemeAssignmentParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetClusterSecurityParams defines parameters for GetClusterSecurity.
+type GetClusterSecurityParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateClusterSecurityParams defines parameters for UpdateClusterSecurity.
+type UpdateClusterSecurityParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // ListClusterSecurityLogsParams defines parameters for ListClusterSecurityLogs.
@@ -2867,7 +3646,28 @@ type ListClusterSecurityLogsParams struct {
 	Search *string `form:"search,omitempty" json:"search,omitempty"`
 
 	// Order Sort order by `created_at`. Defaults to `desc` (newest first).
-	Order *SortOrder `form:"order,omitempty" json:"order,omitempty"`
+	Order      *SortOrder       `form:"order,omitempty" json:"order,omitempty"`
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListClusterCAPTCHADomainsParams defines parameters for ListClusterCAPTCHADomains.
+type ListClusterCAPTCHADomainsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// AddClusterCAPTCHADomainParams defines parameters for AddClusterCAPTCHADomain.
+type AddClusterCAPTCHADomainParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// RemoveClusterCAPTCHADomainParams defines parameters for RemoveClusterCAPTCHADomain.
+type RemoveClusterCAPTCHADomainParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListThemesParams defines parameters for ListThemes.
+type ListThemesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
 }
 
 // UploadThemeMultipartBody defines parameters for UploadTheme.
@@ -2885,6 +3685,46 @@ type UploadThemeMultipartBody struct {
 	Version *string `json:"version,omitempty" validate:"omitnil,semver"`
 }
 
+// UploadThemeParams defines parameters for UploadTheme.
+type UploadThemeParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteThemeParams defines parameters for DeleteTheme.
+type DeleteThemeParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetThemeParams defines parameters for GetTheme.
+type GetThemeParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateThemeParams defines parameters for UpdateTheme.
+type UpdateThemeParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetClusterUpgradePathParams defines parameters for GetClusterUpgradePath.
+type GetClusterUpgradePathParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListClusterUpgradesParams defines parameters for ListClusterUpgrades.
+type ListClusterUpgradesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// CancelClusterUpgradeParams defines parameters for CancelClusterUpgrade.
+type CancelClusterUpgradeParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListExtensionsParams defines parameters for ListExtensions.
+type ListExtensionsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
 // UploadExtensionMultipartBody defines parameters for UploadExtension.
 type UploadExtensionMultipartBody struct {
 	// Jar JAR file containing the Keycloak extension. Content type must be `application/java-archive`.
@@ -2894,6 +3734,26 @@ type UploadExtensionMultipartBody struct {
 	Metadata UploadExtensionMetadata `json:"metadata"`
 }
 
+// UploadExtensionParams defines parameters for UploadExtension.
+type UploadExtensionParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteExtensionParams defines parameters for DeleteExtension.
+type DeleteExtensionParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetExtensionParams defines parameters for GetExtension.
+type GetExtensionParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateExtensionParams defines parameters for UpdateExtension.
+type UpdateExtensionParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
 // PublishExtensionVersionMultipartBody defines parameters for PublishExtensionVersion.
 type PublishExtensionVersionMultipartBody struct {
 	// Jar Replacement JAR file.
@@ -2901,6 +3761,63 @@ type PublishExtensionVersionMultipartBody struct {
 
 	// Metadata Version metadata for the new release.
 	Metadata PublishExtensionVersionMetadata `json:"metadata"`
+}
+
+// PublishExtensionVersionParams defines parameters for PublishExtensionVersion.
+type PublishExtensionVersionParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListIdentityProviderTemplatesParams defines parameters for ListIdentityProviderTemplates.
+type ListIdentityProviderTemplatesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DiscoverOIDCParams defines parameters for DiscoverOIDC.
+type DiscoverOIDCParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListSIEMDestinationsParams defines parameters for ListSIEMDestinations.
+type ListSIEMDestinationsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// CreateSIEMDestinationParams defines parameters for CreateSIEMDestination.
+type CreateSIEMDestinationParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteSIEMDestinationParams defines parameters for DeleteSIEMDestination.
+type DeleteSIEMDestinationParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetSIEMDestinationParams defines parameters for GetSIEMDestination.
+type GetSIEMDestinationParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateSIEMDestinationParams defines parameters for UpdateSIEMDestination.
+type UpdateSIEMDestinationParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// TestSIEMDestinationParams defines parameters for TestSIEMDestination.
+type TestSIEMDestinationParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListWebhookEventTypesParams defines parameters for ListWebhookEventTypes.
+type ListWebhookEventTypesParams struct {
+	Source *WebhookSource `form:"source,omitempty" json:"source,omitempty"`
+}
+
+// ListWebhookSubscriptionsParams defines parameters for ListWebhookSubscriptions.
+type ListWebhookSubscriptionsParams struct {
+	ClusterId *ClusterId     `form:"cluster_id,omitempty" json:"cluster_id,omitempty"`
+	Source    *WebhookSource `form:"source,omitempty" json:"source,omitempty"`
+	Enabled   *bool          `form:"enabled,omitempty" json:"enabled,omitempty"`
 }
 
 // CreateClusterJSONRequestBody defines body for CreateCluster for application/json ContentType.
@@ -3011,6 +3928,21 @@ type PublishExtensionVersionMultipartRequestBody PublishExtensionVersionMultipar
 // DiscoverOIDCJSONRequestBody defines body for DiscoverOIDC for application/json ContentType.
 type DiscoverOIDCJSONRequestBody = DiscoverOIDCRequest
 
+// CreateSIEMDestinationJSONRequestBody defines body for CreateSIEMDestination for application/json ContentType.
+type CreateSIEMDestinationJSONRequestBody = CreateSIEMDestinationRequest
+
+// UpdateSIEMDestinationJSONRequestBody defines body for UpdateSIEMDestination for application/json ContentType.
+type UpdateSIEMDestinationJSONRequestBody = UpdateSIEMDestinationRequest
+
+// CreateWebhookSubscriptionJSONRequestBody defines body for CreateWebhookSubscription for application/json ContentType.
+type CreateWebhookSubscriptionJSONRequestBody = CreateWebhookSubscriptionRequest
+
+// UpdateWebhookSubscriptionJSONRequestBody defines body for UpdateWebhookSubscription for application/json ContentType.
+type UpdateWebhookSubscriptionJSONRequestBody = UpdateWebhookSubscriptionRequest
+
+// TestWebhookSubscriptionJSONRequestBody defines body for TestWebhookSubscription for application/json ContentType.
+type TestWebhookSubscriptionJSONRequestBody = TestWebhookSubscriptionRequest
+
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
 
@@ -3085,80 +4017,80 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 // The interface specification for the client above.
 type ClientInterface interface {
 	// ListClusterFeatures request
-	ListClusterFeatures(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListClusterFeatures(ctx context.Context, params *ListClusterFeaturesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClusterLocations request
-	ListClusterLocations(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListClusterLocations(ctx context.Context, params *ListClusterLocationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClusterTypes request
-	ListClusterTypes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListClusterTypes(ctx context.Context, params *ListClusterTypesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClusterTypeVersions request
-	GetClusterTypeVersions(ctx context.Context, clusterType ClusterType, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetClusterTypeVersions(ctx context.Context, clusterType ClusterType, params *GetClusterTypeVersionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClusters request
-	ListClusters(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListClusters(ctx context.Context, params *ListClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateClusterWithBody request with any body
-	CreateClusterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateClusterWithBody(ctx context.Context, params *CreateClusterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateCluster(ctx context.Context, body CreateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateCluster(ctx context.Context, params *CreateClusterParams, body CreateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteCluster request
-	DeleteCluster(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteCluster(ctx context.Context, clusterId ClusterId, params *DeleteClusterParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetCluster request
-	GetCluster(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetCluster(ctx context.Context, clusterId ClusterId, params *GetClusterParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateClusterWithBody request with any body
-	UpdateClusterWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateClusterWithBody(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateCluster(ctx context.Context, clusterId ClusterId, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateCluster(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClusterBuilds request
-	ListClusterBuilds(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListClusterBuilds(ctx context.Context, clusterId ClusterId, params *ListClusterBuildsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClusterBuild request
-	GetClusterBuild(ctx context.Context, clusterId ClusterId, buildId BuildId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetClusterBuild(ctx context.Context, clusterId ClusterId, buildId BuildId, params *GetClusterBuildParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClusterCredentials request
-	GetClusterCredentials(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetClusterCredentials(ctx context.Context, clusterId ClusterId, params *GetClusterCredentialsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListDomains request
 	ListDomains(ctx context.Context, clusterId ClusterId, params *ListDomainsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateDomainWithBody request with any body
-	CreateDomainWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateDomainWithBody(ctx context.Context, clusterId ClusterId, params *CreateDomainParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateDomain(ctx context.Context, clusterId ClusterId, body CreateDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateDomain(ctx context.Context, clusterId ClusterId, params *CreateDomainParams, body CreateDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteDomain request
-	DeleteDomain(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteDomain(ctx context.Context, clusterId ClusterId, domainId DomainId, params *DeleteDomainParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetDomain request
-	GetDomain(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetDomain(ctx context.Context, clusterId ClusterId, domainId DomainId, params *GetDomainParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListDomainRoutes request
-	ListDomainRoutes(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListDomainRoutes(ctx context.Context, clusterId ClusterId, domainId DomainId, params *ListDomainRoutesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateDomainRouteWithBody request with any body
-	CreateDomainRouteWithBody(ctx context.Context, clusterId ClusterId, domainId DomainId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateDomainRouteWithBody(ctx context.Context, clusterId ClusterId, domainId DomainId, params *CreateDomainRouteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, body CreateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, params *CreateDomainRouteParams, body CreateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteDomainRoute request
-	DeleteDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *DeleteDomainRouteParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetDomainRoute request
-	GetDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *GetDomainRouteParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateDomainRouteWithBody request with any body
-	UpdateDomainRouteWithBody(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateDomainRouteWithBody(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *UpdateDomainRouteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, body UpdateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *UpdateDomainRouteParams, body UpdateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// VerifyDomain request
-	VerifyDomain(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	VerifyDomain(ctx context.Context, clusterId ClusterId, domainId DomainId, params *VerifyDomainParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClusterEvents request
 	ListClusterEvents(ctx context.Context, clusterId ClusterId, params *ListClusterEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3167,32 +4099,32 @@ type ClientInterface interface {
 	ExportClusterEvents(ctx context.Context, clusterId ClusterId, params *ExportClusterEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListExports request
-	ListExports(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListExports(ctx context.Context, clusterId ClusterId, params *ListExportsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateExportWithBody request with any body
-	CreateExportWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateExportWithBody(ctx context.Context, clusterId ClusterId, params *CreateExportParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateExport(ctx context.Context, clusterId ClusterId, body CreateExportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateExport(ctx context.Context, clusterId ClusterId, params *CreateExportParams, body CreateExportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteExport request
-	DeleteExport(ctx context.Context, clusterId ClusterId, exportId ExportId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteExport(ctx context.Context, clusterId ClusterId, exportId ExportId, params *DeleteExportParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetExport request
-	GetExport(ctx context.Context, clusterId ClusterId, exportId ExportId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetExport(ctx context.Context, clusterId ClusterId, exportId ExportId, params *GetExportParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClusterExtensions request
-	ListClusterExtensions(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListClusterExtensions(ctx context.Context, clusterId ClusterId, params *ListClusterExtensionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// InstallExtensionWithBody request with any body
-	InstallExtensionWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	InstallExtensionWithBody(ctx context.Context, clusterId ClusterId, params *InstallExtensionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	InstallExtension(ctx context.Context, clusterId ClusterId, body InstallExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	InstallExtension(ctx context.Context, clusterId ClusterId, params *InstallExtensionParams, body InstallExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UninstallExtension request
-	UninstallExtension(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UninstallExtension(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, params *UninstallExtensionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpgradeClusterExtension request
-	UpgradeClusterExtension(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpgradeClusterExtension(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, params *UpgradeClusterExtensionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClusterInsightsAuthentication request
 	GetClusterInsightsAuthentication(ctx context.Context, clusterId ClusterId, params *GetClusterInsightsAuthenticationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3213,297 +4145,346 @@ type ClientInterface interface {
 	ListClusterLogs(ctx context.Context, clusterId ClusterId, params *ListClusterLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListRealms request
-	ListRealms(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListRealms(ctx context.Context, clusterId ClusterId, params *ListRealmsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateRealmWithBody request with any body
-	CreateRealmWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateRealmWithBody(ctx context.Context, clusterId ClusterId, params *CreateRealmParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateRealm(ctx context.Context, clusterId ClusterId, body CreateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateRealm(ctx context.Context, clusterId ClusterId, params *CreateRealmParams, body CreateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteRealm request
-	DeleteRealm(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteRealm(ctx context.Context, clusterId ClusterId, realmName RealmName, params *DeleteRealmParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRealm request
-	GetRealm(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetRealm(ctx context.Context, clusterId ClusterId, realmName RealmName, params *GetRealmParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateRealmWithBody request with any body
-	UpdateRealmWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateRealmWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, params *UpdateRealmParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateRealm(ctx context.Context, clusterId ClusterId, realmName RealmName, body UpdateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateRealm(ctx context.Context, clusterId ClusterId, realmName RealmName, params *UpdateRealmParams, body UpdateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListApplications request
 	ListApplications(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListApplicationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateApplicationWithBody request with any body
-	CreateApplicationWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateApplicationWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateApplicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateApplicationParams, body CreateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteApplication request
-	DeleteApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *DeleteApplicationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetApplication request
-	GetApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *GetApplicationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateApplicationWithBody request with any body
-	UpdateApplicationWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateApplicationWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *UpdateApplicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *UpdateApplicationParams, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListApplicationRoles request
-	ListApplicationRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListApplicationRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *ListApplicationRolesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AssignApplicationRoleWithBody request with any body
-	AssignApplicationRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AssignApplicationRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *AssignApplicationRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	AssignApplicationRole(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, body AssignApplicationRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AssignApplicationRole(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *AssignApplicationRoleParams, body AssignApplicationRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RemoveApplicationRole request
 	RemoveApplicationRole(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, roleName string, params *RemoveApplicationRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RotateApplicationSecret request
-	RotateApplicationSecret(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	RotateApplicationSecret(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *RotateApplicationSecretParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListApplicationSessions request
-	ListApplicationSessions(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListApplicationSessions(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *ListApplicationSessionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListRealmGroups request
 	ListRealmGroups(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListRealmGroupsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateRealmGroupWithBody request with any body
-	CreateRealmGroupWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateRealmGroupWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmGroupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmGroupParams, body CreateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteRealmGroup request
-	DeleteRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *DeleteRealmGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRealmGroup request
-	GetRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *GetRealmGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateRealmGroupWithBody request with any body
-	UpdateRealmGroupWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateRealmGroupWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *UpdateRealmGroupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, body UpdateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *UpdateRealmGroupParams, body UpdateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListRealmGroupMembers request
 	ListRealmGroupMembers(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *ListRealmGroupMembersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListIdentityProviders request
-	ListIdentityProviders(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListIdentityProviders(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListIdentityProvidersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateIdentityProviderWithBody request with any body
-	CreateIdentityProviderWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateIdentityProviderWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateIdentityProviderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateIdentityProviderParams, body CreateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteIdentityProvider request
-	DeleteIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *DeleteIdentityProviderParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetIdentityProvider request
-	GetIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *GetIdentityProviderParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateIdentityProviderWithBody request with any body
-	UpdateIdentityProviderWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateIdentityProviderWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *UpdateIdentityProviderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, body UpdateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *UpdateIdentityProviderParams, body UpdateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// TestIdentityProviderConnectionWithBody request with any body
-	TestIdentityProviderConnectionWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	TestIdentityProviderConnectionWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *TestIdentityProviderConnectionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	TestIdentityProviderConnection(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, body TestIdentityProviderConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	TestIdentityProviderConnection(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *TestIdentityProviderConnectionParams, body TestIdentityProviderConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListRealmRoles request
-	ListRealmRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListRealmRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListRealmRolesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateRealmRoleWithBody request with any body
-	CreateRealmRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateRealmRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmRoleParams, body CreateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteRealmRole request
-	DeleteRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *DeleteRealmRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRealmRole request
-	GetRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *GetRealmRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateRealmRoleWithBody request with any body
-	UpdateRealmRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateRealmRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *UpdateRealmRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, body UpdateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *UpdateRealmRoleParams, body UpdateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListRealmUsers request
 	ListRealmUsers(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListRealmUsersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateRealmUserWithBody request with any body
-	CreateRealmUserWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateRealmUserWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmUserParams, body CreateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteRealmUser request
-	DeleteRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *DeleteRealmUserParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRealmUser request
-	GetRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *GetRealmUserParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateRealmUserWithBody request with any body
-	UpdateRealmUserWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateRealmUserWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *UpdateRealmUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, body UpdateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *UpdateRealmUserParams, body UpdateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListRealmUserGroups request
-	ListRealmUserGroups(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListRealmUserGroups(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *ListRealmUserGroupsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RemoveRealmUserFromGroup request
-	RemoveRealmUserFromGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	RemoveRealmUserFromGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, params *RemoveRealmUserFromGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AddRealmUserToGroup request
-	AddRealmUserToGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AddRealmUserToGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, params *AddRealmUserToGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListRealmUserRoles request
-	ListRealmUserRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListRealmUserRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *ListRealmUserRolesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AssignRealmUserRolesWithBody request with any body
-	AssignRealmUserRolesWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AssignRealmUserRolesWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *AssignRealmUserRolesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	AssignRealmUserRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, body AssignRealmUserRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AssignRealmUserRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *AssignRealmUserRolesParams, body AssignRealmUserRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RemoveRealmUserRole request
-	RemoveRealmUserRole(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, roleName RealmRoleName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	RemoveRealmUserRole(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, roleName RealmRoleName, params *RemoveRealmUserRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClientThemeAssignment request
-	GetClientThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetClientThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *GetClientThemeAssignmentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SetClientThemeAssignmentWithBody request with any body
-	SetClientThemeAssignmentWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SetClientThemeAssignmentWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *SetClientThemeAssignmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	SetClientThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, body SetClientThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SetClientThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *SetClientThemeAssignmentParams, body SetClientThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteEmailBranding request
-	DeleteEmailBranding(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteEmailBranding(ctx context.Context, clusterId ClusterId, realm RealmName, params *DeleteEmailBrandingParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetEmailBranding request
-	GetEmailBranding(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetEmailBranding(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetEmailBrandingParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpsertEmailBrandingWithBody request with any body
-	UpsertEmailBrandingWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpsertEmailBrandingWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertEmailBrandingParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpsertEmailBranding(ctx context.Context, clusterId ClusterId, realm RealmName, body UpsertEmailBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpsertEmailBranding(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertEmailBrandingParams, body UpsertEmailBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteLoginBranding request
-	DeleteLoginBranding(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteLoginBranding(ctx context.Context, clusterId ClusterId, realm RealmName, params *DeleteLoginBrandingParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetLoginBranding request
-	GetLoginBranding(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetLoginBranding(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetLoginBrandingParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpsertLoginBrandingWithBody request with any body
-	UpsertLoginBrandingWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpsertLoginBrandingWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertLoginBrandingParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpsertLoginBranding(ctx context.Context, clusterId ClusterId, realm RealmName, body UpsertLoginBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpsertLoginBranding(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertLoginBrandingParams, body UpsertLoginBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteSmtpConfig request
-	DeleteSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, params *DeleteSmtpConfigParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetSmtpConfig request
-	GetSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetSmtpConfigParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpsertSmtpConfigWithBody request with any body
-	UpsertSmtpConfigWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpsertSmtpConfigWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertSmtpConfigParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpsertSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, body UpsertSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpsertSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertSmtpConfigParams, body UpsertSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// TestSmtpConfigWithBody request with any body
-	TestSmtpConfigWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	TestSmtpConfigWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, params *TestSmtpConfigParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	TestSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, body TestSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	TestSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, params *TestSmtpConfigParams, body TestSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetThemeAssignment request
-	GetThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetThemeAssignmentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SetThemeAssignmentWithBody request with any body
-	SetThemeAssignmentWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SetThemeAssignmentWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, params *SetThemeAssignmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	SetThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, body SetThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SetThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, params *SetThemeAssignmentParams, body SetThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClusterSecurity request
-	GetClusterSecurity(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetClusterSecurity(ctx context.Context, clusterId ClusterId, params *GetClusterSecurityParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateClusterSecurityWithBody request with any body
-	UpdateClusterSecurityWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateClusterSecurityWithBody(ctx context.Context, clusterId ClusterId, params *UpdateClusterSecurityParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateClusterSecurity(ctx context.Context, clusterId ClusterId, body UpdateClusterSecurityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateClusterSecurity(ctx context.Context, clusterId ClusterId, params *UpdateClusterSecurityParams, body UpdateClusterSecurityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClusterSecurityLogs request
 	ListClusterSecurityLogs(ctx context.Context, clusterId ClusterId, params *ListClusterSecurityLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClusterCAPTCHADomains request
-	ListClusterCAPTCHADomains(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListClusterCAPTCHADomains(ctx context.Context, clusterId ClusterId, params *ListClusterCAPTCHADomainsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AddClusterCAPTCHADomainWithBody request with any body
-	AddClusterCAPTCHADomainWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AddClusterCAPTCHADomainWithBody(ctx context.Context, clusterId ClusterId, params *AddClusterCAPTCHADomainParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	AddClusterCAPTCHADomain(ctx context.Context, clusterId ClusterId, body AddClusterCAPTCHADomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AddClusterCAPTCHADomain(ctx context.Context, clusterId ClusterId, params *AddClusterCAPTCHADomainParams, body AddClusterCAPTCHADomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RemoveClusterCAPTCHADomain request
-	RemoveClusterCAPTCHADomain(ctx context.Context, clusterId ClusterId, hostname string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	RemoveClusterCAPTCHADomain(ctx context.Context, clusterId ClusterId, hostname string, params *RemoveClusterCAPTCHADomainParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListThemes request
-	ListThemes(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListThemes(ctx context.Context, clusterId ClusterId, params *ListThemesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UploadThemeWithBody request with any body
-	UploadThemeWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UploadThemeWithBody(ctx context.Context, clusterId ClusterId, params *UploadThemeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteTheme request
-	DeleteTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *DeleteThemeParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetTheme request
-	GetTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *GetThemeParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateThemeWithBody request with any body
-	UpdateThemeWithBody(ctx context.Context, clusterId ClusterId, themeId ThemeId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateThemeWithBody(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, body UpdateThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, body UpdateThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClusterUpgradePath request
-	GetClusterUpgradePath(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetClusterUpgradePath(ctx context.Context, clusterId ClusterId, params *GetClusterUpgradePathParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClusterUpgrades request
-	ListClusterUpgrades(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListClusterUpgrades(ctx context.Context, clusterId ClusterId, params *ListClusterUpgradesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CancelClusterUpgrade request
-	CancelClusterUpgrade(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CancelClusterUpgrade(ctx context.Context, clusterId ClusterId, params *CancelClusterUpgradeParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListExtensions request
-	ListExtensions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListExtensions(ctx context.Context, params *ListExtensionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UploadExtensionWithBody request with any body
-	UploadExtensionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UploadExtensionWithBody(ctx context.Context, params *UploadExtensionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteExtension request
-	DeleteExtension(ctx context.Context, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteExtension(ctx context.Context, extensionId ExtensionId, params *DeleteExtensionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetExtension request
-	GetExtension(ctx context.Context, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetExtension(ctx context.Context, extensionId ExtensionId, params *GetExtensionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateExtensionWithBody request with any body
-	UpdateExtensionWithBody(ctx context.Context, extensionId ExtensionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateExtensionWithBody(ctx context.Context, extensionId ExtensionId, params *UpdateExtensionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateExtension(ctx context.Context, extensionId ExtensionId, body UpdateExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateExtension(ctx context.Context, extensionId ExtensionId, params *UpdateExtensionParams, body UpdateExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PublishExtensionVersionWithBody request with any body
-	PublishExtensionVersionWithBody(ctx context.Context, extensionId ExtensionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PublishExtensionVersionWithBody(ctx context.Context, extensionId ExtensionId, params *PublishExtensionVersionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListIdentityProviderTemplates request
-	ListIdentityProviderTemplates(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListIdentityProviderTemplates(ctx context.Context, params *ListIdentityProviderTemplatesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DiscoverOIDCWithBody request with any body
-	DiscoverOIDCWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DiscoverOIDCWithBody(ctx context.Context, params *DiscoverOIDCParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	DiscoverOIDC(ctx context.Context, body DiscoverOIDCJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DiscoverOIDC(ctx context.Context, params *DiscoverOIDCParams, body DiscoverOIDCJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListSIEMDestinations request
+	ListSIEMDestinations(ctx context.Context, params *ListSIEMDestinationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateSIEMDestinationWithBody request with any body
+	CreateSIEMDestinationWithBody(ctx context.Context, params *CreateSIEMDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateSIEMDestination(ctx context.Context, params *CreateSIEMDestinationParams, body CreateSIEMDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteSIEMDestination request
+	DeleteSIEMDestination(ctx context.Context, destinationId SIEMDestinationId, params *DeleteSIEMDestinationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetSIEMDestination request
+	GetSIEMDestination(ctx context.Context, destinationId SIEMDestinationId, params *GetSIEMDestinationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateSIEMDestinationWithBody request with any body
+	UpdateSIEMDestinationWithBody(ctx context.Context, destinationId SIEMDestinationId, params *UpdateSIEMDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateSIEMDestination(ctx context.Context, destinationId SIEMDestinationId, params *UpdateSIEMDestinationParams, body UpdateSIEMDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// TestSIEMDestination request
+	TestSIEMDestination(ctx context.Context, destinationId SIEMDestinationId, params *TestSIEMDestinationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWebhookEventTypes request
+	ListWebhookEventTypes(ctx context.Context, params *ListWebhookEventTypesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWebhookSubscriptions request
+	ListWebhookSubscriptions(ctx context.Context, params *ListWebhookSubscriptionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateWebhookSubscriptionWithBody request with any body
+	CreateWebhookSubscriptionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateWebhookSubscription(ctx context.Context, body CreateWebhookSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteWebhookSubscription request
+	DeleteWebhookSubscription(ctx context.Context, webhookId WebhookId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWebhookSubscription request
+	GetWebhookSubscription(ctx context.Context, webhookId WebhookId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateWebhookSubscriptionWithBody request with any body
+	UpdateWebhookSubscriptionWithBody(ctx context.Context, webhookId WebhookId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateWebhookSubscription(ctx context.Context, webhookId WebhookId, body UpdateWebhookSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// TestWebhookSubscriptionWithBody request with any body
+	TestWebhookSubscriptionWithBody(ctx context.Context, webhookId WebhookId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	TestWebhookSubscription(ctx context.Context, webhookId WebhookId, body TestWebhookSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) ListClusterFeatures(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListClusterFeaturesRequest(c.Server)
+func (c *Client) ListClusterFeatures(ctx context.Context, params *ListClusterFeaturesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListClusterFeaturesRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3514,8 +4495,8 @@ func (c *Client) ListClusterFeatures(ctx context.Context, reqEditors ...RequestE
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListClusterLocations(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListClusterLocationsRequest(c.Server)
+func (c *Client) ListClusterLocations(ctx context.Context, params *ListClusterLocationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListClusterLocationsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3526,8 +4507,8 @@ func (c *Client) ListClusterLocations(ctx context.Context, reqEditors ...Request
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListClusterTypes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListClusterTypesRequest(c.Server)
+func (c *Client) ListClusterTypes(ctx context.Context, params *ListClusterTypesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListClusterTypesRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3538,8 +4519,8 @@ func (c *Client) ListClusterTypes(ctx context.Context, reqEditors ...RequestEdit
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetClusterTypeVersions(ctx context.Context, clusterType ClusterType, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetClusterTypeVersionsRequest(c.Server, clusterType)
+func (c *Client) GetClusterTypeVersions(ctx context.Context, clusterType ClusterType, params *GetClusterTypeVersionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterTypeVersionsRequest(c.Server, clusterType, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3550,8 +4531,8 @@ func (c *Client) GetClusterTypeVersions(ctx context.Context, clusterType Cluster
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListClusters(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListClustersRequest(c.Server)
+func (c *Client) ListClusters(ctx context.Context, params *ListClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListClustersRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3562,8 +4543,8 @@ func (c *Client) ListClusters(ctx context.Context, reqEditors ...RequestEditorFn
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateClusterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateClusterRequestWithBody(c.Server, contentType, body)
+func (c *Client) CreateClusterWithBody(ctx context.Context, params *CreateClusterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateClusterRequestWithBody(c.Server, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3574,8 +4555,8 @@ func (c *Client) CreateClusterWithBody(ctx context.Context, contentType string, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateCluster(ctx context.Context, body CreateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateClusterRequest(c.Server, body)
+func (c *Client) CreateCluster(ctx context.Context, params *CreateClusterParams, body CreateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateClusterRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3586,8 +4567,8 @@ func (c *Client) CreateCluster(ctx context.Context, body CreateClusterJSONReques
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteCluster(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteClusterRequest(c.Server, clusterId)
+func (c *Client) DeleteCluster(ctx context.Context, clusterId ClusterId, params *DeleteClusterParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteClusterRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3598,8 +4579,8 @@ func (c *Client) DeleteCluster(ctx context.Context, clusterId ClusterId, reqEdit
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetCluster(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetClusterRequest(c.Server, clusterId)
+func (c *Client) GetCluster(ctx context.Context, clusterId ClusterId, params *GetClusterParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3610,8 +4591,8 @@ func (c *Client) GetCluster(ctx context.Context, clusterId ClusterId, reqEditors
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateClusterWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateClusterRequestWithBody(c.Server, clusterId, contentType, body)
+func (c *Client) UpdateClusterWithBody(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterRequestWithBody(c.Server, clusterId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3622,8 +4603,8 @@ func (c *Client) UpdateClusterWithBody(ctx context.Context, clusterId ClusterId,
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateCluster(ctx context.Context, clusterId ClusterId, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateClusterRequest(c.Server, clusterId, body)
+func (c *Client) UpdateCluster(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterRequest(c.Server, clusterId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3634,8 +4615,8 @@ func (c *Client) UpdateCluster(ctx context.Context, clusterId ClusterId, body Up
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListClusterBuilds(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListClusterBuildsRequest(c.Server, clusterId)
+func (c *Client) ListClusterBuilds(ctx context.Context, clusterId ClusterId, params *ListClusterBuildsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListClusterBuildsRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3646,8 +4627,8 @@ func (c *Client) ListClusterBuilds(ctx context.Context, clusterId ClusterId, req
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetClusterBuild(ctx context.Context, clusterId ClusterId, buildId BuildId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetClusterBuildRequest(c.Server, clusterId, buildId)
+func (c *Client) GetClusterBuild(ctx context.Context, clusterId ClusterId, buildId BuildId, params *GetClusterBuildParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterBuildRequest(c.Server, clusterId, buildId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3658,8 +4639,8 @@ func (c *Client) GetClusterBuild(ctx context.Context, clusterId ClusterId, build
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetClusterCredentials(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetClusterCredentialsRequest(c.Server, clusterId)
+func (c *Client) GetClusterCredentials(ctx context.Context, clusterId ClusterId, params *GetClusterCredentialsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterCredentialsRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3682,8 +4663,8 @@ func (c *Client) ListDomains(ctx context.Context, clusterId ClusterId, params *L
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateDomainWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateDomainRequestWithBody(c.Server, clusterId, contentType, body)
+func (c *Client) CreateDomainWithBody(ctx context.Context, clusterId ClusterId, params *CreateDomainParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateDomainRequestWithBody(c.Server, clusterId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3694,8 +4675,8 @@ func (c *Client) CreateDomainWithBody(ctx context.Context, clusterId ClusterId, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateDomain(ctx context.Context, clusterId ClusterId, body CreateDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateDomainRequest(c.Server, clusterId, body)
+func (c *Client) CreateDomain(ctx context.Context, clusterId ClusterId, params *CreateDomainParams, body CreateDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateDomainRequest(c.Server, clusterId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3706,8 +4687,8 @@ func (c *Client) CreateDomain(ctx context.Context, clusterId ClusterId, body Cre
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteDomain(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteDomainRequest(c.Server, clusterId, domainId)
+func (c *Client) DeleteDomain(ctx context.Context, clusterId ClusterId, domainId DomainId, params *DeleteDomainParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteDomainRequest(c.Server, clusterId, domainId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3718,8 +4699,8 @@ func (c *Client) DeleteDomain(ctx context.Context, clusterId ClusterId, domainId
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetDomain(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetDomainRequest(c.Server, clusterId, domainId)
+func (c *Client) GetDomain(ctx context.Context, clusterId ClusterId, domainId DomainId, params *GetDomainParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetDomainRequest(c.Server, clusterId, domainId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3730,8 +4711,8 @@ func (c *Client) GetDomain(ctx context.Context, clusterId ClusterId, domainId Do
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListDomainRoutes(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListDomainRoutesRequest(c.Server, clusterId, domainId)
+func (c *Client) ListDomainRoutes(ctx context.Context, clusterId ClusterId, domainId DomainId, params *ListDomainRoutesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListDomainRoutesRequest(c.Server, clusterId, domainId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3742,8 +4723,8 @@ func (c *Client) ListDomainRoutes(ctx context.Context, clusterId ClusterId, doma
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateDomainRouteWithBody(ctx context.Context, clusterId ClusterId, domainId DomainId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateDomainRouteRequestWithBody(c.Server, clusterId, domainId, contentType, body)
+func (c *Client) CreateDomainRouteWithBody(ctx context.Context, clusterId ClusterId, domainId DomainId, params *CreateDomainRouteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateDomainRouteRequestWithBody(c.Server, clusterId, domainId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3754,8 +4735,8 @@ func (c *Client) CreateDomainRouteWithBody(ctx context.Context, clusterId Cluste
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, body CreateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateDomainRouteRequest(c.Server, clusterId, domainId, body)
+func (c *Client) CreateDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, params *CreateDomainRouteParams, body CreateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateDomainRouteRequest(c.Server, clusterId, domainId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3766,8 +4747,8 @@ func (c *Client) CreateDomainRoute(ctx context.Context, clusterId ClusterId, dom
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteDomainRouteRequest(c.Server, clusterId, domainId, routeId)
+func (c *Client) DeleteDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *DeleteDomainRouteParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteDomainRouteRequest(c.Server, clusterId, domainId, routeId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3778,8 +4759,8 @@ func (c *Client) DeleteDomainRoute(ctx context.Context, clusterId ClusterId, dom
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetDomainRouteRequest(c.Server, clusterId, domainId, routeId)
+func (c *Client) GetDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *GetDomainRouteParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetDomainRouteRequest(c.Server, clusterId, domainId, routeId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3790,8 +4771,8 @@ func (c *Client) GetDomainRoute(ctx context.Context, clusterId ClusterId, domain
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateDomainRouteWithBody(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateDomainRouteRequestWithBody(c.Server, clusterId, domainId, routeId, contentType, body)
+func (c *Client) UpdateDomainRouteWithBody(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *UpdateDomainRouteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateDomainRouteRequestWithBody(c.Server, clusterId, domainId, routeId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3802,8 +4783,8 @@ func (c *Client) UpdateDomainRouteWithBody(ctx context.Context, clusterId Cluste
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, body UpdateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateDomainRouteRequest(c.Server, clusterId, domainId, routeId, body)
+func (c *Client) UpdateDomainRoute(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *UpdateDomainRouteParams, body UpdateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateDomainRouteRequest(c.Server, clusterId, domainId, routeId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3814,8 +4795,8 @@ func (c *Client) UpdateDomainRoute(ctx context.Context, clusterId ClusterId, dom
 	return c.Client.Do(req)
 }
 
-func (c *Client) VerifyDomain(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewVerifyDomainRequest(c.Server, clusterId, domainId)
+func (c *Client) VerifyDomain(ctx context.Context, clusterId ClusterId, domainId DomainId, params *VerifyDomainParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewVerifyDomainRequest(c.Server, clusterId, domainId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3850,8 +4831,8 @@ func (c *Client) ExportClusterEvents(ctx context.Context, clusterId ClusterId, p
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListExports(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListExportsRequest(c.Server, clusterId)
+func (c *Client) ListExports(ctx context.Context, clusterId ClusterId, params *ListExportsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListExportsRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3862,8 +4843,8 @@ func (c *Client) ListExports(ctx context.Context, clusterId ClusterId, reqEditor
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateExportWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateExportRequestWithBody(c.Server, clusterId, contentType, body)
+func (c *Client) CreateExportWithBody(ctx context.Context, clusterId ClusterId, params *CreateExportParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateExportRequestWithBody(c.Server, clusterId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3874,8 +4855,8 @@ func (c *Client) CreateExportWithBody(ctx context.Context, clusterId ClusterId, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateExport(ctx context.Context, clusterId ClusterId, body CreateExportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateExportRequest(c.Server, clusterId, body)
+func (c *Client) CreateExport(ctx context.Context, clusterId ClusterId, params *CreateExportParams, body CreateExportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateExportRequest(c.Server, clusterId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3886,8 +4867,8 @@ func (c *Client) CreateExport(ctx context.Context, clusterId ClusterId, body Cre
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteExport(ctx context.Context, clusterId ClusterId, exportId ExportId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteExportRequest(c.Server, clusterId, exportId)
+func (c *Client) DeleteExport(ctx context.Context, clusterId ClusterId, exportId ExportId, params *DeleteExportParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteExportRequest(c.Server, clusterId, exportId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3898,8 +4879,8 @@ func (c *Client) DeleteExport(ctx context.Context, clusterId ClusterId, exportId
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetExport(ctx context.Context, clusterId ClusterId, exportId ExportId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetExportRequest(c.Server, clusterId, exportId)
+func (c *Client) GetExport(ctx context.Context, clusterId ClusterId, exportId ExportId, params *GetExportParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetExportRequest(c.Server, clusterId, exportId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3910,8 +4891,8 @@ func (c *Client) GetExport(ctx context.Context, clusterId ClusterId, exportId Ex
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListClusterExtensions(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListClusterExtensionsRequest(c.Server, clusterId)
+func (c *Client) ListClusterExtensions(ctx context.Context, clusterId ClusterId, params *ListClusterExtensionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListClusterExtensionsRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3922,8 +4903,8 @@ func (c *Client) ListClusterExtensions(ctx context.Context, clusterId ClusterId,
 	return c.Client.Do(req)
 }
 
-func (c *Client) InstallExtensionWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewInstallExtensionRequestWithBody(c.Server, clusterId, contentType, body)
+func (c *Client) InstallExtensionWithBody(ctx context.Context, clusterId ClusterId, params *InstallExtensionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewInstallExtensionRequestWithBody(c.Server, clusterId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3934,8 +4915,8 @@ func (c *Client) InstallExtensionWithBody(ctx context.Context, clusterId Cluster
 	return c.Client.Do(req)
 }
 
-func (c *Client) InstallExtension(ctx context.Context, clusterId ClusterId, body InstallExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewInstallExtensionRequest(c.Server, clusterId, body)
+func (c *Client) InstallExtension(ctx context.Context, clusterId ClusterId, params *InstallExtensionParams, body InstallExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewInstallExtensionRequest(c.Server, clusterId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3946,8 +4927,8 @@ func (c *Client) InstallExtension(ctx context.Context, clusterId ClusterId, body
 	return c.Client.Do(req)
 }
 
-func (c *Client) UninstallExtension(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUninstallExtensionRequest(c.Server, clusterId, extensionId)
+func (c *Client) UninstallExtension(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, params *UninstallExtensionParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUninstallExtensionRequest(c.Server, clusterId, extensionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3958,8 +4939,8 @@ func (c *Client) UninstallExtension(ctx context.Context, clusterId ClusterId, ex
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpgradeClusterExtension(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpgradeClusterExtensionRequest(c.Server, clusterId, extensionId)
+func (c *Client) UpgradeClusterExtension(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, params *UpgradeClusterExtensionParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpgradeClusterExtensionRequest(c.Server, clusterId, extensionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4042,8 +5023,8 @@ func (c *Client) ListClusterLogs(ctx context.Context, clusterId ClusterId, param
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListRealms(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListRealmsRequest(c.Server, clusterId)
+func (c *Client) ListRealms(ctx context.Context, clusterId ClusterId, params *ListRealmsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRealmsRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4054,8 +5035,8 @@ func (c *Client) ListRealms(ctx context.Context, clusterId ClusterId, reqEditors
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateRealmWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateRealmRequestWithBody(c.Server, clusterId, contentType, body)
+func (c *Client) CreateRealmWithBody(ctx context.Context, clusterId ClusterId, params *CreateRealmParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRealmRequestWithBody(c.Server, clusterId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4066,8 +5047,8 @@ func (c *Client) CreateRealmWithBody(ctx context.Context, clusterId ClusterId, c
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateRealm(ctx context.Context, clusterId ClusterId, body CreateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateRealmRequest(c.Server, clusterId, body)
+func (c *Client) CreateRealm(ctx context.Context, clusterId ClusterId, params *CreateRealmParams, body CreateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRealmRequest(c.Server, clusterId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4078,8 +5059,8 @@ func (c *Client) CreateRealm(ctx context.Context, clusterId ClusterId, body Crea
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteRealm(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteRealmRequest(c.Server, clusterId, realmName)
+func (c *Client) DeleteRealm(ctx context.Context, clusterId ClusterId, realmName RealmName, params *DeleteRealmParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRealmRequest(c.Server, clusterId, realmName, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4090,8 +5071,8 @@ func (c *Client) DeleteRealm(ctx context.Context, clusterId ClusterId, realmName
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetRealm(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetRealmRequest(c.Server, clusterId, realmName)
+func (c *Client) GetRealm(ctx context.Context, clusterId ClusterId, realmName RealmName, params *GetRealmParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRealmRequest(c.Server, clusterId, realmName, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4102,8 +5083,8 @@ func (c *Client) GetRealm(ctx context.Context, clusterId ClusterId, realmName Re
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateRealmWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRealmRequestWithBody(c.Server, clusterId, realmName, contentType, body)
+func (c *Client) UpdateRealmWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, params *UpdateRealmParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRealmRequestWithBody(c.Server, clusterId, realmName, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4114,8 +5095,8 @@ func (c *Client) UpdateRealmWithBody(ctx context.Context, clusterId ClusterId, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateRealm(ctx context.Context, clusterId ClusterId, realmName RealmName, body UpdateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRealmRequest(c.Server, clusterId, realmName, body)
+func (c *Client) UpdateRealm(ctx context.Context, clusterId ClusterId, realmName RealmName, params *UpdateRealmParams, body UpdateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRealmRequest(c.Server, clusterId, realmName, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4138,8 +5119,8 @@ func (c *Client) ListApplications(ctx context.Context, clusterId ClusterId, real
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateApplicationWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateApplicationRequestWithBody(c.Server, clusterId, realmName, contentType, body)
+func (c *Client) CreateApplicationWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateApplicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateApplicationRequestWithBody(c.Server, clusterId, realmName, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4150,8 +5131,8 @@ func (c *Client) CreateApplicationWithBody(ctx context.Context, clusterId Cluste
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateApplicationRequest(c.Server, clusterId, realmName, body)
+func (c *Client) CreateApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateApplicationParams, body CreateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateApplicationRequest(c.Server, clusterId, realmName, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4162,8 +5143,8 @@ func (c *Client) CreateApplication(ctx context.Context, clusterId ClusterId, rea
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteApplicationRequest(c.Server, clusterId, realmName, clientId)
+func (c *Client) DeleteApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *DeleteApplicationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteApplicationRequest(c.Server, clusterId, realmName, clientId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4174,8 +5155,8 @@ func (c *Client) DeleteApplication(ctx context.Context, clusterId ClusterId, rea
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetApplicationRequest(c.Server, clusterId, realmName, clientId)
+func (c *Client) GetApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *GetApplicationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetApplicationRequest(c.Server, clusterId, realmName, clientId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4186,8 +5167,8 @@ func (c *Client) GetApplication(ctx context.Context, clusterId ClusterId, realmN
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateApplicationWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateApplicationRequestWithBody(c.Server, clusterId, realmName, clientId, contentType, body)
+func (c *Client) UpdateApplicationWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *UpdateApplicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateApplicationRequestWithBody(c.Server, clusterId, realmName, clientId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4198,8 +5179,8 @@ func (c *Client) UpdateApplicationWithBody(ctx context.Context, clusterId Cluste
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateApplicationRequest(c.Server, clusterId, realmName, clientId, body)
+func (c *Client) UpdateApplication(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *UpdateApplicationParams, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateApplicationRequest(c.Server, clusterId, realmName, clientId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4210,8 +5191,8 @@ func (c *Client) UpdateApplication(ctx context.Context, clusterId ClusterId, rea
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListApplicationRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListApplicationRolesRequest(c.Server, clusterId, realmName, clientId)
+func (c *Client) ListApplicationRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *ListApplicationRolesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListApplicationRolesRequest(c.Server, clusterId, realmName, clientId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4222,8 +5203,8 @@ func (c *Client) ListApplicationRoles(ctx context.Context, clusterId ClusterId, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) AssignApplicationRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAssignApplicationRoleRequestWithBody(c.Server, clusterId, realmName, clientId, contentType, body)
+func (c *Client) AssignApplicationRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *AssignApplicationRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAssignApplicationRoleRequestWithBody(c.Server, clusterId, realmName, clientId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4234,8 +5215,8 @@ func (c *Client) AssignApplicationRoleWithBody(ctx context.Context, clusterId Cl
 	return c.Client.Do(req)
 }
 
-func (c *Client) AssignApplicationRole(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, body AssignApplicationRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAssignApplicationRoleRequest(c.Server, clusterId, realmName, clientId, body)
+func (c *Client) AssignApplicationRole(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *AssignApplicationRoleParams, body AssignApplicationRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAssignApplicationRoleRequest(c.Server, clusterId, realmName, clientId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4258,8 +5239,8 @@ func (c *Client) RemoveApplicationRole(ctx context.Context, clusterId ClusterId,
 	return c.Client.Do(req)
 }
 
-func (c *Client) RotateApplicationSecret(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRotateApplicationSecretRequest(c.Server, clusterId, realmName, clientId)
+func (c *Client) RotateApplicationSecret(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *RotateApplicationSecretParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRotateApplicationSecretRequest(c.Server, clusterId, realmName, clientId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4270,8 +5251,8 @@ func (c *Client) RotateApplicationSecret(ctx context.Context, clusterId ClusterI
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListApplicationSessions(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListApplicationSessionsRequest(c.Server, clusterId, realmName, clientId)
+func (c *Client) ListApplicationSessions(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *ListApplicationSessionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListApplicationSessionsRequest(c.Server, clusterId, realmName, clientId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4294,8 +5275,8 @@ func (c *Client) ListRealmGroups(ctx context.Context, clusterId ClusterId, realm
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateRealmGroupWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateRealmGroupRequestWithBody(c.Server, clusterId, realmName, contentType, body)
+func (c *Client) CreateRealmGroupWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmGroupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRealmGroupRequestWithBody(c.Server, clusterId, realmName, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4306,8 +5287,8 @@ func (c *Client) CreateRealmGroupWithBody(ctx context.Context, clusterId Cluster
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateRealmGroupRequest(c.Server, clusterId, realmName, body)
+func (c *Client) CreateRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmGroupParams, body CreateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRealmGroupRequest(c.Server, clusterId, realmName, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4318,8 +5299,8 @@ func (c *Client) CreateRealmGroup(ctx context.Context, clusterId ClusterId, real
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteRealmGroupRequest(c.Server, clusterId, realmName, groupId)
+func (c *Client) DeleteRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *DeleteRealmGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRealmGroupRequest(c.Server, clusterId, realmName, groupId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4330,8 +5311,8 @@ func (c *Client) DeleteRealmGroup(ctx context.Context, clusterId ClusterId, real
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetRealmGroupRequest(c.Server, clusterId, realmName, groupId)
+func (c *Client) GetRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *GetRealmGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRealmGroupRequest(c.Server, clusterId, realmName, groupId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4342,8 +5323,8 @@ func (c *Client) GetRealmGroup(ctx context.Context, clusterId ClusterId, realmNa
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateRealmGroupWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRealmGroupRequestWithBody(c.Server, clusterId, realmName, groupId, contentType, body)
+func (c *Client) UpdateRealmGroupWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *UpdateRealmGroupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRealmGroupRequestWithBody(c.Server, clusterId, realmName, groupId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4354,8 +5335,8 @@ func (c *Client) UpdateRealmGroupWithBody(ctx context.Context, clusterId Cluster
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, body UpdateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRealmGroupRequest(c.Server, clusterId, realmName, groupId, body)
+func (c *Client) UpdateRealmGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *UpdateRealmGroupParams, body UpdateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRealmGroupRequest(c.Server, clusterId, realmName, groupId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4378,8 +5359,8 @@ func (c *Client) ListRealmGroupMembers(ctx context.Context, clusterId ClusterId,
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListIdentityProviders(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListIdentityProvidersRequest(c.Server, clusterId, realmName)
+func (c *Client) ListIdentityProviders(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListIdentityProvidersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListIdentityProvidersRequest(c.Server, clusterId, realmName, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4390,8 +5371,8 @@ func (c *Client) ListIdentityProviders(ctx context.Context, clusterId ClusterId,
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateIdentityProviderWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateIdentityProviderRequestWithBody(c.Server, clusterId, realmName, contentType, body)
+func (c *Client) CreateIdentityProviderWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateIdentityProviderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateIdentityProviderRequestWithBody(c.Server, clusterId, realmName, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4402,8 +5383,8 @@ func (c *Client) CreateIdentityProviderWithBody(ctx context.Context, clusterId C
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateIdentityProviderRequest(c.Server, clusterId, realmName, body)
+func (c *Client) CreateIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateIdentityProviderParams, body CreateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateIdentityProviderRequest(c.Server, clusterId, realmName, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4414,8 +5395,8 @@ func (c *Client) CreateIdentityProvider(ctx context.Context, clusterId ClusterId
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteIdentityProviderRequest(c.Server, clusterId, realmName, providerId)
+func (c *Client) DeleteIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *DeleteIdentityProviderParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteIdentityProviderRequest(c.Server, clusterId, realmName, providerId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4426,8 +5407,8 @@ func (c *Client) DeleteIdentityProvider(ctx context.Context, clusterId ClusterId
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetIdentityProviderRequest(c.Server, clusterId, realmName, providerId)
+func (c *Client) GetIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *GetIdentityProviderParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetIdentityProviderRequest(c.Server, clusterId, realmName, providerId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4438,8 +5419,8 @@ func (c *Client) GetIdentityProvider(ctx context.Context, clusterId ClusterId, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateIdentityProviderWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateIdentityProviderRequestWithBody(c.Server, clusterId, realmName, providerId, contentType, body)
+func (c *Client) UpdateIdentityProviderWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *UpdateIdentityProviderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateIdentityProviderRequestWithBody(c.Server, clusterId, realmName, providerId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4450,8 +5431,8 @@ func (c *Client) UpdateIdentityProviderWithBody(ctx context.Context, clusterId C
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, body UpdateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateIdentityProviderRequest(c.Server, clusterId, realmName, providerId, body)
+func (c *Client) UpdateIdentityProvider(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *UpdateIdentityProviderParams, body UpdateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateIdentityProviderRequest(c.Server, clusterId, realmName, providerId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4462,8 +5443,8 @@ func (c *Client) UpdateIdentityProvider(ctx context.Context, clusterId ClusterId
 	return c.Client.Do(req)
 }
 
-func (c *Client) TestIdentityProviderConnectionWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewTestIdentityProviderConnectionRequestWithBody(c.Server, clusterId, realmName, providerId, contentType, body)
+func (c *Client) TestIdentityProviderConnectionWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *TestIdentityProviderConnectionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTestIdentityProviderConnectionRequestWithBody(c.Server, clusterId, realmName, providerId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4474,8 +5455,8 @@ func (c *Client) TestIdentityProviderConnectionWithBody(ctx context.Context, clu
 	return c.Client.Do(req)
 }
 
-func (c *Client) TestIdentityProviderConnection(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, body TestIdentityProviderConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewTestIdentityProviderConnectionRequest(c.Server, clusterId, realmName, providerId, body)
+func (c *Client) TestIdentityProviderConnection(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *TestIdentityProviderConnectionParams, body TestIdentityProviderConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTestIdentityProviderConnectionRequest(c.Server, clusterId, realmName, providerId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4486,8 +5467,8 @@ func (c *Client) TestIdentityProviderConnection(ctx context.Context, clusterId C
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListRealmRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListRealmRolesRequest(c.Server, clusterId, realmName)
+func (c *Client) ListRealmRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListRealmRolesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRealmRolesRequest(c.Server, clusterId, realmName, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4498,8 +5479,8 @@ func (c *Client) ListRealmRoles(ctx context.Context, clusterId ClusterId, realmN
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateRealmRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateRealmRoleRequestWithBody(c.Server, clusterId, realmName, contentType, body)
+func (c *Client) CreateRealmRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRealmRoleRequestWithBody(c.Server, clusterId, realmName, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4510,8 +5491,8 @@ func (c *Client) CreateRealmRoleWithBody(ctx context.Context, clusterId ClusterI
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateRealmRoleRequest(c.Server, clusterId, realmName, body)
+func (c *Client) CreateRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmRoleParams, body CreateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRealmRoleRequest(c.Server, clusterId, realmName, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4522,8 +5503,8 @@ func (c *Client) CreateRealmRole(ctx context.Context, clusterId ClusterId, realm
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteRealmRoleRequest(c.Server, clusterId, realmName, roleName)
+func (c *Client) DeleteRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *DeleteRealmRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRealmRoleRequest(c.Server, clusterId, realmName, roleName, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4534,8 +5515,8 @@ func (c *Client) DeleteRealmRole(ctx context.Context, clusterId ClusterId, realm
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetRealmRoleRequest(c.Server, clusterId, realmName, roleName)
+func (c *Client) GetRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *GetRealmRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRealmRoleRequest(c.Server, clusterId, realmName, roleName, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4546,8 +5527,8 @@ func (c *Client) GetRealmRole(ctx context.Context, clusterId ClusterId, realmNam
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateRealmRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRealmRoleRequestWithBody(c.Server, clusterId, realmName, roleName, contentType, body)
+func (c *Client) UpdateRealmRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *UpdateRealmRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRealmRoleRequestWithBody(c.Server, clusterId, realmName, roleName, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4558,8 +5539,8 @@ func (c *Client) UpdateRealmRoleWithBody(ctx context.Context, clusterId ClusterI
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, body UpdateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRealmRoleRequest(c.Server, clusterId, realmName, roleName, body)
+func (c *Client) UpdateRealmRole(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *UpdateRealmRoleParams, body UpdateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRealmRoleRequest(c.Server, clusterId, realmName, roleName, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4582,8 +5563,8 @@ func (c *Client) ListRealmUsers(ctx context.Context, clusterId ClusterId, realmN
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateRealmUserWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateRealmUserRequestWithBody(c.Server, clusterId, realmName, contentType, body)
+func (c *Client) CreateRealmUserWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRealmUserRequestWithBody(c.Server, clusterId, realmName, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4594,8 +5575,8 @@ func (c *Client) CreateRealmUserWithBody(ctx context.Context, clusterId ClusterI
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateRealmUserRequest(c.Server, clusterId, realmName, body)
+func (c *Client) CreateRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmUserParams, body CreateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRealmUserRequest(c.Server, clusterId, realmName, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4606,8 +5587,8 @@ func (c *Client) CreateRealmUser(ctx context.Context, clusterId ClusterId, realm
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteRealmUserRequest(c.Server, clusterId, realmName, userId)
+func (c *Client) DeleteRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *DeleteRealmUserParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRealmUserRequest(c.Server, clusterId, realmName, userId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4618,8 +5599,8 @@ func (c *Client) DeleteRealmUser(ctx context.Context, clusterId ClusterId, realm
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetRealmUserRequest(c.Server, clusterId, realmName, userId)
+func (c *Client) GetRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *GetRealmUserParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRealmUserRequest(c.Server, clusterId, realmName, userId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4630,8 +5611,8 @@ func (c *Client) GetRealmUser(ctx context.Context, clusterId ClusterId, realmNam
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateRealmUserWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRealmUserRequestWithBody(c.Server, clusterId, realmName, userId, contentType, body)
+func (c *Client) UpdateRealmUserWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *UpdateRealmUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRealmUserRequestWithBody(c.Server, clusterId, realmName, userId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4642,8 +5623,8 @@ func (c *Client) UpdateRealmUserWithBody(ctx context.Context, clusterId ClusterI
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, body UpdateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRealmUserRequest(c.Server, clusterId, realmName, userId, body)
+func (c *Client) UpdateRealmUser(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *UpdateRealmUserParams, body UpdateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRealmUserRequest(c.Server, clusterId, realmName, userId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4654,8 +5635,8 @@ func (c *Client) UpdateRealmUser(ctx context.Context, clusterId ClusterId, realm
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListRealmUserGroups(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListRealmUserGroupsRequest(c.Server, clusterId, realmName, userId)
+func (c *Client) ListRealmUserGroups(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *ListRealmUserGroupsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRealmUserGroupsRequest(c.Server, clusterId, realmName, userId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4666,8 +5647,8 @@ func (c *Client) ListRealmUserGroups(ctx context.Context, clusterId ClusterId, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) RemoveRealmUserFromGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRemoveRealmUserFromGroupRequest(c.Server, clusterId, realmName, userId, groupId)
+func (c *Client) RemoveRealmUserFromGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, params *RemoveRealmUserFromGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveRealmUserFromGroupRequest(c.Server, clusterId, realmName, userId, groupId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4678,8 +5659,8 @@ func (c *Client) RemoveRealmUserFromGroup(ctx context.Context, clusterId Cluster
 	return c.Client.Do(req)
 }
 
-func (c *Client) AddRealmUserToGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAddRealmUserToGroupRequest(c.Server, clusterId, realmName, userId, groupId)
+func (c *Client) AddRealmUserToGroup(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, params *AddRealmUserToGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddRealmUserToGroupRequest(c.Server, clusterId, realmName, userId, groupId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4690,8 +5671,8 @@ func (c *Client) AddRealmUserToGroup(ctx context.Context, clusterId ClusterId, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListRealmUserRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListRealmUserRolesRequest(c.Server, clusterId, realmName, userId)
+func (c *Client) ListRealmUserRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *ListRealmUserRolesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRealmUserRolesRequest(c.Server, clusterId, realmName, userId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4702,8 +5683,8 @@ func (c *Client) ListRealmUserRoles(ctx context.Context, clusterId ClusterId, re
 	return c.Client.Do(req)
 }
 
-func (c *Client) AssignRealmUserRolesWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAssignRealmUserRolesRequestWithBody(c.Server, clusterId, realmName, userId, contentType, body)
+func (c *Client) AssignRealmUserRolesWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *AssignRealmUserRolesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAssignRealmUserRolesRequestWithBody(c.Server, clusterId, realmName, userId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4714,8 +5695,8 @@ func (c *Client) AssignRealmUserRolesWithBody(ctx context.Context, clusterId Clu
 	return c.Client.Do(req)
 }
 
-func (c *Client) AssignRealmUserRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, body AssignRealmUserRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAssignRealmUserRolesRequest(c.Server, clusterId, realmName, userId, body)
+func (c *Client) AssignRealmUserRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *AssignRealmUserRolesParams, body AssignRealmUserRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAssignRealmUserRolesRequest(c.Server, clusterId, realmName, userId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4726,8 +5707,8 @@ func (c *Client) AssignRealmUserRoles(ctx context.Context, clusterId ClusterId, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) RemoveRealmUserRole(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, roleName RealmRoleName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRemoveRealmUserRoleRequest(c.Server, clusterId, realmName, userId, roleName)
+func (c *Client) RemoveRealmUserRole(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, roleName RealmRoleName, params *RemoveRealmUserRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveRealmUserRoleRequest(c.Server, clusterId, realmName, userId, roleName, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4738,8 +5719,8 @@ func (c *Client) RemoveRealmUserRole(ctx context.Context, clusterId ClusterId, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetClientThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetClientThemeAssignmentRequest(c.Server, clusterId, realm, clientId)
+func (c *Client) GetClientThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *GetClientThemeAssignmentParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClientThemeAssignmentRequest(c.Server, clusterId, realm, clientId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4750,8 +5731,8 @@ func (c *Client) GetClientThemeAssignment(ctx context.Context, clusterId Cluster
 	return c.Client.Do(req)
 }
 
-func (c *Client) SetClientThemeAssignmentWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetClientThemeAssignmentRequestWithBody(c.Server, clusterId, realm, clientId, contentType, body)
+func (c *Client) SetClientThemeAssignmentWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *SetClientThemeAssignmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetClientThemeAssignmentRequestWithBody(c.Server, clusterId, realm, clientId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4762,8 +5743,8 @@ func (c *Client) SetClientThemeAssignmentWithBody(ctx context.Context, clusterId
 	return c.Client.Do(req)
 }
 
-func (c *Client) SetClientThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, body SetClientThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetClientThemeAssignmentRequest(c.Server, clusterId, realm, clientId, body)
+func (c *Client) SetClientThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *SetClientThemeAssignmentParams, body SetClientThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetClientThemeAssignmentRequest(c.Server, clusterId, realm, clientId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4774,8 +5755,8 @@ func (c *Client) SetClientThemeAssignment(ctx context.Context, clusterId Cluster
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteEmailBranding(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteEmailBrandingRequest(c.Server, clusterId, realm)
+func (c *Client) DeleteEmailBranding(ctx context.Context, clusterId ClusterId, realm RealmName, params *DeleteEmailBrandingParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteEmailBrandingRequest(c.Server, clusterId, realm, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4786,8 +5767,8 @@ func (c *Client) DeleteEmailBranding(ctx context.Context, clusterId ClusterId, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetEmailBranding(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetEmailBrandingRequest(c.Server, clusterId, realm)
+func (c *Client) GetEmailBranding(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetEmailBrandingParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetEmailBrandingRequest(c.Server, clusterId, realm, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4798,8 +5779,8 @@ func (c *Client) GetEmailBranding(ctx context.Context, clusterId ClusterId, real
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpsertEmailBrandingWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpsertEmailBrandingRequestWithBody(c.Server, clusterId, realm, contentType, body)
+func (c *Client) UpsertEmailBrandingWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertEmailBrandingParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpsertEmailBrandingRequestWithBody(c.Server, clusterId, realm, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4810,8 +5791,8 @@ func (c *Client) UpsertEmailBrandingWithBody(ctx context.Context, clusterId Clus
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpsertEmailBranding(ctx context.Context, clusterId ClusterId, realm RealmName, body UpsertEmailBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpsertEmailBrandingRequest(c.Server, clusterId, realm, body)
+func (c *Client) UpsertEmailBranding(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertEmailBrandingParams, body UpsertEmailBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpsertEmailBrandingRequest(c.Server, clusterId, realm, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4822,8 +5803,8 @@ func (c *Client) UpsertEmailBranding(ctx context.Context, clusterId ClusterId, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteLoginBranding(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteLoginBrandingRequest(c.Server, clusterId, realm)
+func (c *Client) DeleteLoginBranding(ctx context.Context, clusterId ClusterId, realm RealmName, params *DeleteLoginBrandingParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteLoginBrandingRequest(c.Server, clusterId, realm, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4834,8 +5815,8 @@ func (c *Client) DeleteLoginBranding(ctx context.Context, clusterId ClusterId, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetLoginBranding(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetLoginBrandingRequest(c.Server, clusterId, realm)
+func (c *Client) GetLoginBranding(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetLoginBrandingParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetLoginBrandingRequest(c.Server, clusterId, realm, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4846,8 +5827,8 @@ func (c *Client) GetLoginBranding(ctx context.Context, clusterId ClusterId, real
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpsertLoginBrandingWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpsertLoginBrandingRequestWithBody(c.Server, clusterId, realm, contentType, body)
+func (c *Client) UpsertLoginBrandingWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertLoginBrandingParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpsertLoginBrandingRequestWithBody(c.Server, clusterId, realm, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4858,8 +5839,8 @@ func (c *Client) UpsertLoginBrandingWithBody(ctx context.Context, clusterId Clus
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpsertLoginBranding(ctx context.Context, clusterId ClusterId, realm RealmName, body UpsertLoginBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpsertLoginBrandingRequest(c.Server, clusterId, realm, body)
+func (c *Client) UpsertLoginBranding(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertLoginBrandingParams, body UpsertLoginBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpsertLoginBrandingRequest(c.Server, clusterId, realm, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4870,8 +5851,8 @@ func (c *Client) UpsertLoginBranding(ctx context.Context, clusterId ClusterId, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteSmtpConfigRequest(c.Server, clusterId, realm)
+func (c *Client) DeleteSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, params *DeleteSmtpConfigParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteSmtpConfigRequest(c.Server, clusterId, realm, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4882,8 +5863,8 @@ func (c *Client) DeleteSmtpConfig(ctx context.Context, clusterId ClusterId, real
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetSmtpConfigRequest(c.Server, clusterId, realm)
+func (c *Client) GetSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetSmtpConfigParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSmtpConfigRequest(c.Server, clusterId, realm, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4894,8 +5875,8 @@ func (c *Client) GetSmtpConfig(ctx context.Context, clusterId ClusterId, realm R
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpsertSmtpConfigWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpsertSmtpConfigRequestWithBody(c.Server, clusterId, realm, contentType, body)
+func (c *Client) UpsertSmtpConfigWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertSmtpConfigParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpsertSmtpConfigRequestWithBody(c.Server, clusterId, realm, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4906,8 +5887,8 @@ func (c *Client) UpsertSmtpConfigWithBody(ctx context.Context, clusterId Cluster
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpsertSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, body UpsertSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpsertSmtpConfigRequest(c.Server, clusterId, realm, body)
+func (c *Client) UpsertSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertSmtpConfigParams, body UpsertSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpsertSmtpConfigRequest(c.Server, clusterId, realm, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4918,8 +5899,8 @@ func (c *Client) UpsertSmtpConfig(ctx context.Context, clusterId ClusterId, real
 	return c.Client.Do(req)
 }
 
-func (c *Client) TestSmtpConfigWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewTestSmtpConfigRequestWithBody(c.Server, clusterId, realm, contentType, body)
+func (c *Client) TestSmtpConfigWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, params *TestSmtpConfigParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTestSmtpConfigRequestWithBody(c.Server, clusterId, realm, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4930,8 +5911,8 @@ func (c *Client) TestSmtpConfigWithBody(ctx context.Context, clusterId ClusterId
 	return c.Client.Do(req)
 }
 
-func (c *Client) TestSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, body TestSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewTestSmtpConfigRequest(c.Server, clusterId, realm, body)
+func (c *Client) TestSmtpConfig(ctx context.Context, clusterId ClusterId, realm RealmName, params *TestSmtpConfigParams, body TestSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTestSmtpConfigRequest(c.Server, clusterId, realm, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4942,8 +5923,8 @@ func (c *Client) TestSmtpConfig(ctx context.Context, clusterId ClusterId, realm 
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetThemeAssignmentRequest(c.Server, clusterId, realm)
+func (c *Client) GetThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetThemeAssignmentParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetThemeAssignmentRequest(c.Server, clusterId, realm, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4954,8 +5935,8 @@ func (c *Client) GetThemeAssignment(ctx context.Context, clusterId ClusterId, re
 	return c.Client.Do(req)
 }
 
-func (c *Client) SetThemeAssignmentWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetThemeAssignmentRequestWithBody(c.Server, clusterId, realm, contentType, body)
+func (c *Client) SetThemeAssignmentWithBody(ctx context.Context, clusterId ClusterId, realm RealmName, params *SetThemeAssignmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetThemeAssignmentRequestWithBody(c.Server, clusterId, realm, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4966,8 +5947,8 @@ func (c *Client) SetThemeAssignmentWithBody(ctx context.Context, clusterId Clust
 	return c.Client.Do(req)
 }
 
-func (c *Client) SetThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, body SetThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetThemeAssignmentRequest(c.Server, clusterId, realm, body)
+func (c *Client) SetThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, params *SetThemeAssignmentParams, body SetThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetThemeAssignmentRequest(c.Server, clusterId, realm, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4978,8 +5959,8 @@ func (c *Client) SetThemeAssignment(ctx context.Context, clusterId ClusterId, re
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetClusterSecurity(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetClusterSecurityRequest(c.Server, clusterId)
+func (c *Client) GetClusterSecurity(ctx context.Context, clusterId ClusterId, params *GetClusterSecurityParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterSecurityRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4990,8 +5971,8 @@ func (c *Client) GetClusterSecurity(ctx context.Context, clusterId ClusterId, re
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateClusterSecurityWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateClusterSecurityRequestWithBody(c.Server, clusterId, contentType, body)
+func (c *Client) UpdateClusterSecurityWithBody(ctx context.Context, clusterId ClusterId, params *UpdateClusterSecurityParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterSecurityRequestWithBody(c.Server, clusterId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5002,8 +5983,8 @@ func (c *Client) UpdateClusterSecurityWithBody(ctx context.Context, clusterId Cl
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateClusterSecurity(ctx context.Context, clusterId ClusterId, body UpdateClusterSecurityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateClusterSecurityRequest(c.Server, clusterId, body)
+func (c *Client) UpdateClusterSecurity(ctx context.Context, clusterId ClusterId, params *UpdateClusterSecurityParams, body UpdateClusterSecurityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterSecurityRequest(c.Server, clusterId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5026,8 +6007,8 @@ func (c *Client) ListClusterSecurityLogs(ctx context.Context, clusterId ClusterI
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListClusterCAPTCHADomains(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListClusterCAPTCHADomainsRequest(c.Server, clusterId)
+func (c *Client) ListClusterCAPTCHADomains(ctx context.Context, clusterId ClusterId, params *ListClusterCAPTCHADomainsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListClusterCAPTCHADomainsRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5038,8 +6019,8 @@ func (c *Client) ListClusterCAPTCHADomains(ctx context.Context, clusterId Cluste
 	return c.Client.Do(req)
 }
 
-func (c *Client) AddClusterCAPTCHADomainWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAddClusterCAPTCHADomainRequestWithBody(c.Server, clusterId, contentType, body)
+func (c *Client) AddClusterCAPTCHADomainWithBody(ctx context.Context, clusterId ClusterId, params *AddClusterCAPTCHADomainParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddClusterCAPTCHADomainRequestWithBody(c.Server, clusterId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5050,8 +6031,8 @@ func (c *Client) AddClusterCAPTCHADomainWithBody(ctx context.Context, clusterId 
 	return c.Client.Do(req)
 }
 
-func (c *Client) AddClusterCAPTCHADomain(ctx context.Context, clusterId ClusterId, body AddClusterCAPTCHADomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAddClusterCAPTCHADomainRequest(c.Server, clusterId, body)
+func (c *Client) AddClusterCAPTCHADomain(ctx context.Context, clusterId ClusterId, params *AddClusterCAPTCHADomainParams, body AddClusterCAPTCHADomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddClusterCAPTCHADomainRequest(c.Server, clusterId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5062,8 +6043,8 @@ func (c *Client) AddClusterCAPTCHADomain(ctx context.Context, clusterId ClusterI
 	return c.Client.Do(req)
 }
 
-func (c *Client) RemoveClusterCAPTCHADomain(ctx context.Context, clusterId ClusterId, hostname string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRemoveClusterCAPTCHADomainRequest(c.Server, clusterId, hostname)
+func (c *Client) RemoveClusterCAPTCHADomain(ctx context.Context, clusterId ClusterId, hostname string, params *RemoveClusterCAPTCHADomainParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveClusterCAPTCHADomainRequest(c.Server, clusterId, hostname, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5074,8 +6055,8 @@ func (c *Client) RemoveClusterCAPTCHADomain(ctx context.Context, clusterId Clust
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListThemes(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListThemesRequest(c.Server, clusterId)
+func (c *Client) ListThemes(ctx context.Context, clusterId ClusterId, params *ListThemesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListThemesRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5086,8 +6067,8 @@ func (c *Client) ListThemes(ctx context.Context, clusterId ClusterId, reqEditors
 	return c.Client.Do(req)
 }
 
-func (c *Client) UploadThemeWithBody(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUploadThemeRequestWithBody(c.Server, clusterId, contentType, body)
+func (c *Client) UploadThemeWithBody(ctx context.Context, clusterId ClusterId, params *UploadThemeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadThemeRequestWithBody(c.Server, clusterId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5098,8 +6079,8 @@ func (c *Client) UploadThemeWithBody(ctx context.Context, clusterId ClusterId, c
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteThemeRequest(c.Server, clusterId, themeId)
+func (c *Client) DeleteTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *DeleteThemeParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteThemeRequest(c.Server, clusterId, themeId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5110,8 +6091,8 @@ func (c *Client) DeleteTheme(ctx context.Context, clusterId ClusterId, themeId T
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetThemeRequest(c.Server, clusterId, themeId)
+func (c *Client) GetTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *GetThemeParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetThemeRequest(c.Server, clusterId, themeId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5122,8 +6103,8 @@ func (c *Client) GetTheme(ctx context.Context, clusterId ClusterId, themeId Them
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateThemeWithBody(ctx context.Context, clusterId ClusterId, themeId ThemeId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateThemeRequestWithBody(c.Server, clusterId, themeId, contentType, body)
+func (c *Client) UpdateThemeWithBody(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateThemeRequestWithBody(c.Server, clusterId, themeId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5134,8 +6115,8 @@ func (c *Client) UpdateThemeWithBody(ctx context.Context, clusterId ClusterId, t
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, body UpdateThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateThemeRequest(c.Server, clusterId, themeId, body)
+func (c *Client) UpdateTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, body UpdateThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateThemeRequest(c.Server, clusterId, themeId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5146,8 +6127,8 @@ func (c *Client) UpdateTheme(ctx context.Context, clusterId ClusterId, themeId T
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetClusterUpgradePath(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetClusterUpgradePathRequest(c.Server, clusterId)
+func (c *Client) GetClusterUpgradePath(ctx context.Context, clusterId ClusterId, params *GetClusterUpgradePathParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterUpgradePathRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5158,8 +6139,8 @@ func (c *Client) GetClusterUpgradePath(ctx context.Context, clusterId ClusterId,
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListClusterUpgrades(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListClusterUpgradesRequest(c.Server, clusterId)
+func (c *Client) ListClusterUpgrades(ctx context.Context, clusterId ClusterId, params *ListClusterUpgradesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListClusterUpgradesRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5170,8 +6151,8 @@ func (c *Client) ListClusterUpgrades(ctx context.Context, clusterId ClusterId, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) CancelClusterUpgrade(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCancelClusterUpgradeRequest(c.Server, clusterId)
+func (c *Client) CancelClusterUpgrade(ctx context.Context, clusterId ClusterId, params *CancelClusterUpgradeParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCancelClusterUpgradeRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5182,8 +6163,8 @@ func (c *Client) CancelClusterUpgrade(ctx context.Context, clusterId ClusterId, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListExtensions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListExtensionsRequest(c.Server)
+func (c *Client) ListExtensions(ctx context.Context, params *ListExtensionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListExtensionsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5194,8 +6175,8 @@ func (c *Client) ListExtensions(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
-func (c *Client) UploadExtensionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUploadExtensionRequestWithBody(c.Server, contentType, body)
+func (c *Client) UploadExtensionWithBody(ctx context.Context, params *UploadExtensionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadExtensionRequestWithBody(c.Server, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5206,8 +6187,8 @@ func (c *Client) UploadExtensionWithBody(ctx context.Context, contentType string
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteExtension(ctx context.Context, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteExtensionRequest(c.Server, extensionId)
+func (c *Client) DeleteExtension(ctx context.Context, extensionId ExtensionId, params *DeleteExtensionParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteExtensionRequest(c.Server, extensionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5218,8 +6199,8 @@ func (c *Client) DeleteExtension(ctx context.Context, extensionId ExtensionId, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetExtension(ctx context.Context, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetExtensionRequest(c.Server, extensionId)
+func (c *Client) GetExtension(ctx context.Context, extensionId ExtensionId, params *GetExtensionParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetExtensionRequest(c.Server, extensionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5230,8 +6211,8 @@ func (c *Client) GetExtension(ctx context.Context, extensionId ExtensionId, reqE
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateExtensionWithBody(ctx context.Context, extensionId ExtensionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateExtensionRequestWithBody(c.Server, extensionId, contentType, body)
+func (c *Client) UpdateExtensionWithBody(ctx context.Context, extensionId ExtensionId, params *UpdateExtensionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateExtensionRequestWithBody(c.Server, extensionId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5242,8 +6223,8 @@ func (c *Client) UpdateExtensionWithBody(ctx context.Context, extensionId Extens
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateExtension(ctx context.Context, extensionId ExtensionId, body UpdateExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateExtensionRequest(c.Server, extensionId, body)
+func (c *Client) UpdateExtension(ctx context.Context, extensionId ExtensionId, params *UpdateExtensionParams, body UpdateExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateExtensionRequest(c.Server, extensionId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5254,8 +6235,8 @@ func (c *Client) UpdateExtension(ctx context.Context, extensionId ExtensionId, b
 	return c.Client.Do(req)
 }
 
-func (c *Client) PublishExtensionVersionWithBody(ctx context.Context, extensionId ExtensionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPublishExtensionVersionRequestWithBody(c.Server, extensionId, contentType, body)
+func (c *Client) PublishExtensionVersionWithBody(ctx context.Context, extensionId ExtensionId, params *PublishExtensionVersionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPublishExtensionVersionRequestWithBody(c.Server, extensionId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5266,8 +6247,8 @@ func (c *Client) PublishExtensionVersionWithBody(ctx context.Context, extensionI
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListIdentityProviderTemplates(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListIdentityProviderTemplatesRequest(c.Server)
+func (c *Client) ListIdentityProviderTemplates(ctx context.Context, params *ListIdentityProviderTemplatesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListIdentityProviderTemplatesRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5278,8 +6259,8 @@ func (c *Client) ListIdentityProviderTemplates(ctx context.Context, reqEditors .
 	return c.Client.Do(req)
 }
 
-func (c *Client) DiscoverOIDCWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDiscoverOIDCRequestWithBody(c.Server, contentType, body)
+func (c *Client) DiscoverOIDCWithBody(ctx context.Context, params *DiscoverOIDCParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDiscoverOIDCRequestWithBody(c.Server, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5290,8 +6271,224 @@ func (c *Client) DiscoverOIDCWithBody(ctx context.Context, contentType string, b
 	return c.Client.Do(req)
 }
 
-func (c *Client) DiscoverOIDC(ctx context.Context, body DiscoverOIDCJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDiscoverOIDCRequest(c.Server, body)
+func (c *Client) DiscoverOIDC(ctx context.Context, params *DiscoverOIDCParams, body DiscoverOIDCJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDiscoverOIDCRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListSIEMDestinations(ctx context.Context, params *ListSIEMDestinationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListSIEMDestinationsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateSIEMDestinationWithBody(ctx context.Context, params *CreateSIEMDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateSIEMDestinationRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateSIEMDestination(ctx context.Context, params *CreateSIEMDestinationParams, body CreateSIEMDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateSIEMDestinationRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteSIEMDestination(ctx context.Context, destinationId SIEMDestinationId, params *DeleteSIEMDestinationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteSIEMDestinationRequest(c.Server, destinationId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetSIEMDestination(ctx context.Context, destinationId SIEMDestinationId, params *GetSIEMDestinationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSIEMDestinationRequest(c.Server, destinationId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateSIEMDestinationWithBody(ctx context.Context, destinationId SIEMDestinationId, params *UpdateSIEMDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateSIEMDestinationRequestWithBody(c.Server, destinationId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateSIEMDestination(ctx context.Context, destinationId SIEMDestinationId, params *UpdateSIEMDestinationParams, body UpdateSIEMDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateSIEMDestinationRequest(c.Server, destinationId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) TestSIEMDestination(ctx context.Context, destinationId SIEMDestinationId, params *TestSIEMDestinationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTestSIEMDestinationRequest(c.Server, destinationId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListWebhookEventTypes(ctx context.Context, params *ListWebhookEventTypesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWebhookEventTypesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListWebhookSubscriptions(ctx context.Context, params *ListWebhookSubscriptionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWebhookSubscriptionsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateWebhookSubscriptionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateWebhookSubscriptionRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateWebhookSubscription(ctx context.Context, body CreateWebhookSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateWebhookSubscriptionRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteWebhookSubscription(ctx context.Context, webhookId WebhookId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteWebhookSubscriptionRequest(c.Server, webhookId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetWebhookSubscription(ctx context.Context, webhookId WebhookId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWebhookSubscriptionRequest(c.Server, webhookId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateWebhookSubscriptionWithBody(ctx context.Context, webhookId WebhookId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateWebhookSubscriptionRequestWithBody(c.Server, webhookId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateWebhookSubscription(ctx context.Context, webhookId WebhookId, body UpdateWebhookSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateWebhookSubscriptionRequest(c.Server, webhookId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) TestWebhookSubscriptionWithBody(ctx context.Context, webhookId WebhookId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTestWebhookSubscriptionRequestWithBody(c.Server, webhookId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) TestWebhookSubscription(ctx context.Context, webhookId WebhookId, body TestWebhookSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTestWebhookSubscriptionRequest(c.Server, webhookId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5303,7 +6500,7 @@ func (c *Client) DiscoverOIDC(ctx context.Context, body DiscoverOIDCJSONRequestB
 }
 
 // NewListClusterFeaturesRequest generates requests for ListClusterFeatures
-func NewListClusterFeaturesRequest(server string) (*http.Request, error) {
+func NewListClusterFeaturesRequest(server string, params *ListClusterFeaturesParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -5326,11 +6523,24 @@ func NewListClusterFeaturesRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListClusterLocationsRequest generates requests for ListClusterLocations
-func NewListClusterLocationsRequest(server string) (*http.Request, error) {
+func NewListClusterLocationsRequest(server string, params *ListClusterLocationsParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -5353,11 +6563,24 @@ func NewListClusterLocationsRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListClusterTypesRequest generates requests for ListClusterTypes
-func NewListClusterTypesRequest(server string) (*http.Request, error) {
+func NewListClusterTypesRequest(server string, params *ListClusterTypesParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -5380,11 +6603,24 @@ func NewListClusterTypesRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetClusterTypeVersionsRequest generates requests for GetClusterTypeVersions
-func NewGetClusterTypeVersionsRequest(server string, clusterType ClusterType) (*http.Request, error) {
+func NewGetClusterTypeVersionsRequest(server string, clusterType ClusterType, params *GetClusterTypeVersionsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -5414,11 +6650,24 @@ func NewGetClusterTypeVersionsRequest(server string, clusterType ClusterType) (*
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListClustersRequest generates requests for ListClusters
-func NewListClustersRequest(server string) (*http.Request, error) {
+func NewListClustersRequest(server string, params *ListClustersParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -5441,22 +6690,35 @@ func NewListClustersRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewCreateClusterRequest calls the generic CreateCluster builder with application/json body
-func NewCreateClusterRequest(server string, body CreateClusterJSONRequestBody) (*http.Request, error) {
+func NewCreateClusterRequest(server string, params *CreateClusterParams, body CreateClusterJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateClusterRequestWithBody(server, "application/json", bodyReader)
+	return NewCreateClusterRequestWithBody(server, params, "application/json", bodyReader)
 }
 
 // NewCreateClusterRequestWithBody generates requests for CreateCluster with any type of body
-func NewCreateClusterRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreateClusterRequestWithBody(server string, params *CreateClusterParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -5481,11 +6743,24 @@ func NewCreateClusterRequestWithBody(server string, contentType string, body io.
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteClusterRequest generates requests for DeleteCluster
-func NewDeleteClusterRequest(server string, clusterId ClusterId) (*http.Request, error) {
+func NewDeleteClusterRequest(server string, clusterId ClusterId, params *DeleteClusterParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -5515,11 +6790,24 @@ func NewDeleteClusterRequest(server string, clusterId ClusterId) (*http.Request,
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetClusterRequest generates requests for GetCluster
-func NewGetClusterRequest(server string, clusterId ClusterId) (*http.Request, error) {
+func NewGetClusterRequest(server string, clusterId ClusterId, params *GetClusterParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -5549,22 +6837,35 @@ func NewGetClusterRequest(server string, clusterId ClusterId) (*http.Request, er
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpdateClusterRequest calls the generic UpdateCluster builder with application/json body
-func NewUpdateClusterRequest(server string, clusterId ClusterId, body UpdateClusterJSONRequestBody) (*http.Request, error) {
+func NewUpdateClusterRequest(server string, clusterId ClusterId, params *UpdateClusterParams, body UpdateClusterJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateClusterRequestWithBody(server, clusterId, "application/json", bodyReader)
+	return NewUpdateClusterRequestWithBody(server, clusterId, params, "application/json", bodyReader)
 }
 
 // NewUpdateClusterRequestWithBody generates requests for UpdateCluster with any type of body
-func NewUpdateClusterRequestWithBody(server string, clusterId ClusterId, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateClusterRequestWithBody(server string, clusterId ClusterId, params *UpdateClusterParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -5596,11 +6897,24 @@ func NewUpdateClusterRequestWithBody(server string, clusterId ClusterId, content
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListClusterBuildsRequest generates requests for ListClusterBuilds
-func NewListClusterBuildsRequest(server string, clusterId ClusterId) (*http.Request, error) {
+func NewListClusterBuildsRequest(server string, clusterId ClusterId, params *ListClusterBuildsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -5630,11 +6944,24 @@ func NewListClusterBuildsRequest(server string, clusterId ClusterId) (*http.Requ
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetClusterBuildRequest generates requests for GetClusterBuild
-func NewGetClusterBuildRequest(server string, clusterId ClusterId, buildId BuildId) (*http.Request, error) {
+func NewGetClusterBuildRequest(server string, clusterId ClusterId, buildId BuildId, params *GetClusterBuildParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -5671,11 +6998,24 @@ func NewGetClusterBuildRequest(server string, clusterId ClusterId, buildId Build
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetClusterCredentialsRequest generates requests for GetClusterCredentials
-func NewGetClusterCredentialsRequest(server string, clusterId ClusterId) (*http.Request, error) {
+func NewGetClusterCredentialsRequest(server string, clusterId ClusterId, params *GetClusterCredentialsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -5703,6 +7043,19 @@ func NewGetClusterCredentialsRequest(server string, clusterId ClusterId) (*http.
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
 	}
 
 	return req, nil
@@ -5793,22 +7146,35 @@ func NewListDomainsRequest(server string, clusterId ClusterId, params *ListDomai
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewCreateDomainRequest calls the generic CreateDomain builder with application/json body
-func NewCreateDomainRequest(server string, clusterId ClusterId, body CreateDomainJSONRequestBody) (*http.Request, error) {
+func NewCreateDomainRequest(server string, clusterId ClusterId, params *CreateDomainParams, body CreateDomainJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateDomainRequestWithBody(server, clusterId, "application/json", bodyReader)
+	return NewCreateDomainRequestWithBody(server, clusterId, params, "application/json", bodyReader)
 }
 
 // NewCreateDomainRequestWithBody generates requests for CreateDomain with any type of body
-func NewCreateDomainRequestWithBody(server string, clusterId ClusterId, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreateDomainRequestWithBody(server string, clusterId ClusterId, params *CreateDomainParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -5840,11 +7206,24 @@ func NewCreateDomainRequestWithBody(server string, clusterId ClusterId, contentT
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteDomainRequest generates requests for DeleteDomain
-func NewDeleteDomainRequest(server string, clusterId ClusterId, domainId DomainId) (*http.Request, error) {
+func NewDeleteDomainRequest(server string, clusterId ClusterId, domainId DomainId, params *DeleteDomainParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -5881,11 +7260,24 @@ func NewDeleteDomainRequest(server string, clusterId ClusterId, domainId DomainI
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetDomainRequest generates requests for GetDomain
-func NewGetDomainRequest(server string, clusterId ClusterId, domainId DomainId) (*http.Request, error) {
+func NewGetDomainRequest(server string, clusterId ClusterId, domainId DomainId, params *GetDomainParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -5922,11 +7314,24 @@ func NewGetDomainRequest(server string, clusterId ClusterId, domainId DomainId) 
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListDomainRoutesRequest generates requests for ListDomainRoutes
-func NewListDomainRoutesRequest(server string, clusterId ClusterId, domainId DomainId) (*http.Request, error) {
+func NewListDomainRoutesRequest(server string, clusterId ClusterId, domainId DomainId, params *ListDomainRoutesParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -5963,22 +7368,35 @@ func NewListDomainRoutesRequest(server string, clusterId ClusterId, domainId Dom
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewCreateDomainRouteRequest calls the generic CreateDomainRoute builder with application/json body
-func NewCreateDomainRouteRequest(server string, clusterId ClusterId, domainId DomainId, body CreateDomainRouteJSONRequestBody) (*http.Request, error) {
+func NewCreateDomainRouteRequest(server string, clusterId ClusterId, domainId DomainId, params *CreateDomainRouteParams, body CreateDomainRouteJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateDomainRouteRequestWithBody(server, clusterId, domainId, "application/json", bodyReader)
+	return NewCreateDomainRouteRequestWithBody(server, clusterId, domainId, params, "application/json", bodyReader)
 }
 
 // NewCreateDomainRouteRequestWithBody generates requests for CreateDomainRoute with any type of body
-func NewCreateDomainRouteRequestWithBody(server string, clusterId ClusterId, domainId DomainId, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreateDomainRouteRequestWithBody(server string, clusterId ClusterId, domainId DomainId, params *CreateDomainRouteParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6017,11 +7435,24 @@ func NewCreateDomainRouteRequestWithBody(server string, clusterId ClusterId, dom
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteDomainRouteRequest generates requests for DeleteDomainRoute
-func NewDeleteDomainRouteRequest(server string, clusterId ClusterId, domainId DomainId, routeId DomainRouteId) (*http.Request, error) {
+func NewDeleteDomainRouteRequest(server string, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *DeleteDomainRouteParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6065,11 +7496,24 @@ func NewDeleteDomainRouteRequest(server string, clusterId ClusterId, domainId Do
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetDomainRouteRequest generates requests for GetDomainRoute
-func NewGetDomainRouteRequest(server string, clusterId ClusterId, domainId DomainId, routeId DomainRouteId) (*http.Request, error) {
+func NewGetDomainRouteRequest(server string, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *GetDomainRouteParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6113,22 +7557,35 @@ func NewGetDomainRouteRequest(server string, clusterId ClusterId, domainId Domai
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpdateDomainRouteRequest calls the generic UpdateDomainRoute builder with application/json body
-func NewUpdateDomainRouteRequest(server string, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, body UpdateDomainRouteJSONRequestBody) (*http.Request, error) {
+func NewUpdateDomainRouteRequest(server string, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *UpdateDomainRouteParams, body UpdateDomainRouteJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateDomainRouteRequestWithBody(server, clusterId, domainId, routeId, "application/json", bodyReader)
+	return NewUpdateDomainRouteRequestWithBody(server, clusterId, domainId, routeId, params, "application/json", bodyReader)
 }
 
 // NewUpdateDomainRouteRequestWithBody generates requests for UpdateDomainRoute with any type of body
-func NewUpdateDomainRouteRequestWithBody(server string, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateDomainRouteRequestWithBody(server string, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *UpdateDomainRouteParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6174,11 +7631,24 @@ func NewUpdateDomainRouteRequestWithBody(server string, clusterId ClusterId, dom
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewVerifyDomainRequest generates requests for VerifyDomain
-func NewVerifyDomainRequest(server string, clusterId ClusterId, domainId DomainId) (*http.Request, error) {
+func NewVerifyDomainRequest(server string, clusterId ClusterId, domainId DomainId, params *VerifyDomainParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6213,6 +7683,19 @@ func NewVerifyDomainRequest(server string, clusterId ClusterId, domainId DomainI
 	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
 	}
 
 	return req, nil
@@ -6495,6 +7978,19 @@ func NewListClusterEventsRequest(server string, clusterId ClusterId, params *Lis
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
@@ -6739,11 +8235,24 @@ func NewExportClusterEventsRequest(server string, clusterId ClusterId, params *E
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListExportsRequest generates requests for ListExports
-func NewListExportsRequest(server string, clusterId ClusterId) (*http.Request, error) {
+func NewListExportsRequest(server string, clusterId ClusterId, params *ListExportsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6773,22 +8282,35 @@ func NewListExportsRequest(server string, clusterId ClusterId) (*http.Request, e
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewCreateExportRequest calls the generic CreateExport builder with application/json body
-func NewCreateExportRequest(server string, clusterId ClusterId, body CreateExportJSONRequestBody) (*http.Request, error) {
+func NewCreateExportRequest(server string, clusterId ClusterId, params *CreateExportParams, body CreateExportJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateExportRequestWithBody(server, clusterId, "application/json", bodyReader)
+	return NewCreateExportRequestWithBody(server, clusterId, params, "application/json", bodyReader)
 }
 
 // NewCreateExportRequestWithBody generates requests for CreateExport with any type of body
-func NewCreateExportRequestWithBody(server string, clusterId ClusterId, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreateExportRequestWithBody(server string, clusterId ClusterId, params *CreateExportParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6820,11 +8342,24 @@ func NewCreateExportRequestWithBody(server string, clusterId ClusterId, contentT
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteExportRequest generates requests for DeleteExport
-func NewDeleteExportRequest(server string, clusterId ClusterId, exportId ExportId) (*http.Request, error) {
+func NewDeleteExportRequest(server string, clusterId ClusterId, exportId ExportId, params *DeleteExportParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6861,11 +8396,24 @@ func NewDeleteExportRequest(server string, clusterId ClusterId, exportId ExportI
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetExportRequest generates requests for GetExport
-func NewGetExportRequest(server string, clusterId ClusterId, exportId ExportId) (*http.Request, error) {
+func NewGetExportRequest(server string, clusterId ClusterId, exportId ExportId, params *GetExportParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6902,11 +8450,24 @@ func NewGetExportRequest(server string, clusterId ClusterId, exportId ExportId) 
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListClusterExtensionsRequest generates requests for ListClusterExtensions
-func NewListClusterExtensionsRequest(server string, clusterId ClusterId) (*http.Request, error) {
+func NewListClusterExtensionsRequest(server string, clusterId ClusterId, params *ListClusterExtensionsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6936,22 +8497,35 @@ func NewListClusterExtensionsRequest(server string, clusterId ClusterId) (*http.
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewInstallExtensionRequest calls the generic InstallExtension builder with application/json body
-func NewInstallExtensionRequest(server string, clusterId ClusterId, body InstallExtensionJSONRequestBody) (*http.Request, error) {
+func NewInstallExtensionRequest(server string, clusterId ClusterId, params *InstallExtensionParams, body InstallExtensionJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewInstallExtensionRequestWithBody(server, clusterId, "application/json", bodyReader)
+	return NewInstallExtensionRequestWithBody(server, clusterId, params, "application/json", bodyReader)
 }
 
 // NewInstallExtensionRequestWithBody generates requests for InstallExtension with any type of body
-func NewInstallExtensionRequestWithBody(server string, clusterId ClusterId, contentType string, body io.Reader) (*http.Request, error) {
+func NewInstallExtensionRequestWithBody(server string, clusterId ClusterId, params *InstallExtensionParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6983,11 +8557,24 @@ func NewInstallExtensionRequestWithBody(server string, clusterId ClusterId, cont
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUninstallExtensionRequest generates requests for UninstallExtension
-func NewUninstallExtensionRequest(server string, clusterId ClusterId, extensionId ExtensionId) (*http.Request, error) {
+func NewUninstallExtensionRequest(server string, clusterId ClusterId, extensionId ExtensionId, params *UninstallExtensionParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7024,11 +8611,24 @@ func NewUninstallExtensionRequest(server string, clusterId ClusterId, extensionI
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpgradeClusterExtensionRequest generates requests for UpgradeClusterExtension
-func NewUpgradeClusterExtensionRequest(server string, clusterId ClusterId, extensionId ExtensionId) (*http.Request, error) {
+func NewUpgradeClusterExtensionRequest(server string, clusterId ClusterId, extensionId ExtensionId, params *UpgradeClusterExtensionParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7063,6 +8663,19 @@ func NewUpgradeClusterExtensionRequest(server string, clusterId ClusterId, exten
 	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
 	}
 
 	return req, nil
@@ -7153,6 +8766,19 @@ func NewGetClusterInsightsAuthenticationRequest(server string, clusterId Cluster
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
@@ -7223,6 +8849,19 @@ func NewGetClusterInsightsEventsRequest(server string, clusterId ClusterId, para
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
 	}
 
 	return req, nil
@@ -7313,6 +8952,19 @@ func NewGetClusterInsightsOverviewRequest(server string, clusterId ClusterId, pa
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
@@ -7401,6 +9053,19 @@ func NewGetClusterInsightsPerformanceRequest(server string, clusterId ClusterId,
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
@@ -7487,6 +9152,19 @@ func NewGetClusterInsightsSecurityRequest(server string, clusterId ClusterId, pa
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
 	}
 
 	return req, nil
@@ -7673,11 +9351,24 @@ func NewListClusterLogsRequest(server string, clusterId ClusterId, params *ListC
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListRealmsRequest generates requests for ListRealms
-func NewListRealmsRequest(server string, clusterId ClusterId) (*http.Request, error) {
+func NewListRealmsRequest(server string, clusterId ClusterId, params *ListRealmsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7707,22 +9398,35 @@ func NewListRealmsRequest(server string, clusterId ClusterId) (*http.Request, er
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewCreateRealmRequest calls the generic CreateRealm builder with application/json body
-func NewCreateRealmRequest(server string, clusterId ClusterId, body CreateRealmJSONRequestBody) (*http.Request, error) {
+func NewCreateRealmRequest(server string, clusterId ClusterId, params *CreateRealmParams, body CreateRealmJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateRealmRequestWithBody(server, clusterId, "application/json", bodyReader)
+	return NewCreateRealmRequestWithBody(server, clusterId, params, "application/json", bodyReader)
 }
 
 // NewCreateRealmRequestWithBody generates requests for CreateRealm with any type of body
-func NewCreateRealmRequestWithBody(server string, clusterId ClusterId, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreateRealmRequestWithBody(server string, clusterId ClusterId, params *CreateRealmParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7754,11 +9458,24 @@ func NewCreateRealmRequestWithBody(server string, clusterId ClusterId, contentTy
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteRealmRequest generates requests for DeleteRealm
-func NewDeleteRealmRequest(server string, clusterId ClusterId, realmName RealmName) (*http.Request, error) {
+func NewDeleteRealmRequest(server string, clusterId ClusterId, realmName RealmName, params *DeleteRealmParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7795,11 +9512,24 @@ func NewDeleteRealmRequest(server string, clusterId ClusterId, realmName RealmNa
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetRealmRequest generates requests for GetRealm
-func NewGetRealmRequest(server string, clusterId ClusterId, realmName RealmName) (*http.Request, error) {
+func NewGetRealmRequest(server string, clusterId ClusterId, realmName RealmName, params *GetRealmParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7836,22 +9566,35 @@ func NewGetRealmRequest(server string, clusterId ClusterId, realmName RealmName)
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpdateRealmRequest calls the generic UpdateRealm builder with application/json body
-func NewUpdateRealmRequest(server string, clusterId ClusterId, realmName RealmName, body UpdateRealmJSONRequestBody) (*http.Request, error) {
+func NewUpdateRealmRequest(server string, clusterId ClusterId, realmName RealmName, params *UpdateRealmParams, body UpdateRealmJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateRealmRequestWithBody(server, clusterId, realmName, "application/json", bodyReader)
+	return NewUpdateRealmRequestWithBody(server, clusterId, realmName, params, "application/json", bodyReader)
 }
 
 // NewUpdateRealmRequestWithBody generates requests for UpdateRealm with any type of body
-func NewUpdateRealmRequestWithBody(server string, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateRealmRequestWithBody(server string, clusterId ClusterId, realmName RealmName, params *UpdateRealmParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7889,6 +9632,19 @@ func NewUpdateRealmRequestWithBody(server string, clusterId ClusterId, realmName
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
 
 	return req, nil
 }
@@ -7985,22 +9741,35 @@ func NewListApplicationsRequest(server string, clusterId ClusterId, realmName Re
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewCreateApplicationRequest calls the generic CreateApplication builder with application/json body
-func NewCreateApplicationRequest(server string, clusterId ClusterId, realmName RealmName, body CreateApplicationJSONRequestBody) (*http.Request, error) {
+func NewCreateApplicationRequest(server string, clusterId ClusterId, realmName RealmName, params *CreateApplicationParams, body CreateApplicationJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateApplicationRequestWithBody(server, clusterId, realmName, "application/json", bodyReader)
+	return NewCreateApplicationRequestWithBody(server, clusterId, realmName, params, "application/json", bodyReader)
 }
 
 // NewCreateApplicationRequestWithBody generates requests for CreateApplication with any type of body
-func NewCreateApplicationRequestWithBody(server string, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreateApplicationRequestWithBody(server string, clusterId ClusterId, realmName RealmName, params *CreateApplicationParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8039,11 +9808,24 @@ func NewCreateApplicationRequestWithBody(server string, clusterId ClusterId, rea
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteApplicationRequest generates requests for DeleteApplication
-func NewDeleteApplicationRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId) (*http.Request, error) {
+func NewDeleteApplicationRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *DeleteApplicationParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8087,11 +9869,24 @@ func NewDeleteApplicationRequest(server string, clusterId ClusterId, realmName R
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetApplicationRequest generates requests for GetApplication
-func NewGetApplicationRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId) (*http.Request, error) {
+func NewGetApplicationRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *GetApplicationParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8135,22 +9930,35 @@ func NewGetApplicationRequest(server string, clusterId ClusterId, realmName Real
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpdateApplicationRequest calls the generic UpdateApplication builder with application/json body
-func NewUpdateApplicationRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, body UpdateApplicationJSONRequestBody) (*http.Request, error) {
+func NewUpdateApplicationRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *UpdateApplicationParams, body UpdateApplicationJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateApplicationRequestWithBody(server, clusterId, realmName, clientId, "application/json", bodyReader)
+	return NewUpdateApplicationRequestWithBody(server, clusterId, realmName, clientId, params, "application/json", bodyReader)
 }
 
 // NewUpdateApplicationRequestWithBody generates requests for UpdateApplication with any type of body
-func NewUpdateApplicationRequestWithBody(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateApplicationRequestWithBody(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *UpdateApplicationParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8196,11 +10004,24 @@ func NewUpdateApplicationRequestWithBody(server string, clusterId ClusterId, rea
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListApplicationRolesRequest generates requests for ListApplicationRoles
-func NewListApplicationRolesRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId) (*http.Request, error) {
+func NewListApplicationRolesRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *ListApplicationRolesParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8244,22 +10065,35 @@ func NewListApplicationRolesRequest(server string, clusterId ClusterId, realmNam
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewAssignApplicationRoleRequest calls the generic AssignApplicationRole builder with application/json body
-func NewAssignApplicationRoleRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, body AssignApplicationRoleJSONRequestBody) (*http.Request, error) {
+func NewAssignApplicationRoleRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *AssignApplicationRoleParams, body AssignApplicationRoleJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewAssignApplicationRoleRequestWithBody(server, clusterId, realmName, clientId, "application/json", bodyReader)
+	return NewAssignApplicationRoleRequestWithBody(server, clusterId, realmName, clientId, params, "application/json", bodyReader)
 }
 
 // NewAssignApplicationRoleRequestWithBody generates requests for AssignApplicationRole with any type of body
-func NewAssignApplicationRoleRequestWithBody(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, contentType string, body io.Reader) (*http.Request, error) {
+func NewAssignApplicationRoleRequestWithBody(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *AssignApplicationRoleParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8304,6 +10138,19 @@ func NewAssignApplicationRoleRequestWithBody(server string, clusterId ClusterId,
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
 
 	return req, nil
 }
@@ -8382,11 +10229,24 @@ func NewRemoveApplicationRoleRequest(server string, clusterId ClusterId, realmNa
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewRotateApplicationSecretRequest generates requests for RotateApplicationSecret
-func NewRotateApplicationSecretRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId) (*http.Request, error) {
+func NewRotateApplicationSecretRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *RotateApplicationSecretParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8430,11 +10290,24 @@ func NewRotateApplicationSecretRequest(server string, clusterId ClusterId, realm
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListApplicationSessionsRequest generates requests for ListApplicationSessions
-func NewListApplicationSessionsRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId) (*http.Request, error) {
+func NewListApplicationSessionsRequest(server string, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *ListApplicationSessionsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8476,6 +10349,19 @@ func NewListApplicationSessionsRequest(server string, clusterId ClusterId, realm
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
 	}
 
 	return req, nil
@@ -8541,22 +10427,35 @@ func NewListRealmGroupsRequest(server string, clusterId ClusterId, realmName Rea
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewCreateRealmGroupRequest calls the generic CreateRealmGroup builder with application/json body
-func NewCreateRealmGroupRequest(server string, clusterId ClusterId, realmName RealmName, body CreateRealmGroupJSONRequestBody) (*http.Request, error) {
+func NewCreateRealmGroupRequest(server string, clusterId ClusterId, realmName RealmName, params *CreateRealmGroupParams, body CreateRealmGroupJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateRealmGroupRequestWithBody(server, clusterId, realmName, "application/json", bodyReader)
+	return NewCreateRealmGroupRequestWithBody(server, clusterId, realmName, params, "application/json", bodyReader)
 }
 
 // NewCreateRealmGroupRequestWithBody generates requests for CreateRealmGroup with any type of body
-func NewCreateRealmGroupRequestWithBody(server string, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreateRealmGroupRequestWithBody(server string, clusterId ClusterId, realmName RealmName, params *CreateRealmGroupParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8595,11 +10494,24 @@ func NewCreateRealmGroupRequestWithBody(server string, clusterId ClusterId, real
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteRealmGroupRequest generates requests for DeleteRealmGroup
-func NewDeleteRealmGroupRequest(server string, clusterId ClusterId, realmName RealmName, groupId RealmGroupId) (*http.Request, error) {
+func NewDeleteRealmGroupRequest(server string, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *DeleteRealmGroupParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8643,11 +10555,24 @@ func NewDeleteRealmGroupRequest(server string, clusterId ClusterId, realmName Re
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetRealmGroupRequest generates requests for GetRealmGroup
-func NewGetRealmGroupRequest(server string, clusterId ClusterId, realmName RealmName, groupId RealmGroupId) (*http.Request, error) {
+func NewGetRealmGroupRequest(server string, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *GetRealmGroupParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8691,22 +10616,35 @@ func NewGetRealmGroupRequest(server string, clusterId ClusterId, realmName Realm
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpdateRealmGroupRequest calls the generic UpdateRealmGroup builder with application/json body
-func NewUpdateRealmGroupRequest(server string, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, body UpdateRealmGroupJSONRequestBody) (*http.Request, error) {
+func NewUpdateRealmGroupRequest(server string, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *UpdateRealmGroupParams, body UpdateRealmGroupJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateRealmGroupRequestWithBody(server, clusterId, realmName, groupId, "application/json", bodyReader)
+	return NewUpdateRealmGroupRequestWithBody(server, clusterId, realmName, groupId, params, "application/json", bodyReader)
 }
 
 // NewUpdateRealmGroupRequestWithBody generates requests for UpdateRealmGroup with any type of body
-func NewUpdateRealmGroupRequestWithBody(server string, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateRealmGroupRequestWithBody(server string, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *UpdateRealmGroupParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8751,6 +10689,19 @@ func NewUpdateRealmGroupRequestWithBody(server string, clusterId ClusterId, real
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
 
 	return req, nil
 }
@@ -8838,11 +10789,24 @@ func NewListRealmGroupMembersRequest(server string, clusterId ClusterId, realmNa
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListIdentityProvidersRequest generates requests for ListIdentityProviders
-func NewListIdentityProvidersRequest(server string, clusterId ClusterId, realmName RealmName) (*http.Request, error) {
+func NewListIdentityProvidersRequest(server string, clusterId ClusterId, realmName RealmName, params *ListIdentityProvidersParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8879,22 +10843,35 @@ func NewListIdentityProvidersRequest(server string, clusterId ClusterId, realmNa
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewCreateIdentityProviderRequest calls the generic CreateIdentityProvider builder with application/json body
-func NewCreateIdentityProviderRequest(server string, clusterId ClusterId, realmName RealmName, body CreateIdentityProviderJSONRequestBody) (*http.Request, error) {
+func NewCreateIdentityProviderRequest(server string, clusterId ClusterId, realmName RealmName, params *CreateIdentityProviderParams, body CreateIdentityProviderJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateIdentityProviderRequestWithBody(server, clusterId, realmName, "application/json", bodyReader)
+	return NewCreateIdentityProviderRequestWithBody(server, clusterId, realmName, params, "application/json", bodyReader)
 }
 
 // NewCreateIdentityProviderRequestWithBody generates requests for CreateIdentityProvider with any type of body
-func NewCreateIdentityProviderRequestWithBody(server string, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreateIdentityProviderRequestWithBody(server string, clusterId ClusterId, realmName RealmName, params *CreateIdentityProviderParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8933,11 +10910,24 @@ func NewCreateIdentityProviderRequestWithBody(server string, clusterId ClusterId
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteIdentityProviderRequest generates requests for DeleteIdentityProvider
-func NewDeleteIdentityProviderRequest(server string, clusterId ClusterId, realmName RealmName, providerId ProviderId) (*http.Request, error) {
+func NewDeleteIdentityProviderRequest(server string, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *DeleteIdentityProviderParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -8981,11 +10971,24 @@ func NewDeleteIdentityProviderRequest(server string, clusterId ClusterId, realmN
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetIdentityProviderRequest generates requests for GetIdentityProvider
-func NewGetIdentityProviderRequest(server string, clusterId ClusterId, realmName RealmName, providerId ProviderId) (*http.Request, error) {
+func NewGetIdentityProviderRequest(server string, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *GetIdentityProviderParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9029,22 +11032,35 @@ func NewGetIdentityProviderRequest(server string, clusterId ClusterId, realmName
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpdateIdentityProviderRequest calls the generic UpdateIdentityProvider builder with application/json body
-func NewUpdateIdentityProviderRequest(server string, clusterId ClusterId, realmName RealmName, providerId ProviderId, body UpdateIdentityProviderJSONRequestBody) (*http.Request, error) {
+func NewUpdateIdentityProviderRequest(server string, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *UpdateIdentityProviderParams, body UpdateIdentityProviderJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateIdentityProviderRequestWithBody(server, clusterId, realmName, providerId, "application/json", bodyReader)
+	return NewUpdateIdentityProviderRequestWithBody(server, clusterId, realmName, providerId, params, "application/json", bodyReader)
 }
 
 // NewUpdateIdentityProviderRequestWithBody generates requests for UpdateIdentityProvider with any type of body
-func NewUpdateIdentityProviderRequestWithBody(server string, clusterId ClusterId, realmName RealmName, providerId ProviderId, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateIdentityProviderRequestWithBody(server string, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *UpdateIdentityProviderParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9090,22 +11106,35 @@ func NewUpdateIdentityProviderRequestWithBody(server string, clusterId ClusterId
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewTestIdentityProviderConnectionRequest calls the generic TestIdentityProviderConnection builder with application/json body
-func NewTestIdentityProviderConnectionRequest(server string, clusterId ClusterId, realmName RealmName, providerId ProviderId, body TestIdentityProviderConnectionJSONRequestBody) (*http.Request, error) {
+func NewTestIdentityProviderConnectionRequest(server string, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *TestIdentityProviderConnectionParams, body TestIdentityProviderConnectionJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewTestIdentityProviderConnectionRequestWithBody(server, clusterId, realmName, providerId, "application/json", bodyReader)
+	return NewTestIdentityProviderConnectionRequestWithBody(server, clusterId, realmName, providerId, params, "application/json", bodyReader)
 }
 
 // NewTestIdentityProviderConnectionRequestWithBody generates requests for TestIdentityProviderConnection with any type of body
-func NewTestIdentityProviderConnectionRequestWithBody(server string, clusterId ClusterId, realmName RealmName, providerId ProviderId, contentType string, body io.Reader) (*http.Request, error) {
+func NewTestIdentityProviderConnectionRequestWithBody(server string, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *TestIdentityProviderConnectionParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9151,11 +11180,24 @@ func NewTestIdentityProviderConnectionRequestWithBody(server string, clusterId C
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListRealmRolesRequest generates requests for ListRealmRoles
-func NewListRealmRolesRequest(server string, clusterId ClusterId, realmName RealmName) (*http.Request, error) {
+func NewListRealmRolesRequest(server string, clusterId ClusterId, realmName RealmName, params *ListRealmRolesParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9192,22 +11234,35 @@ func NewListRealmRolesRequest(server string, clusterId ClusterId, realmName Real
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewCreateRealmRoleRequest calls the generic CreateRealmRole builder with application/json body
-func NewCreateRealmRoleRequest(server string, clusterId ClusterId, realmName RealmName, body CreateRealmRoleJSONRequestBody) (*http.Request, error) {
+func NewCreateRealmRoleRequest(server string, clusterId ClusterId, realmName RealmName, params *CreateRealmRoleParams, body CreateRealmRoleJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateRealmRoleRequestWithBody(server, clusterId, realmName, "application/json", bodyReader)
+	return NewCreateRealmRoleRequestWithBody(server, clusterId, realmName, params, "application/json", bodyReader)
 }
 
 // NewCreateRealmRoleRequestWithBody generates requests for CreateRealmRole with any type of body
-func NewCreateRealmRoleRequestWithBody(server string, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreateRealmRoleRequestWithBody(server string, clusterId ClusterId, realmName RealmName, params *CreateRealmRoleParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9246,11 +11301,24 @@ func NewCreateRealmRoleRequestWithBody(server string, clusterId ClusterId, realm
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteRealmRoleRequest generates requests for DeleteRealmRole
-func NewDeleteRealmRoleRequest(server string, clusterId ClusterId, realmName RealmName, roleName RealmRoleName) (*http.Request, error) {
+func NewDeleteRealmRoleRequest(server string, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *DeleteRealmRoleParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9294,11 +11362,24 @@ func NewDeleteRealmRoleRequest(server string, clusterId ClusterId, realmName Rea
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetRealmRoleRequest generates requests for GetRealmRole
-func NewGetRealmRoleRequest(server string, clusterId ClusterId, realmName RealmName, roleName RealmRoleName) (*http.Request, error) {
+func NewGetRealmRoleRequest(server string, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *GetRealmRoleParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9342,22 +11423,35 @@ func NewGetRealmRoleRequest(server string, clusterId ClusterId, realmName RealmN
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpdateRealmRoleRequest calls the generic UpdateRealmRole builder with application/json body
-func NewUpdateRealmRoleRequest(server string, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, body UpdateRealmRoleJSONRequestBody) (*http.Request, error) {
+func NewUpdateRealmRoleRequest(server string, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *UpdateRealmRoleParams, body UpdateRealmRoleJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateRealmRoleRequestWithBody(server, clusterId, realmName, roleName, "application/json", bodyReader)
+	return NewUpdateRealmRoleRequestWithBody(server, clusterId, realmName, roleName, params, "application/json", bodyReader)
 }
 
 // NewUpdateRealmRoleRequestWithBody generates requests for UpdateRealmRole with any type of body
-func NewUpdateRealmRoleRequestWithBody(server string, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateRealmRoleRequestWithBody(server string, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *UpdateRealmRoleParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9402,6 +11496,19 @@ func NewUpdateRealmRoleRequestWithBody(server string, clusterId ClusterId, realm
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
 
 	return req, nil
 }
@@ -9530,22 +11637,35 @@ func NewListRealmUsersRequest(server string, clusterId ClusterId, realmName Real
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewCreateRealmUserRequest calls the generic CreateRealmUser builder with application/json body
-func NewCreateRealmUserRequest(server string, clusterId ClusterId, realmName RealmName, body CreateRealmUserJSONRequestBody) (*http.Request, error) {
+func NewCreateRealmUserRequest(server string, clusterId ClusterId, realmName RealmName, params *CreateRealmUserParams, body CreateRealmUserJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateRealmUserRequestWithBody(server, clusterId, realmName, "application/json", bodyReader)
+	return NewCreateRealmUserRequestWithBody(server, clusterId, realmName, params, "application/json", bodyReader)
 }
 
 // NewCreateRealmUserRequestWithBody generates requests for CreateRealmUser with any type of body
-func NewCreateRealmUserRequestWithBody(server string, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreateRealmUserRequestWithBody(server string, clusterId ClusterId, realmName RealmName, params *CreateRealmUserParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9584,11 +11704,24 @@ func NewCreateRealmUserRequestWithBody(server string, clusterId ClusterId, realm
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteRealmUserRequest generates requests for DeleteRealmUser
-func NewDeleteRealmUserRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId) (*http.Request, error) {
+func NewDeleteRealmUserRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *DeleteRealmUserParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9632,11 +11765,24 @@ func NewDeleteRealmUserRequest(server string, clusterId ClusterId, realmName Rea
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetRealmUserRequest generates requests for GetRealmUser
-func NewGetRealmUserRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId) (*http.Request, error) {
+func NewGetRealmUserRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *GetRealmUserParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9680,22 +11826,35 @@ func NewGetRealmUserRequest(server string, clusterId ClusterId, realmName RealmN
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpdateRealmUserRequest calls the generic UpdateRealmUser builder with application/json body
-func NewUpdateRealmUserRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, body UpdateRealmUserJSONRequestBody) (*http.Request, error) {
+func NewUpdateRealmUserRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *UpdateRealmUserParams, body UpdateRealmUserJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateRealmUserRequestWithBody(server, clusterId, realmName, userId, "application/json", bodyReader)
+	return NewUpdateRealmUserRequestWithBody(server, clusterId, realmName, userId, params, "application/json", bodyReader)
 }
 
 // NewUpdateRealmUserRequestWithBody generates requests for UpdateRealmUser with any type of body
-func NewUpdateRealmUserRequestWithBody(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateRealmUserRequestWithBody(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *UpdateRealmUserParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9741,11 +11900,24 @@ func NewUpdateRealmUserRequestWithBody(server string, clusterId ClusterId, realm
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListRealmUserGroupsRequest generates requests for ListRealmUserGroups
-func NewListRealmUserGroupsRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId) (*http.Request, error) {
+func NewListRealmUserGroupsRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *ListRealmUserGroupsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9789,11 +11961,24 @@ func NewListRealmUserGroupsRequest(server string, clusterId ClusterId, realmName
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewRemoveRealmUserFromGroupRequest generates requests for RemoveRealmUserFromGroup
-func NewRemoveRealmUserFromGroupRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId) (*http.Request, error) {
+func NewRemoveRealmUserFromGroupRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, params *RemoveRealmUserFromGroupParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9844,11 +12029,24 @@ func NewRemoveRealmUserFromGroupRequest(server string, clusterId ClusterId, real
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewAddRealmUserToGroupRequest generates requests for AddRealmUserToGroup
-func NewAddRealmUserToGroupRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId) (*http.Request, error) {
+func NewAddRealmUserToGroupRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, params *AddRealmUserToGroupParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9899,11 +12097,24 @@ func NewAddRealmUserToGroupRequest(server string, clusterId ClusterId, realmName
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListRealmUserRolesRequest generates requests for ListRealmUserRoles
-func NewListRealmUserRolesRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId) (*http.Request, error) {
+func NewListRealmUserRolesRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *ListRealmUserRolesParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9947,22 +12158,35 @@ func NewListRealmUserRolesRequest(server string, clusterId ClusterId, realmName 
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewAssignRealmUserRolesRequest calls the generic AssignRealmUserRoles builder with application/json body
-func NewAssignRealmUserRolesRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, body AssignRealmUserRolesJSONRequestBody) (*http.Request, error) {
+func NewAssignRealmUserRolesRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *AssignRealmUserRolesParams, body AssignRealmUserRolesJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewAssignRealmUserRolesRequestWithBody(server, clusterId, realmName, userId, "application/json", bodyReader)
+	return NewAssignRealmUserRolesRequestWithBody(server, clusterId, realmName, userId, params, "application/json", bodyReader)
 }
 
 // NewAssignRealmUserRolesRequestWithBody generates requests for AssignRealmUserRoles with any type of body
-func NewAssignRealmUserRolesRequestWithBody(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, contentType string, body io.Reader) (*http.Request, error) {
+func NewAssignRealmUserRolesRequestWithBody(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *AssignRealmUserRolesParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10008,11 +12232,24 @@ func NewAssignRealmUserRolesRequestWithBody(server string, clusterId ClusterId, 
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewRemoveRealmUserRoleRequest generates requests for RemoveRealmUserRole
-func NewRemoveRealmUserRoleRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, roleName RealmRoleName) (*http.Request, error) {
+func NewRemoveRealmUserRoleRequest(server string, clusterId ClusterId, realmName RealmName, userId RealmUserId, roleName RealmRoleName, params *RemoveRealmUserRoleParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10063,11 +12300,24 @@ func NewRemoveRealmUserRoleRequest(server string, clusterId ClusterId, realmName
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetClientThemeAssignmentRequest generates requests for GetClientThemeAssignment
-func NewGetClientThemeAssignmentRequest(server string, clusterId ClusterId, realm RealmName, clientId ApplicationClientId) (*http.Request, error) {
+func NewGetClientThemeAssignmentRequest(server string, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *GetClientThemeAssignmentParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10111,22 +12361,35 @@ func NewGetClientThemeAssignmentRequest(server string, clusterId ClusterId, real
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewSetClientThemeAssignmentRequest calls the generic SetClientThemeAssignment builder with application/json body
-func NewSetClientThemeAssignmentRequest(server string, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, body SetClientThemeAssignmentJSONRequestBody) (*http.Request, error) {
+func NewSetClientThemeAssignmentRequest(server string, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *SetClientThemeAssignmentParams, body SetClientThemeAssignmentJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewSetClientThemeAssignmentRequestWithBody(server, clusterId, realm, clientId, "application/json", bodyReader)
+	return NewSetClientThemeAssignmentRequestWithBody(server, clusterId, realm, clientId, params, "application/json", bodyReader)
 }
 
 // NewSetClientThemeAssignmentRequestWithBody generates requests for SetClientThemeAssignment with any type of body
-func NewSetClientThemeAssignmentRequestWithBody(server string, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, contentType string, body io.Reader) (*http.Request, error) {
+func NewSetClientThemeAssignmentRequestWithBody(server string, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *SetClientThemeAssignmentParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10172,11 +12435,24 @@ func NewSetClientThemeAssignmentRequestWithBody(server string, clusterId Cluster
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteEmailBrandingRequest generates requests for DeleteEmailBranding
-func NewDeleteEmailBrandingRequest(server string, clusterId ClusterId, realm RealmName) (*http.Request, error) {
+func NewDeleteEmailBrandingRequest(server string, clusterId ClusterId, realm RealmName, params *DeleteEmailBrandingParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10211,13 +12487,26 @@ func NewDeleteEmailBrandingRequest(server string, clusterId ClusterId, realm Rea
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
 	}
 
 	return req, nil
 }
 
 // NewGetEmailBrandingRequest generates requests for GetEmailBranding
-func NewGetEmailBrandingRequest(server string, clusterId ClusterId, realm RealmName) (*http.Request, error) {
+func NewGetEmailBrandingRequest(server string, clusterId ClusterId, realm RealmName, params *GetEmailBrandingParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10252,24 +12541,37 @@ func NewGetEmailBrandingRequest(server string, clusterId ClusterId, realm RealmN
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
 	}
 
 	return req, nil
 }
 
 // NewUpsertEmailBrandingRequest calls the generic UpsertEmailBranding builder with application/json body
-func NewUpsertEmailBrandingRequest(server string, clusterId ClusterId, realm RealmName, body UpsertEmailBrandingJSONRequestBody) (*http.Request, error) {
+func NewUpsertEmailBrandingRequest(server string, clusterId ClusterId, realm RealmName, params *UpsertEmailBrandingParams, body UpsertEmailBrandingJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpsertEmailBrandingRequestWithBody(server, clusterId, realm, "application/json", bodyReader)
+	return NewUpsertEmailBrandingRequestWithBody(server, clusterId, realm, params, "application/json", bodyReader)
 }
 
 // NewUpsertEmailBrandingRequestWithBody generates requests for UpsertEmailBranding with any type of body
-func NewUpsertEmailBrandingRequestWithBody(server string, clusterId ClusterId, realm RealmName, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpsertEmailBrandingRequestWithBody(server string, clusterId ClusterId, realm RealmName, params *UpsertEmailBrandingParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10308,11 +12610,24 @@ func NewUpsertEmailBrandingRequestWithBody(server string, clusterId ClusterId, r
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteLoginBrandingRequest generates requests for DeleteLoginBranding
-func NewDeleteLoginBrandingRequest(server string, clusterId ClusterId, realm RealmName) (*http.Request, error) {
+func NewDeleteLoginBrandingRequest(server string, clusterId ClusterId, realm RealmName, params *DeleteLoginBrandingParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10347,13 +12662,26 @@ func NewDeleteLoginBrandingRequest(server string, clusterId ClusterId, realm Rea
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
 	}
 
 	return req, nil
 }
 
 // NewGetLoginBrandingRequest generates requests for GetLoginBranding
-func NewGetLoginBrandingRequest(server string, clusterId ClusterId, realm RealmName) (*http.Request, error) {
+func NewGetLoginBrandingRequest(server string, clusterId ClusterId, realm RealmName, params *GetLoginBrandingParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10390,22 +12718,35 @@ func NewGetLoginBrandingRequest(server string, clusterId ClusterId, realm RealmN
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpsertLoginBrandingRequest calls the generic UpsertLoginBranding builder with application/json body
-func NewUpsertLoginBrandingRequest(server string, clusterId ClusterId, realm RealmName, body UpsertLoginBrandingJSONRequestBody) (*http.Request, error) {
+func NewUpsertLoginBrandingRequest(server string, clusterId ClusterId, realm RealmName, params *UpsertLoginBrandingParams, body UpsertLoginBrandingJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpsertLoginBrandingRequestWithBody(server, clusterId, realm, "application/json", bodyReader)
+	return NewUpsertLoginBrandingRequestWithBody(server, clusterId, realm, params, "application/json", bodyReader)
 }
 
 // NewUpsertLoginBrandingRequestWithBody generates requests for UpsertLoginBranding with any type of body
-func NewUpsertLoginBrandingRequestWithBody(server string, clusterId ClusterId, realm RealmName, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpsertLoginBrandingRequestWithBody(server string, clusterId ClusterId, realm RealmName, params *UpsertLoginBrandingParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10444,11 +12785,24 @@ func NewUpsertLoginBrandingRequestWithBody(server string, clusterId ClusterId, r
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteSmtpConfigRequest generates requests for DeleteSmtpConfig
-func NewDeleteSmtpConfigRequest(server string, clusterId ClusterId, realm RealmName) (*http.Request, error) {
+func NewDeleteSmtpConfigRequest(server string, clusterId ClusterId, realm RealmName, params *DeleteSmtpConfigParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10485,11 +12839,24 @@ func NewDeleteSmtpConfigRequest(server string, clusterId ClusterId, realm RealmN
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetSmtpConfigRequest generates requests for GetSmtpConfig
-func NewGetSmtpConfigRequest(server string, clusterId ClusterId, realm RealmName) (*http.Request, error) {
+func NewGetSmtpConfigRequest(server string, clusterId ClusterId, realm RealmName, params *GetSmtpConfigParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10526,22 +12893,35 @@ func NewGetSmtpConfigRequest(server string, clusterId ClusterId, realm RealmName
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpsertSmtpConfigRequest calls the generic UpsertSmtpConfig builder with application/json body
-func NewUpsertSmtpConfigRequest(server string, clusterId ClusterId, realm RealmName, body UpsertSmtpConfigJSONRequestBody) (*http.Request, error) {
+func NewUpsertSmtpConfigRequest(server string, clusterId ClusterId, realm RealmName, params *UpsertSmtpConfigParams, body UpsertSmtpConfigJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpsertSmtpConfigRequestWithBody(server, clusterId, realm, "application/json", bodyReader)
+	return NewUpsertSmtpConfigRequestWithBody(server, clusterId, realm, params, "application/json", bodyReader)
 }
 
 // NewUpsertSmtpConfigRequestWithBody generates requests for UpsertSmtpConfig with any type of body
-func NewUpsertSmtpConfigRequestWithBody(server string, clusterId ClusterId, realm RealmName, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpsertSmtpConfigRequestWithBody(server string, clusterId ClusterId, realm RealmName, params *UpsertSmtpConfigParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10580,22 +12960,35 @@ func NewUpsertSmtpConfigRequestWithBody(server string, clusterId ClusterId, real
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewTestSmtpConfigRequest calls the generic TestSmtpConfig builder with application/json body
-func NewTestSmtpConfigRequest(server string, clusterId ClusterId, realm RealmName, body TestSmtpConfigJSONRequestBody) (*http.Request, error) {
+func NewTestSmtpConfigRequest(server string, clusterId ClusterId, realm RealmName, params *TestSmtpConfigParams, body TestSmtpConfigJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewTestSmtpConfigRequestWithBody(server, clusterId, realm, "application/json", bodyReader)
+	return NewTestSmtpConfigRequestWithBody(server, clusterId, realm, params, "application/json", bodyReader)
 }
 
 // NewTestSmtpConfigRequestWithBody generates requests for TestSmtpConfig with any type of body
-func NewTestSmtpConfigRequestWithBody(server string, clusterId ClusterId, realm RealmName, contentType string, body io.Reader) (*http.Request, error) {
+func NewTestSmtpConfigRequestWithBody(server string, clusterId ClusterId, realm RealmName, params *TestSmtpConfigParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10634,11 +13027,24 @@ func NewTestSmtpConfigRequestWithBody(server string, clusterId ClusterId, realm 
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetThemeAssignmentRequest generates requests for GetThemeAssignment
-func NewGetThemeAssignmentRequest(server string, clusterId ClusterId, realm RealmName) (*http.Request, error) {
+func NewGetThemeAssignmentRequest(server string, clusterId ClusterId, realm RealmName, params *GetThemeAssignmentParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10673,24 +13079,37 @@ func NewGetThemeAssignmentRequest(server string, clusterId ClusterId, realm Real
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
 	}
 
 	return req, nil
 }
 
 // NewSetThemeAssignmentRequest calls the generic SetThemeAssignment builder with application/json body
-func NewSetThemeAssignmentRequest(server string, clusterId ClusterId, realm RealmName, body SetThemeAssignmentJSONRequestBody) (*http.Request, error) {
+func NewSetThemeAssignmentRequest(server string, clusterId ClusterId, realm RealmName, params *SetThemeAssignmentParams, body SetThemeAssignmentJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewSetThemeAssignmentRequestWithBody(server, clusterId, realm, "application/json", bodyReader)
+	return NewSetThemeAssignmentRequestWithBody(server, clusterId, realm, params, "application/json", bodyReader)
 }
 
 // NewSetThemeAssignmentRequestWithBody generates requests for SetThemeAssignment with any type of body
-func NewSetThemeAssignmentRequestWithBody(server string, clusterId ClusterId, realm RealmName, contentType string, body io.Reader) (*http.Request, error) {
+func NewSetThemeAssignmentRequestWithBody(server string, clusterId ClusterId, realm RealmName, params *SetThemeAssignmentParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10729,11 +13148,24 @@ func NewSetThemeAssignmentRequestWithBody(server string, clusterId ClusterId, re
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetClusterSecurityRequest generates requests for GetClusterSecurity
-func NewGetClusterSecurityRequest(server string, clusterId ClusterId) (*http.Request, error) {
+func NewGetClusterSecurityRequest(server string, clusterId ClusterId, params *GetClusterSecurityParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10763,22 +13195,35 @@ func NewGetClusterSecurityRequest(server string, clusterId ClusterId) (*http.Req
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpdateClusterSecurityRequest calls the generic UpdateClusterSecurity builder with application/json body
-func NewUpdateClusterSecurityRequest(server string, clusterId ClusterId, body UpdateClusterSecurityJSONRequestBody) (*http.Request, error) {
+func NewUpdateClusterSecurityRequest(server string, clusterId ClusterId, params *UpdateClusterSecurityParams, body UpdateClusterSecurityJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateClusterSecurityRequestWithBody(server, clusterId, "application/json", bodyReader)
+	return NewUpdateClusterSecurityRequestWithBody(server, clusterId, params, "application/json", bodyReader)
 }
 
 // NewUpdateClusterSecurityRequestWithBody generates requests for UpdateClusterSecurity with any type of body
-func NewUpdateClusterSecurityRequestWithBody(server string, clusterId ClusterId, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateClusterSecurityRequestWithBody(server string, clusterId ClusterId, params *UpdateClusterSecurityParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -10809,6 +13254,19 @@ func NewUpdateClusterSecurityRequestWithBody(server string, clusterId ClusterId,
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
 
 	return req, nil
 }
@@ -11010,11 +13468,24 @@ func NewListClusterSecurityLogsRequest(server string, clusterId ClusterId, param
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListClusterCAPTCHADomainsRequest generates requests for ListClusterCAPTCHADomains
-func NewListClusterCAPTCHADomainsRequest(server string, clusterId ClusterId) (*http.Request, error) {
+func NewListClusterCAPTCHADomainsRequest(server string, clusterId ClusterId, params *ListClusterCAPTCHADomainsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11044,22 +13515,35 @@ func NewListClusterCAPTCHADomainsRequest(server string, clusterId ClusterId) (*h
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewAddClusterCAPTCHADomainRequest calls the generic AddClusterCAPTCHADomain builder with application/json body
-func NewAddClusterCAPTCHADomainRequest(server string, clusterId ClusterId, body AddClusterCAPTCHADomainJSONRequestBody) (*http.Request, error) {
+func NewAddClusterCAPTCHADomainRequest(server string, clusterId ClusterId, params *AddClusterCAPTCHADomainParams, body AddClusterCAPTCHADomainJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewAddClusterCAPTCHADomainRequestWithBody(server, clusterId, "application/json", bodyReader)
+	return NewAddClusterCAPTCHADomainRequestWithBody(server, clusterId, params, "application/json", bodyReader)
 }
 
 // NewAddClusterCAPTCHADomainRequestWithBody generates requests for AddClusterCAPTCHADomain with any type of body
-func NewAddClusterCAPTCHADomainRequestWithBody(server string, clusterId ClusterId, contentType string, body io.Reader) (*http.Request, error) {
+func NewAddClusterCAPTCHADomainRequestWithBody(server string, clusterId ClusterId, params *AddClusterCAPTCHADomainParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11091,11 +13575,24 @@ func NewAddClusterCAPTCHADomainRequestWithBody(server string, clusterId ClusterI
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewRemoveClusterCAPTCHADomainRequest generates requests for RemoveClusterCAPTCHADomain
-func NewRemoveClusterCAPTCHADomainRequest(server string, clusterId ClusterId, hostname string) (*http.Request, error) {
+func NewRemoveClusterCAPTCHADomainRequest(server string, clusterId ClusterId, hostname string, params *RemoveClusterCAPTCHADomainParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11132,11 +13629,24 @@ func NewRemoveClusterCAPTCHADomainRequest(server string, clusterId ClusterId, ho
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListThemesRequest generates requests for ListThemes
-func NewListThemesRequest(server string, clusterId ClusterId) (*http.Request, error) {
+func NewListThemesRequest(server string, clusterId ClusterId, params *ListThemesParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11166,11 +13676,24 @@ func NewListThemesRequest(server string, clusterId ClusterId) (*http.Request, er
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUploadThemeRequestWithBody generates requests for UploadTheme with any type of body
-func NewUploadThemeRequestWithBody(server string, clusterId ClusterId, contentType string, body io.Reader) (*http.Request, error) {
+func NewUploadThemeRequestWithBody(server string, clusterId ClusterId, params *UploadThemeParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11202,11 +13725,24 @@ func NewUploadThemeRequestWithBody(server string, clusterId ClusterId, contentTy
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteThemeRequest generates requests for DeleteTheme
-func NewDeleteThemeRequest(server string, clusterId ClusterId, themeId ThemeId) (*http.Request, error) {
+func NewDeleteThemeRequest(server string, clusterId ClusterId, themeId ThemeId, params *DeleteThemeParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11243,11 +13779,24 @@ func NewDeleteThemeRequest(server string, clusterId ClusterId, themeId ThemeId) 
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetThemeRequest generates requests for GetTheme
-func NewGetThemeRequest(server string, clusterId ClusterId, themeId ThemeId) (*http.Request, error) {
+func NewGetThemeRequest(server string, clusterId ClusterId, themeId ThemeId, params *GetThemeParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11284,22 +13833,35 @@ func NewGetThemeRequest(server string, clusterId ClusterId, themeId ThemeId) (*h
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpdateThemeRequest calls the generic UpdateTheme builder with application/json body
-func NewUpdateThemeRequest(server string, clusterId ClusterId, themeId ThemeId, body UpdateThemeJSONRequestBody) (*http.Request, error) {
+func NewUpdateThemeRequest(server string, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, body UpdateThemeJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateThemeRequestWithBody(server, clusterId, themeId, "application/json", bodyReader)
+	return NewUpdateThemeRequestWithBody(server, clusterId, themeId, params, "application/json", bodyReader)
 }
 
 // NewUpdateThemeRequestWithBody generates requests for UpdateTheme with any type of body
-func NewUpdateThemeRequestWithBody(server string, clusterId ClusterId, themeId ThemeId, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateThemeRequestWithBody(server string, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11338,11 +13900,24 @@ func NewUpdateThemeRequestWithBody(server string, clusterId ClusterId, themeId T
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetClusterUpgradePathRequest generates requests for GetClusterUpgradePath
-func NewGetClusterUpgradePathRequest(server string, clusterId ClusterId) (*http.Request, error) {
+func NewGetClusterUpgradePathRequest(server string, clusterId ClusterId, params *GetClusterUpgradePathParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11372,11 +13947,24 @@ func NewGetClusterUpgradePathRequest(server string, clusterId ClusterId) (*http.
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListClusterUpgradesRequest generates requests for ListClusterUpgrades
-func NewListClusterUpgradesRequest(server string, clusterId ClusterId) (*http.Request, error) {
+func NewListClusterUpgradesRequest(server string, clusterId ClusterId, params *ListClusterUpgradesParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11406,11 +13994,24 @@ func NewListClusterUpgradesRequest(server string, clusterId ClusterId) (*http.Re
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewCancelClusterUpgradeRequest generates requests for CancelClusterUpgrade
-func NewCancelClusterUpgradeRequest(server string, clusterId ClusterId) (*http.Request, error) {
+func NewCancelClusterUpgradeRequest(server string, clusterId ClusterId, params *CancelClusterUpgradeParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11440,11 +14041,24 @@ func NewCancelClusterUpgradeRequest(server string, clusterId ClusterId) (*http.R
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListExtensionsRequest generates requests for ListExtensions
-func NewListExtensionsRequest(server string) (*http.Request, error) {
+func NewListExtensionsRequest(server string, params *ListExtensionsParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -11467,11 +14081,24 @@ func NewListExtensionsRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUploadExtensionRequestWithBody generates requests for UploadExtension with any type of body
-func NewUploadExtensionRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+func NewUploadExtensionRequestWithBody(server string, params *UploadExtensionParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -11496,11 +14123,24 @@ func NewUploadExtensionRequestWithBody(server string, contentType string, body i
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDeleteExtensionRequest generates requests for DeleteExtension
-func NewDeleteExtensionRequest(server string, extensionId ExtensionId) (*http.Request, error) {
+func NewDeleteExtensionRequest(server string, extensionId ExtensionId, params *DeleteExtensionParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11530,11 +14170,24 @@ func NewDeleteExtensionRequest(server string, extensionId ExtensionId) (*http.Re
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewGetExtensionRequest generates requests for GetExtension
-func NewGetExtensionRequest(server string, extensionId ExtensionId) (*http.Request, error) {
+func NewGetExtensionRequest(server string, extensionId ExtensionId, params *GetExtensionParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11564,22 +14217,35 @@ func NewGetExtensionRequest(server string, extensionId ExtensionId) (*http.Reque
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewUpdateExtensionRequest calls the generic UpdateExtension builder with application/json body
-func NewUpdateExtensionRequest(server string, extensionId ExtensionId, body UpdateExtensionJSONRequestBody) (*http.Request, error) {
+func NewUpdateExtensionRequest(server string, extensionId ExtensionId, params *UpdateExtensionParams, body UpdateExtensionJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateExtensionRequestWithBody(server, extensionId, "application/json", bodyReader)
+	return NewUpdateExtensionRequestWithBody(server, extensionId, params, "application/json", bodyReader)
 }
 
 // NewUpdateExtensionRequestWithBody generates requests for UpdateExtension with any type of body
-func NewUpdateExtensionRequestWithBody(server string, extensionId ExtensionId, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateExtensionRequestWithBody(server string, extensionId ExtensionId, params *UpdateExtensionParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11611,11 +14277,24 @@ func NewUpdateExtensionRequestWithBody(server string, extensionId ExtensionId, c
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewPublishExtensionVersionRequestWithBody generates requests for PublishExtensionVersion with any type of body
-func NewPublishExtensionVersionRequestWithBody(server string, extensionId ExtensionId, contentType string, body io.Reader) (*http.Request, error) {
+func NewPublishExtensionVersionRequestWithBody(server string, extensionId ExtensionId, params *PublishExtensionVersionParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11647,11 +14326,24 @@ func NewPublishExtensionVersionRequestWithBody(server string, extensionId Extens
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewListIdentityProviderTemplatesRequest generates requests for ListIdentityProviderTemplates
-func NewListIdentityProviderTemplatesRequest(server string) (*http.Request, error) {
+func NewListIdentityProviderTemplatesRequest(server string, params *ListIdentityProviderTemplatesParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -11674,22 +14366,35 @@ func NewListIdentityProviderTemplatesRequest(server string) (*http.Request, erro
 		return nil, err
 	}
 
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
 	return req, nil
 }
 
 // NewDiscoverOIDCRequest calls the generic DiscoverOIDC builder with application/json body
-func NewDiscoverOIDCRequest(server string, body DiscoverOIDCJSONRequestBody) (*http.Request, error) {
+func NewDiscoverOIDCRequest(server string, params *DiscoverOIDCParams, body DiscoverOIDCJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewDiscoverOIDCRequestWithBody(server, "application/json", bodyReader)
+	return NewDiscoverOIDCRequestWithBody(server, params, "application/json", bodyReader)
 }
 
 // NewDiscoverOIDCRequestWithBody generates requests for DiscoverOIDC with any type of body
-func NewDiscoverOIDCRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+func NewDiscoverOIDCRequestWithBody(server string, params *DiscoverOIDCParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -11698,6 +14403,645 @@ func NewDiscoverOIDCRequestWithBody(server string, contentType string, body io.R
 	}
 
 	operationPath := fmt.Sprintf("/identity-providers/discover-oidc")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewListSIEMDestinationsRequest generates requests for ListSIEMDestinations
+func NewListSIEMDestinationsRequest(server string, params *ListSIEMDestinationsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/siem/destinations")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewCreateSIEMDestinationRequest calls the generic CreateSIEMDestination builder with application/json body
+func NewCreateSIEMDestinationRequest(server string, params *CreateSIEMDestinationParams, body CreateSIEMDestinationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateSIEMDestinationRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewCreateSIEMDestinationRequestWithBody generates requests for CreateSIEMDestination with any type of body
+func NewCreateSIEMDestinationRequestWithBody(server string, params *CreateSIEMDestinationParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/siem/destinations")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewDeleteSIEMDestinationRequest generates requests for DeleteSIEMDestination
+func NewDeleteSIEMDestinationRequest(server string, destinationId SIEMDestinationId, params *DeleteSIEMDestinationParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "destination_id", runtime.ParamLocationPath, destinationId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/siem/destinations/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetSIEMDestinationRequest generates requests for GetSIEMDestination
+func NewGetSIEMDestinationRequest(server string, destinationId SIEMDestinationId, params *GetSIEMDestinationParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "destination_id", runtime.ParamLocationPath, destinationId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/siem/destinations/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewUpdateSIEMDestinationRequest calls the generic UpdateSIEMDestination builder with application/json body
+func NewUpdateSIEMDestinationRequest(server string, destinationId SIEMDestinationId, params *UpdateSIEMDestinationParams, body UpdateSIEMDestinationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateSIEMDestinationRequestWithBody(server, destinationId, params, "application/json", bodyReader)
+}
+
+// NewUpdateSIEMDestinationRequestWithBody generates requests for UpdateSIEMDestination with any type of body
+func NewUpdateSIEMDestinationRequestWithBody(server string, destinationId SIEMDestinationId, params *UpdateSIEMDestinationParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "destination_id", runtime.ParamLocationPath, destinationId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/siem/destinations/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewTestSIEMDestinationRequest generates requests for TestSIEMDestination
+func NewTestSIEMDestinationRequest(server string, destinationId SIEMDestinationId, params *TestSIEMDestinationParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "destination_id", runtime.ParamLocationPath, destinationId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/siem/destinations/%s/test", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewListWebhookEventTypesRequest generates requests for ListWebhookEventTypes
+func NewListWebhookEventTypesRequest(server string, params *ListWebhookEventTypesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/webhook-event-types")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Source != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "source", runtime.ParamLocationQuery, *params.Source); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListWebhookSubscriptionsRequest generates requests for ListWebhookSubscriptions
+func NewListWebhookSubscriptionsRequest(server string, params *ListWebhookSubscriptionsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/webhooks")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.ClusterId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "cluster_id", runtime.ParamLocationQuery, *params.ClusterId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Source != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "source", runtime.ParamLocationQuery, *params.Source); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Enabled != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "enabled", runtime.ParamLocationQuery, *params.Enabled); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateWebhookSubscriptionRequest calls the generic CreateWebhookSubscription builder with application/json body
+func NewCreateWebhookSubscriptionRequest(server string, body CreateWebhookSubscriptionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateWebhookSubscriptionRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateWebhookSubscriptionRequestWithBody generates requests for CreateWebhookSubscription with any type of body
+func NewCreateWebhookSubscriptionRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/webhooks")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteWebhookSubscriptionRequest generates requests for DeleteWebhookSubscription
+func NewDeleteWebhookSubscriptionRequest(server string, webhookId WebhookId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "webhook_id", runtime.ParamLocationPath, webhookId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/webhooks/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetWebhookSubscriptionRequest generates requests for GetWebhookSubscription
+func NewGetWebhookSubscriptionRequest(server string, webhookId WebhookId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "webhook_id", runtime.ParamLocationPath, webhookId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/webhooks/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateWebhookSubscriptionRequest calls the generic UpdateWebhookSubscription builder with application/json body
+func NewUpdateWebhookSubscriptionRequest(server string, webhookId WebhookId, body UpdateWebhookSubscriptionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateWebhookSubscriptionRequestWithBody(server, webhookId, "application/json", bodyReader)
+}
+
+// NewUpdateWebhookSubscriptionRequestWithBody generates requests for UpdateWebhookSubscription with any type of body
+func NewUpdateWebhookSubscriptionRequestWithBody(server string, webhookId WebhookId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "webhook_id", runtime.ParamLocationPath, webhookId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/webhooks/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewTestWebhookSubscriptionRequest calls the generic TestWebhookSubscription builder with application/json body
+func NewTestWebhookSubscriptionRequest(server string, webhookId WebhookId, body TestWebhookSubscriptionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewTestWebhookSubscriptionRequestWithBody(server, webhookId, "application/json", bodyReader)
+}
+
+// NewTestWebhookSubscriptionRequestWithBody generates requests for TestWebhookSubscription with any type of body
+func NewTestWebhookSubscriptionRequestWithBody(server string, webhookId WebhookId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "webhook_id", runtime.ParamLocationPath, webhookId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/webhooks/%s/test", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -11761,80 +15105,80 @@ func WithBaseURL(baseURL string) ClientOption {
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
 	// ListClusterFeaturesWithResponse request
-	ListClusterFeaturesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListClusterFeaturesResponse, error)
+	ListClusterFeaturesWithResponse(ctx context.Context, params *ListClusterFeaturesParams, reqEditors ...RequestEditorFn) (*ListClusterFeaturesResponse, error)
 
 	// ListClusterLocationsWithResponse request
-	ListClusterLocationsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListClusterLocationsResponse, error)
+	ListClusterLocationsWithResponse(ctx context.Context, params *ListClusterLocationsParams, reqEditors ...RequestEditorFn) (*ListClusterLocationsResponse, error)
 
 	// ListClusterTypesWithResponse request
-	ListClusterTypesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListClusterTypesResponse, error)
+	ListClusterTypesWithResponse(ctx context.Context, params *ListClusterTypesParams, reqEditors ...RequestEditorFn) (*ListClusterTypesResponse, error)
 
 	// GetClusterTypeVersionsWithResponse request
-	GetClusterTypeVersionsWithResponse(ctx context.Context, clusterType ClusterType, reqEditors ...RequestEditorFn) (*GetClusterTypeVersionsResponse, error)
+	GetClusterTypeVersionsWithResponse(ctx context.Context, clusterType ClusterType, params *GetClusterTypeVersionsParams, reqEditors ...RequestEditorFn) (*GetClusterTypeVersionsResponse, error)
 
 	// ListClustersWithResponse request
-	ListClustersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListClustersResponse, error)
+	ListClustersWithResponse(ctx context.Context, params *ListClustersParams, reqEditors ...RequestEditorFn) (*ListClustersResponse, error)
 
 	// CreateClusterWithBodyWithResponse request with any body
-	CreateClusterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClusterResponse, error)
+	CreateClusterWithBodyWithResponse(ctx context.Context, params *CreateClusterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClusterResponse, error)
 
-	CreateClusterWithResponse(ctx context.Context, body CreateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClusterResponse, error)
+	CreateClusterWithResponse(ctx context.Context, params *CreateClusterParams, body CreateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClusterResponse, error)
 
 	// DeleteClusterWithResponse request
-	DeleteClusterWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*DeleteClusterResponse, error)
+	DeleteClusterWithResponse(ctx context.Context, clusterId ClusterId, params *DeleteClusterParams, reqEditors ...RequestEditorFn) (*DeleteClusterResponse, error)
 
 	// GetClusterWithResponse request
-	GetClusterWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*GetClusterResponse, error)
+	GetClusterWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterParams, reqEditors ...RequestEditorFn) (*GetClusterResponse, error)
 
 	// UpdateClusterWithBodyWithResponse request with any body
-	UpdateClusterWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error)
+	UpdateClusterWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error)
 
-	UpdateClusterWithResponse(ctx context.Context, clusterId ClusterId, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error)
+	UpdateClusterWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error)
 
 	// ListClusterBuildsWithResponse request
-	ListClusterBuildsWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListClusterBuildsResponse, error)
+	ListClusterBuildsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterBuildsParams, reqEditors ...RequestEditorFn) (*ListClusterBuildsResponse, error)
 
 	// GetClusterBuildWithResponse request
-	GetClusterBuildWithResponse(ctx context.Context, clusterId ClusterId, buildId BuildId, reqEditors ...RequestEditorFn) (*GetClusterBuildResponse, error)
+	GetClusterBuildWithResponse(ctx context.Context, clusterId ClusterId, buildId BuildId, params *GetClusterBuildParams, reqEditors ...RequestEditorFn) (*GetClusterBuildResponse, error)
 
 	// GetClusterCredentialsWithResponse request
-	GetClusterCredentialsWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*GetClusterCredentialsResponse, error)
+	GetClusterCredentialsWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterCredentialsParams, reqEditors ...RequestEditorFn) (*GetClusterCredentialsResponse, error)
 
 	// ListDomainsWithResponse request
 	ListDomainsWithResponse(ctx context.Context, clusterId ClusterId, params *ListDomainsParams, reqEditors ...RequestEditorFn) (*ListDomainsResponse, error)
 
 	// CreateDomainWithBodyWithResponse request with any body
-	CreateDomainWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDomainResponse, error)
+	CreateDomainWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *CreateDomainParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDomainResponse, error)
 
-	CreateDomainWithResponse(ctx context.Context, clusterId ClusterId, body CreateDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDomainResponse, error)
+	CreateDomainWithResponse(ctx context.Context, clusterId ClusterId, params *CreateDomainParams, body CreateDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDomainResponse, error)
 
 	// DeleteDomainWithResponse request
-	DeleteDomainWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*DeleteDomainResponse, error)
+	DeleteDomainWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, params *DeleteDomainParams, reqEditors ...RequestEditorFn) (*DeleteDomainResponse, error)
 
 	// GetDomainWithResponse request
-	GetDomainWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*GetDomainResponse, error)
+	GetDomainWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, params *GetDomainParams, reqEditors ...RequestEditorFn) (*GetDomainResponse, error)
 
 	// ListDomainRoutesWithResponse request
-	ListDomainRoutesWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*ListDomainRoutesResponse, error)
+	ListDomainRoutesWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, params *ListDomainRoutesParams, reqEditors ...RequestEditorFn) (*ListDomainRoutesResponse, error)
 
 	// CreateDomainRouteWithBodyWithResponse request with any body
-	CreateDomainRouteWithBodyWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDomainRouteResponse, error)
+	CreateDomainRouteWithBodyWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, params *CreateDomainRouteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDomainRouteResponse, error)
 
-	CreateDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, body CreateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDomainRouteResponse, error)
+	CreateDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, params *CreateDomainRouteParams, body CreateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDomainRouteResponse, error)
 
 	// DeleteDomainRouteWithResponse request
-	DeleteDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, reqEditors ...RequestEditorFn) (*DeleteDomainRouteResponse, error)
+	DeleteDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *DeleteDomainRouteParams, reqEditors ...RequestEditorFn) (*DeleteDomainRouteResponse, error)
 
 	// GetDomainRouteWithResponse request
-	GetDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, reqEditors ...RequestEditorFn) (*GetDomainRouteResponse, error)
+	GetDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *GetDomainRouteParams, reqEditors ...RequestEditorFn) (*GetDomainRouteResponse, error)
 
 	// UpdateDomainRouteWithBodyWithResponse request with any body
-	UpdateDomainRouteWithBodyWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateDomainRouteResponse, error)
+	UpdateDomainRouteWithBodyWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *UpdateDomainRouteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateDomainRouteResponse, error)
 
-	UpdateDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, body UpdateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateDomainRouteResponse, error)
+	UpdateDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *UpdateDomainRouteParams, body UpdateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateDomainRouteResponse, error)
 
 	// VerifyDomainWithResponse request
-	VerifyDomainWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*VerifyDomainResponse, error)
+	VerifyDomainWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, params *VerifyDomainParams, reqEditors ...RequestEditorFn) (*VerifyDomainResponse, error)
 
 	// ListClusterEventsWithResponse request
 	ListClusterEventsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterEventsParams, reqEditors ...RequestEditorFn) (*ListClusterEventsResponse, error)
@@ -11843,32 +15187,32 @@ type ClientWithResponsesInterface interface {
 	ExportClusterEventsWithResponse(ctx context.Context, clusterId ClusterId, params *ExportClusterEventsParams, reqEditors ...RequestEditorFn) (*ExportClusterEventsResponse, error)
 
 	// ListExportsWithResponse request
-	ListExportsWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListExportsResponse, error)
+	ListExportsWithResponse(ctx context.Context, clusterId ClusterId, params *ListExportsParams, reqEditors ...RequestEditorFn) (*ListExportsResponse, error)
 
 	// CreateExportWithBodyWithResponse request with any body
-	CreateExportWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateExportResponse, error)
+	CreateExportWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *CreateExportParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateExportResponse, error)
 
-	CreateExportWithResponse(ctx context.Context, clusterId ClusterId, body CreateExportJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateExportResponse, error)
+	CreateExportWithResponse(ctx context.Context, clusterId ClusterId, params *CreateExportParams, body CreateExportJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateExportResponse, error)
 
 	// DeleteExportWithResponse request
-	DeleteExportWithResponse(ctx context.Context, clusterId ClusterId, exportId ExportId, reqEditors ...RequestEditorFn) (*DeleteExportResponse, error)
+	DeleteExportWithResponse(ctx context.Context, clusterId ClusterId, exportId ExportId, params *DeleteExportParams, reqEditors ...RequestEditorFn) (*DeleteExportResponse, error)
 
 	// GetExportWithResponse request
-	GetExportWithResponse(ctx context.Context, clusterId ClusterId, exportId ExportId, reqEditors ...RequestEditorFn) (*GetExportResponse, error)
+	GetExportWithResponse(ctx context.Context, clusterId ClusterId, exportId ExportId, params *GetExportParams, reqEditors ...RequestEditorFn) (*GetExportResponse, error)
 
 	// ListClusterExtensionsWithResponse request
-	ListClusterExtensionsWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListClusterExtensionsResponse, error)
+	ListClusterExtensionsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterExtensionsParams, reqEditors ...RequestEditorFn) (*ListClusterExtensionsResponse, error)
 
 	// InstallExtensionWithBodyWithResponse request with any body
-	InstallExtensionWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*InstallExtensionResponse, error)
+	InstallExtensionWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *InstallExtensionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*InstallExtensionResponse, error)
 
-	InstallExtensionWithResponse(ctx context.Context, clusterId ClusterId, body InstallExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*InstallExtensionResponse, error)
+	InstallExtensionWithResponse(ctx context.Context, clusterId ClusterId, params *InstallExtensionParams, body InstallExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*InstallExtensionResponse, error)
 
 	// UninstallExtensionWithResponse request
-	UninstallExtensionWithResponse(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*UninstallExtensionResponse, error)
+	UninstallExtensionWithResponse(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, params *UninstallExtensionParams, reqEditors ...RequestEditorFn) (*UninstallExtensionResponse, error)
 
 	// UpgradeClusterExtensionWithResponse request
-	UpgradeClusterExtensionWithResponse(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*UpgradeClusterExtensionResponse, error)
+	UpgradeClusterExtensionWithResponse(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, params *UpgradeClusterExtensionParams, reqEditors ...RequestEditorFn) (*UpgradeClusterExtensionResponse, error)
 
 	// GetClusterInsightsAuthenticationWithResponse request
 	GetClusterInsightsAuthenticationWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterInsightsAuthenticationParams, reqEditors ...RequestEditorFn) (*GetClusterInsightsAuthenticationResponse, error)
@@ -11889,293 +15233,342 @@ type ClientWithResponsesInterface interface {
 	ListClusterLogsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterLogsParams, reqEditors ...RequestEditorFn) (*ListClusterLogsResponse, error)
 
 	// ListRealmsWithResponse request
-	ListRealmsWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListRealmsResponse, error)
+	ListRealmsWithResponse(ctx context.Context, clusterId ClusterId, params *ListRealmsParams, reqEditors ...RequestEditorFn) (*ListRealmsResponse, error)
 
 	// CreateRealmWithBodyWithResponse request with any body
-	CreateRealmWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmResponse, error)
+	CreateRealmWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *CreateRealmParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmResponse, error)
 
-	CreateRealmWithResponse(ctx context.Context, clusterId ClusterId, body CreateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmResponse, error)
+	CreateRealmWithResponse(ctx context.Context, clusterId ClusterId, params *CreateRealmParams, body CreateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmResponse, error)
 
 	// DeleteRealmWithResponse request
-	DeleteRealmWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*DeleteRealmResponse, error)
+	DeleteRealmWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *DeleteRealmParams, reqEditors ...RequestEditorFn) (*DeleteRealmResponse, error)
 
 	// GetRealmWithResponse request
-	GetRealmWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*GetRealmResponse, error)
+	GetRealmWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *GetRealmParams, reqEditors ...RequestEditorFn) (*GetRealmResponse, error)
 
 	// UpdateRealmWithBodyWithResponse request with any body
-	UpdateRealmWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmResponse, error)
+	UpdateRealmWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *UpdateRealmParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmResponse, error)
 
-	UpdateRealmWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, body UpdateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmResponse, error)
+	UpdateRealmWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *UpdateRealmParams, body UpdateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmResponse, error)
 
 	// ListApplicationsWithResponse request
 	ListApplicationsWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListApplicationsParams, reqEditors ...RequestEditorFn) (*ListApplicationsResponse, error)
 
 	// CreateApplicationWithBodyWithResponse request with any body
-	CreateApplicationWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateApplicationResponse, error)
+	CreateApplicationWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateApplicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateApplicationResponse, error)
 
-	CreateApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateApplicationResponse, error)
+	CreateApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateApplicationParams, body CreateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateApplicationResponse, error)
 
 	// DeleteApplicationWithResponse request
-	DeleteApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*DeleteApplicationResponse, error)
+	DeleteApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *DeleteApplicationParams, reqEditors ...RequestEditorFn) (*DeleteApplicationResponse, error)
 
 	// GetApplicationWithResponse request
-	GetApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*GetApplicationResponse, error)
+	GetApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *GetApplicationParams, reqEditors ...RequestEditorFn) (*GetApplicationResponse, error)
 
 	// UpdateApplicationWithBodyWithResponse request with any body
-	UpdateApplicationWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateApplicationResponse, error)
+	UpdateApplicationWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *UpdateApplicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateApplicationResponse, error)
 
-	UpdateApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateApplicationResponse, error)
+	UpdateApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *UpdateApplicationParams, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateApplicationResponse, error)
 
 	// ListApplicationRolesWithResponse request
-	ListApplicationRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*ListApplicationRolesResponse, error)
+	ListApplicationRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *ListApplicationRolesParams, reqEditors ...RequestEditorFn) (*ListApplicationRolesResponse, error)
 
 	// AssignApplicationRoleWithBodyWithResponse request with any body
-	AssignApplicationRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AssignApplicationRoleResponse, error)
+	AssignApplicationRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *AssignApplicationRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AssignApplicationRoleResponse, error)
 
-	AssignApplicationRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, body AssignApplicationRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignApplicationRoleResponse, error)
+	AssignApplicationRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *AssignApplicationRoleParams, body AssignApplicationRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignApplicationRoleResponse, error)
 
 	// RemoveApplicationRoleWithResponse request
 	RemoveApplicationRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, roleName string, params *RemoveApplicationRoleParams, reqEditors ...RequestEditorFn) (*RemoveApplicationRoleResponse, error)
 
 	// RotateApplicationSecretWithResponse request
-	RotateApplicationSecretWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*RotateApplicationSecretResponse, error)
+	RotateApplicationSecretWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *RotateApplicationSecretParams, reqEditors ...RequestEditorFn) (*RotateApplicationSecretResponse, error)
 
 	// ListApplicationSessionsWithResponse request
-	ListApplicationSessionsWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*ListApplicationSessionsResponse, error)
+	ListApplicationSessionsWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *ListApplicationSessionsParams, reqEditors ...RequestEditorFn) (*ListApplicationSessionsResponse, error)
 
 	// ListRealmGroupsWithResponse request
 	ListRealmGroupsWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListRealmGroupsParams, reqEditors ...RequestEditorFn) (*ListRealmGroupsResponse, error)
 
 	// CreateRealmGroupWithBodyWithResponse request with any body
-	CreateRealmGroupWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmGroupResponse, error)
+	CreateRealmGroupWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmGroupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmGroupResponse, error)
 
-	CreateRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmGroupResponse, error)
+	CreateRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmGroupParams, body CreateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmGroupResponse, error)
 
 	// DeleteRealmGroupWithResponse request
-	DeleteRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*DeleteRealmGroupResponse, error)
+	DeleteRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *DeleteRealmGroupParams, reqEditors ...RequestEditorFn) (*DeleteRealmGroupResponse, error)
 
 	// GetRealmGroupWithResponse request
-	GetRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*GetRealmGroupResponse, error)
+	GetRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *GetRealmGroupParams, reqEditors ...RequestEditorFn) (*GetRealmGroupResponse, error)
 
 	// UpdateRealmGroupWithBodyWithResponse request with any body
-	UpdateRealmGroupWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmGroupResponse, error)
+	UpdateRealmGroupWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *UpdateRealmGroupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmGroupResponse, error)
 
-	UpdateRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, body UpdateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmGroupResponse, error)
+	UpdateRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *UpdateRealmGroupParams, body UpdateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmGroupResponse, error)
 
 	// ListRealmGroupMembersWithResponse request
 	ListRealmGroupMembersWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *ListRealmGroupMembersParams, reqEditors ...RequestEditorFn) (*ListRealmGroupMembersResponse, error)
 
 	// ListIdentityProvidersWithResponse request
-	ListIdentityProvidersWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*ListIdentityProvidersResponse, error)
+	ListIdentityProvidersWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListIdentityProvidersParams, reqEditors ...RequestEditorFn) (*ListIdentityProvidersResponse, error)
 
 	// CreateIdentityProviderWithBodyWithResponse request with any body
-	CreateIdentityProviderWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateIdentityProviderResponse, error)
+	CreateIdentityProviderWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateIdentityProviderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateIdentityProviderResponse, error)
 
-	CreateIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateIdentityProviderResponse, error)
+	CreateIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateIdentityProviderParams, body CreateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateIdentityProviderResponse, error)
 
 	// DeleteIdentityProviderWithResponse request
-	DeleteIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, reqEditors ...RequestEditorFn) (*DeleteIdentityProviderResponse, error)
+	DeleteIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *DeleteIdentityProviderParams, reqEditors ...RequestEditorFn) (*DeleteIdentityProviderResponse, error)
 
 	// GetIdentityProviderWithResponse request
-	GetIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, reqEditors ...RequestEditorFn) (*GetIdentityProviderResponse, error)
+	GetIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *GetIdentityProviderParams, reqEditors ...RequestEditorFn) (*GetIdentityProviderResponse, error)
 
 	// UpdateIdentityProviderWithBodyWithResponse request with any body
-	UpdateIdentityProviderWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateIdentityProviderResponse, error)
+	UpdateIdentityProviderWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *UpdateIdentityProviderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateIdentityProviderResponse, error)
 
-	UpdateIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, body UpdateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateIdentityProviderResponse, error)
+	UpdateIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *UpdateIdentityProviderParams, body UpdateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateIdentityProviderResponse, error)
 
 	// TestIdentityProviderConnectionWithBodyWithResponse request with any body
-	TestIdentityProviderConnectionWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestIdentityProviderConnectionResponse, error)
+	TestIdentityProviderConnectionWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *TestIdentityProviderConnectionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestIdentityProviderConnectionResponse, error)
 
-	TestIdentityProviderConnectionWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, body TestIdentityProviderConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*TestIdentityProviderConnectionResponse, error)
+	TestIdentityProviderConnectionWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *TestIdentityProviderConnectionParams, body TestIdentityProviderConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*TestIdentityProviderConnectionResponse, error)
 
 	// ListRealmRolesWithResponse request
-	ListRealmRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*ListRealmRolesResponse, error)
+	ListRealmRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListRealmRolesParams, reqEditors ...RequestEditorFn) (*ListRealmRolesResponse, error)
 
 	// CreateRealmRoleWithBodyWithResponse request with any body
-	CreateRealmRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmRoleResponse, error)
+	CreateRealmRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmRoleResponse, error)
 
-	CreateRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmRoleResponse, error)
+	CreateRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmRoleParams, body CreateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmRoleResponse, error)
 
 	// DeleteRealmRoleWithResponse request
-	DeleteRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, reqEditors ...RequestEditorFn) (*DeleteRealmRoleResponse, error)
+	DeleteRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *DeleteRealmRoleParams, reqEditors ...RequestEditorFn) (*DeleteRealmRoleResponse, error)
 
 	// GetRealmRoleWithResponse request
-	GetRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, reqEditors ...RequestEditorFn) (*GetRealmRoleResponse, error)
+	GetRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *GetRealmRoleParams, reqEditors ...RequestEditorFn) (*GetRealmRoleResponse, error)
 
 	// UpdateRealmRoleWithBodyWithResponse request with any body
-	UpdateRealmRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmRoleResponse, error)
+	UpdateRealmRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *UpdateRealmRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmRoleResponse, error)
 
-	UpdateRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, body UpdateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmRoleResponse, error)
+	UpdateRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *UpdateRealmRoleParams, body UpdateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmRoleResponse, error)
 
 	// ListRealmUsersWithResponse request
 	ListRealmUsersWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListRealmUsersParams, reqEditors ...RequestEditorFn) (*ListRealmUsersResponse, error)
 
 	// CreateRealmUserWithBodyWithResponse request with any body
-	CreateRealmUserWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmUserResponse, error)
+	CreateRealmUserWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmUserResponse, error)
 
-	CreateRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmUserResponse, error)
+	CreateRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmUserParams, body CreateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmUserResponse, error)
 
 	// DeleteRealmUserWithResponse request
-	DeleteRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*DeleteRealmUserResponse, error)
+	DeleteRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *DeleteRealmUserParams, reqEditors ...RequestEditorFn) (*DeleteRealmUserResponse, error)
 
 	// GetRealmUserWithResponse request
-	GetRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*GetRealmUserResponse, error)
+	GetRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *GetRealmUserParams, reqEditors ...RequestEditorFn) (*GetRealmUserResponse, error)
 
 	// UpdateRealmUserWithBodyWithResponse request with any body
-	UpdateRealmUserWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmUserResponse, error)
+	UpdateRealmUserWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *UpdateRealmUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmUserResponse, error)
 
-	UpdateRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, body UpdateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmUserResponse, error)
+	UpdateRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *UpdateRealmUserParams, body UpdateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmUserResponse, error)
 
 	// ListRealmUserGroupsWithResponse request
-	ListRealmUserGroupsWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*ListRealmUserGroupsResponse, error)
+	ListRealmUserGroupsWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *ListRealmUserGroupsParams, reqEditors ...RequestEditorFn) (*ListRealmUserGroupsResponse, error)
 
 	// RemoveRealmUserFromGroupWithResponse request
-	RemoveRealmUserFromGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*RemoveRealmUserFromGroupResponse, error)
+	RemoveRealmUserFromGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, params *RemoveRealmUserFromGroupParams, reqEditors ...RequestEditorFn) (*RemoveRealmUserFromGroupResponse, error)
 
 	// AddRealmUserToGroupWithResponse request
-	AddRealmUserToGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*AddRealmUserToGroupResponse, error)
+	AddRealmUserToGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, params *AddRealmUserToGroupParams, reqEditors ...RequestEditorFn) (*AddRealmUserToGroupResponse, error)
 
 	// ListRealmUserRolesWithResponse request
-	ListRealmUserRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*ListRealmUserRolesResponse, error)
+	ListRealmUserRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *ListRealmUserRolesParams, reqEditors ...RequestEditorFn) (*ListRealmUserRolesResponse, error)
 
 	// AssignRealmUserRolesWithBodyWithResponse request with any body
-	AssignRealmUserRolesWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AssignRealmUserRolesResponse, error)
+	AssignRealmUserRolesWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *AssignRealmUserRolesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AssignRealmUserRolesResponse, error)
 
-	AssignRealmUserRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, body AssignRealmUserRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignRealmUserRolesResponse, error)
+	AssignRealmUserRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *AssignRealmUserRolesParams, body AssignRealmUserRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignRealmUserRolesResponse, error)
 
 	// RemoveRealmUserRoleWithResponse request
-	RemoveRealmUserRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, roleName RealmRoleName, reqEditors ...RequestEditorFn) (*RemoveRealmUserRoleResponse, error)
+	RemoveRealmUserRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, roleName RealmRoleName, params *RemoveRealmUserRoleParams, reqEditors ...RequestEditorFn) (*RemoveRealmUserRoleResponse, error)
 
 	// GetClientThemeAssignmentWithResponse request
-	GetClientThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*GetClientThemeAssignmentResponse, error)
+	GetClientThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *GetClientThemeAssignmentParams, reqEditors ...RequestEditorFn) (*GetClientThemeAssignmentResponse, error)
 
 	// SetClientThemeAssignmentWithBodyWithResponse request with any body
-	SetClientThemeAssignmentWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetClientThemeAssignmentResponse, error)
+	SetClientThemeAssignmentWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *SetClientThemeAssignmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetClientThemeAssignmentResponse, error)
 
-	SetClientThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, body SetClientThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*SetClientThemeAssignmentResponse, error)
+	SetClientThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *SetClientThemeAssignmentParams, body SetClientThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*SetClientThemeAssignmentResponse, error)
 
 	// DeleteEmailBrandingWithResponse request
-	DeleteEmailBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*DeleteEmailBrandingResponse, error)
+	DeleteEmailBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *DeleteEmailBrandingParams, reqEditors ...RequestEditorFn) (*DeleteEmailBrandingResponse, error)
 
 	// GetEmailBrandingWithResponse request
-	GetEmailBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*GetEmailBrandingResponse, error)
+	GetEmailBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetEmailBrandingParams, reqEditors ...RequestEditorFn) (*GetEmailBrandingResponse, error)
 
 	// UpsertEmailBrandingWithBodyWithResponse request with any body
-	UpsertEmailBrandingWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertEmailBrandingResponse, error)
+	UpsertEmailBrandingWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertEmailBrandingParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertEmailBrandingResponse, error)
 
-	UpsertEmailBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, body UpsertEmailBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertEmailBrandingResponse, error)
+	UpsertEmailBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertEmailBrandingParams, body UpsertEmailBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertEmailBrandingResponse, error)
 
 	// DeleteLoginBrandingWithResponse request
-	DeleteLoginBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*DeleteLoginBrandingResponse, error)
+	DeleteLoginBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *DeleteLoginBrandingParams, reqEditors ...RequestEditorFn) (*DeleteLoginBrandingResponse, error)
 
 	// GetLoginBrandingWithResponse request
-	GetLoginBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*GetLoginBrandingResponse, error)
+	GetLoginBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetLoginBrandingParams, reqEditors ...RequestEditorFn) (*GetLoginBrandingResponse, error)
 
 	// UpsertLoginBrandingWithBodyWithResponse request with any body
-	UpsertLoginBrandingWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertLoginBrandingResponse, error)
+	UpsertLoginBrandingWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertLoginBrandingParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertLoginBrandingResponse, error)
 
-	UpsertLoginBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, body UpsertLoginBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertLoginBrandingResponse, error)
+	UpsertLoginBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertLoginBrandingParams, body UpsertLoginBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertLoginBrandingResponse, error)
 
 	// DeleteSmtpConfigWithResponse request
-	DeleteSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*DeleteSmtpConfigResponse, error)
+	DeleteSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *DeleteSmtpConfigParams, reqEditors ...RequestEditorFn) (*DeleteSmtpConfigResponse, error)
 
 	// GetSmtpConfigWithResponse request
-	GetSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*GetSmtpConfigResponse, error)
+	GetSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetSmtpConfigParams, reqEditors ...RequestEditorFn) (*GetSmtpConfigResponse, error)
 
 	// UpsertSmtpConfigWithBodyWithResponse request with any body
-	UpsertSmtpConfigWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertSmtpConfigResponse, error)
+	UpsertSmtpConfigWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertSmtpConfigParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertSmtpConfigResponse, error)
 
-	UpsertSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, body UpsertSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertSmtpConfigResponse, error)
+	UpsertSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertSmtpConfigParams, body UpsertSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertSmtpConfigResponse, error)
 
 	// TestSmtpConfigWithBodyWithResponse request with any body
-	TestSmtpConfigWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestSmtpConfigResponse, error)
+	TestSmtpConfigWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *TestSmtpConfigParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestSmtpConfigResponse, error)
 
-	TestSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, body TestSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*TestSmtpConfigResponse, error)
+	TestSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *TestSmtpConfigParams, body TestSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*TestSmtpConfigResponse, error)
 
 	// GetThemeAssignmentWithResponse request
-	GetThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*GetThemeAssignmentResponse, error)
+	GetThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetThemeAssignmentParams, reqEditors ...RequestEditorFn) (*GetThemeAssignmentResponse, error)
 
 	// SetThemeAssignmentWithBodyWithResponse request with any body
-	SetThemeAssignmentWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetThemeAssignmentResponse, error)
+	SetThemeAssignmentWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *SetThemeAssignmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetThemeAssignmentResponse, error)
 
-	SetThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, body SetThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*SetThemeAssignmentResponse, error)
+	SetThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *SetThemeAssignmentParams, body SetThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*SetThemeAssignmentResponse, error)
 
 	// GetClusterSecurityWithResponse request
-	GetClusterSecurityWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*GetClusterSecurityResponse, error)
+	GetClusterSecurityWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterSecurityParams, reqEditors ...RequestEditorFn) (*GetClusterSecurityResponse, error)
 
 	// UpdateClusterSecurityWithBodyWithResponse request with any body
-	UpdateClusterSecurityWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterSecurityResponse, error)
+	UpdateClusterSecurityWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterSecurityParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterSecurityResponse, error)
 
-	UpdateClusterSecurityWithResponse(ctx context.Context, clusterId ClusterId, body UpdateClusterSecurityJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterSecurityResponse, error)
+	UpdateClusterSecurityWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterSecurityParams, body UpdateClusterSecurityJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterSecurityResponse, error)
 
 	// ListClusterSecurityLogsWithResponse request
 	ListClusterSecurityLogsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterSecurityLogsParams, reqEditors ...RequestEditorFn) (*ListClusterSecurityLogsResponse, error)
 
 	// ListClusterCAPTCHADomainsWithResponse request
-	ListClusterCAPTCHADomainsWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListClusterCAPTCHADomainsResponse, error)
+	ListClusterCAPTCHADomainsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterCAPTCHADomainsParams, reqEditors ...RequestEditorFn) (*ListClusterCAPTCHADomainsResponse, error)
 
 	// AddClusterCAPTCHADomainWithBodyWithResponse request with any body
-	AddClusterCAPTCHADomainWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddClusterCAPTCHADomainResponse, error)
+	AddClusterCAPTCHADomainWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *AddClusterCAPTCHADomainParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddClusterCAPTCHADomainResponse, error)
 
-	AddClusterCAPTCHADomainWithResponse(ctx context.Context, clusterId ClusterId, body AddClusterCAPTCHADomainJSONRequestBody, reqEditors ...RequestEditorFn) (*AddClusterCAPTCHADomainResponse, error)
+	AddClusterCAPTCHADomainWithResponse(ctx context.Context, clusterId ClusterId, params *AddClusterCAPTCHADomainParams, body AddClusterCAPTCHADomainJSONRequestBody, reqEditors ...RequestEditorFn) (*AddClusterCAPTCHADomainResponse, error)
 
 	// RemoveClusterCAPTCHADomainWithResponse request
-	RemoveClusterCAPTCHADomainWithResponse(ctx context.Context, clusterId ClusterId, hostname string, reqEditors ...RequestEditorFn) (*RemoveClusterCAPTCHADomainResponse, error)
+	RemoveClusterCAPTCHADomainWithResponse(ctx context.Context, clusterId ClusterId, hostname string, params *RemoveClusterCAPTCHADomainParams, reqEditors ...RequestEditorFn) (*RemoveClusterCAPTCHADomainResponse, error)
 
 	// ListThemesWithResponse request
-	ListThemesWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListThemesResponse, error)
+	ListThemesWithResponse(ctx context.Context, clusterId ClusterId, params *ListThemesParams, reqEditors ...RequestEditorFn) (*ListThemesResponse, error)
 
 	// UploadThemeWithBodyWithResponse request with any body
-	UploadThemeWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadThemeResponse, error)
+	UploadThemeWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *UploadThemeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadThemeResponse, error)
 
 	// DeleteThemeWithResponse request
-	DeleteThemeWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, reqEditors ...RequestEditorFn) (*DeleteThemeResponse, error)
+	DeleteThemeWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *DeleteThemeParams, reqEditors ...RequestEditorFn) (*DeleteThemeResponse, error)
 
 	// GetThemeWithResponse request
-	GetThemeWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, reqEditors ...RequestEditorFn) (*GetThemeResponse, error)
+	GetThemeWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *GetThemeParams, reqEditors ...RequestEditorFn) (*GetThemeResponse, error)
 
 	// UpdateThemeWithBodyWithResponse request with any body
-	UpdateThemeWithBodyWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateThemeResponse, error)
+	UpdateThemeWithBodyWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateThemeResponse, error)
 
-	UpdateThemeWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, body UpdateThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateThemeResponse, error)
+	UpdateThemeWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, body UpdateThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateThemeResponse, error)
 
 	// GetClusterUpgradePathWithResponse request
-	GetClusterUpgradePathWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*GetClusterUpgradePathResponse, error)
+	GetClusterUpgradePathWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterUpgradePathParams, reqEditors ...RequestEditorFn) (*GetClusterUpgradePathResponse, error)
 
 	// ListClusterUpgradesWithResponse request
-	ListClusterUpgradesWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListClusterUpgradesResponse, error)
+	ListClusterUpgradesWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterUpgradesParams, reqEditors ...RequestEditorFn) (*ListClusterUpgradesResponse, error)
 
 	// CancelClusterUpgradeWithResponse request
-	CancelClusterUpgradeWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*CancelClusterUpgradeResponse, error)
+	CancelClusterUpgradeWithResponse(ctx context.Context, clusterId ClusterId, params *CancelClusterUpgradeParams, reqEditors ...RequestEditorFn) (*CancelClusterUpgradeResponse, error)
 
 	// ListExtensionsWithResponse request
-	ListExtensionsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListExtensionsResponse, error)
+	ListExtensionsWithResponse(ctx context.Context, params *ListExtensionsParams, reqEditors ...RequestEditorFn) (*ListExtensionsResponse, error)
 
 	// UploadExtensionWithBodyWithResponse request with any body
-	UploadExtensionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadExtensionResponse, error)
+	UploadExtensionWithBodyWithResponse(ctx context.Context, params *UploadExtensionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadExtensionResponse, error)
 
 	// DeleteExtensionWithResponse request
-	DeleteExtensionWithResponse(ctx context.Context, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*DeleteExtensionResponse, error)
+	DeleteExtensionWithResponse(ctx context.Context, extensionId ExtensionId, params *DeleteExtensionParams, reqEditors ...RequestEditorFn) (*DeleteExtensionResponse, error)
 
 	// GetExtensionWithResponse request
-	GetExtensionWithResponse(ctx context.Context, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*GetExtensionResponse, error)
+	GetExtensionWithResponse(ctx context.Context, extensionId ExtensionId, params *GetExtensionParams, reqEditors ...RequestEditorFn) (*GetExtensionResponse, error)
 
 	// UpdateExtensionWithBodyWithResponse request with any body
-	UpdateExtensionWithBodyWithResponse(ctx context.Context, extensionId ExtensionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateExtensionResponse, error)
+	UpdateExtensionWithBodyWithResponse(ctx context.Context, extensionId ExtensionId, params *UpdateExtensionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateExtensionResponse, error)
 
-	UpdateExtensionWithResponse(ctx context.Context, extensionId ExtensionId, body UpdateExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateExtensionResponse, error)
+	UpdateExtensionWithResponse(ctx context.Context, extensionId ExtensionId, params *UpdateExtensionParams, body UpdateExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateExtensionResponse, error)
 
 	// PublishExtensionVersionWithBodyWithResponse request with any body
-	PublishExtensionVersionWithBodyWithResponse(ctx context.Context, extensionId ExtensionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PublishExtensionVersionResponse, error)
+	PublishExtensionVersionWithBodyWithResponse(ctx context.Context, extensionId ExtensionId, params *PublishExtensionVersionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PublishExtensionVersionResponse, error)
 
 	// ListIdentityProviderTemplatesWithResponse request
-	ListIdentityProviderTemplatesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListIdentityProviderTemplatesResponse, error)
+	ListIdentityProviderTemplatesWithResponse(ctx context.Context, params *ListIdentityProviderTemplatesParams, reqEditors ...RequestEditorFn) (*ListIdentityProviderTemplatesResponse, error)
 
 	// DiscoverOIDCWithBodyWithResponse request with any body
-	DiscoverOIDCWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DiscoverOIDCResponse, error)
+	DiscoverOIDCWithBodyWithResponse(ctx context.Context, params *DiscoverOIDCParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DiscoverOIDCResponse, error)
 
-	DiscoverOIDCWithResponse(ctx context.Context, body DiscoverOIDCJSONRequestBody, reqEditors ...RequestEditorFn) (*DiscoverOIDCResponse, error)
+	DiscoverOIDCWithResponse(ctx context.Context, params *DiscoverOIDCParams, body DiscoverOIDCJSONRequestBody, reqEditors ...RequestEditorFn) (*DiscoverOIDCResponse, error)
+
+	// ListSIEMDestinationsWithResponse request
+	ListSIEMDestinationsWithResponse(ctx context.Context, params *ListSIEMDestinationsParams, reqEditors ...RequestEditorFn) (*ListSIEMDestinationsResponse, error)
+
+	// CreateSIEMDestinationWithBodyWithResponse request with any body
+	CreateSIEMDestinationWithBodyWithResponse(ctx context.Context, params *CreateSIEMDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateSIEMDestinationResponse, error)
+
+	CreateSIEMDestinationWithResponse(ctx context.Context, params *CreateSIEMDestinationParams, body CreateSIEMDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateSIEMDestinationResponse, error)
+
+	// DeleteSIEMDestinationWithResponse request
+	DeleteSIEMDestinationWithResponse(ctx context.Context, destinationId SIEMDestinationId, params *DeleteSIEMDestinationParams, reqEditors ...RequestEditorFn) (*DeleteSIEMDestinationResponse, error)
+
+	// GetSIEMDestinationWithResponse request
+	GetSIEMDestinationWithResponse(ctx context.Context, destinationId SIEMDestinationId, params *GetSIEMDestinationParams, reqEditors ...RequestEditorFn) (*GetSIEMDestinationResponse, error)
+
+	// UpdateSIEMDestinationWithBodyWithResponse request with any body
+	UpdateSIEMDestinationWithBodyWithResponse(ctx context.Context, destinationId SIEMDestinationId, params *UpdateSIEMDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSIEMDestinationResponse, error)
+
+	UpdateSIEMDestinationWithResponse(ctx context.Context, destinationId SIEMDestinationId, params *UpdateSIEMDestinationParams, body UpdateSIEMDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSIEMDestinationResponse, error)
+
+	// TestSIEMDestinationWithResponse request
+	TestSIEMDestinationWithResponse(ctx context.Context, destinationId SIEMDestinationId, params *TestSIEMDestinationParams, reqEditors ...RequestEditorFn) (*TestSIEMDestinationResponse, error)
+
+	// ListWebhookEventTypesWithResponse request
+	ListWebhookEventTypesWithResponse(ctx context.Context, params *ListWebhookEventTypesParams, reqEditors ...RequestEditorFn) (*ListWebhookEventTypesResponse, error)
+
+	// ListWebhookSubscriptionsWithResponse request
+	ListWebhookSubscriptionsWithResponse(ctx context.Context, params *ListWebhookSubscriptionsParams, reqEditors ...RequestEditorFn) (*ListWebhookSubscriptionsResponse, error)
+
+	// CreateWebhookSubscriptionWithBodyWithResponse request with any body
+	CreateWebhookSubscriptionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateWebhookSubscriptionResponse, error)
+
+	CreateWebhookSubscriptionWithResponse(ctx context.Context, body CreateWebhookSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateWebhookSubscriptionResponse, error)
+
+	// DeleteWebhookSubscriptionWithResponse request
+	DeleteWebhookSubscriptionWithResponse(ctx context.Context, webhookId WebhookId, reqEditors ...RequestEditorFn) (*DeleteWebhookSubscriptionResponse, error)
+
+	// GetWebhookSubscriptionWithResponse request
+	GetWebhookSubscriptionWithResponse(ctx context.Context, webhookId WebhookId, reqEditors ...RequestEditorFn) (*GetWebhookSubscriptionResponse, error)
+
+	// UpdateWebhookSubscriptionWithBodyWithResponse request with any body
+	UpdateWebhookSubscriptionWithBodyWithResponse(ctx context.Context, webhookId WebhookId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateWebhookSubscriptionResponse, error)
+
+	UpdateWebhookSubscriptionWithResponse(ctx context.Context, webhookId WebhookId, body UpdateWebhookSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateWebhookSubscriptionResponse, error)
+
+	// TestWebhookSubscriptionWithBodyWithResponse request with any body
+	TestWebhookSubscriptionWithBodyWithResponse(ctx context.Context, webhookId WebhookId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestWebhookSubscriptionResponse, error)
+
+	TestWebhookSubscriptionWithResponse(ctx context.Context, webhookId WebhookId, body TestWebhookSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*TestWebhookSubscriptionResponse, error)
 }
 
 type ListClusterFeaturesResponse struct {
@@ -15524,9 +18917,401 @@ func (r DiscoverOIDCResponse) StatusCode() int {
 	return 0
 }
 
+type ListSIEMDestinationsResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *[]SIEMDestination
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r ListSIEMDestinationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListSIEMDestinationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateSIEMDestinationResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON201                   *SIEMDestination
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON402 *PlanLimitErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateSIEMDestinationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateSIEMDestinationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteSIEMDestinationResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON402 *PlanLimitErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteSIEMDestinationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteSIEMDestinationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetSIEMDestinationResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *SIEMDestination
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r GetSIEMDestinationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetSIEMDestinationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateSIEMDestinationResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *SIEMDestination
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON402 *PlanLimitErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateSIEMDestinationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateSIEMDestinationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type TestSIEMDestinationResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *SIEMDestinationTestResult
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON402 *PlanLimitErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r TestSIEMDestinationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r TestSIEMDestinationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListWebhookEventTypesResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *[]WebhookEventType
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWebhookEventTypesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWebhookEventTypesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListWebhookSubscriptionsResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *[]WebhookSubscription
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWebhookSubscriptionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWebhookSubscriptionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateWebhookSubscriptionResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON201                   *WebhookSubscription
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON402 *PlanLimitErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateWebhookSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateWebhookSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteWebhookSubscriptionResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON402 *PlanLimitErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteWebhookSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteWebhookSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetWebhookSubscriptionResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *WebhookSubscription
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWebhookSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWebhookSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateWebhookSubscriptionResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *WebhookSubscription
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON402 *PlanLimitErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateWebhookSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateWebhookSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type TestWebhookSubscriptionResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *WebhookTestResult
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON402 *PlanLimitErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r TestWebhookSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r TestWebhookSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // ListClusterFeaturesWithResponse request returning *ListClusterFeaturesResponse
-func (c *ClientWithResponses) ListClusterFeaturesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListClusterFeaturesResponse, error) {
-	rsp, err := c.ListClusterFeatures(ctx, reqEditors...)
+func (c *ClientWithResponses) ListClusterFeaturesWithResponse(ctx context.Context, params *ListClusterFeaturesParams, reqEditors ...RequestEditorFn) (*ListClusterFeaturesResponse, error) {
+	rsp, err := c.ListClusterFeatures(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15534,8 +19319,8 @@ func (c *ClientWithResponses) ListClusterFeaturesWithResponse(ctx context.Contex
 }
 
 // ListClusterLocationsWithResponse request returning *ListClusterLocationsResponse
-func (c *ClientWithResponses) ListClusterLocationsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListClusterLocationsResponse, error) {
-	rsp, err := c.ListClusterLocations(ctx, reqEditors...)
+func (c *ClientWithResponses) ListClusterLocationsWithResponse(ctx context.Context, params *ListClusterLocationsParams, reqEditors ...RequestEditorFn) (*ListClusterLocationsResponse, error) {
+	rsp, err := c.ListClusterLocations(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15543,8 +19328,8 @@ func (c *ClientWithResponses) ListClusterLocationsWithResponse(ctx context.Conte
 }
 
 // ListClusterTypesWithResponse request returning *ListClusterTypesResponse
-func (c *ClientWithResponses) ListClusterTypesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListClusterTypesResponse, error) {
-	rsp, err := c.ListClusterTypes(ctx, reqEditors...)
+func (c *ClientWithResponses) ListClusterTypesWithResponse(ctx context.Context, params *ListClusterTypesParams, reqEditors ...RequestEditorFn) (*ListClusterTypesResponse, error) {
+	rsp, err := c.ListClusterTypes(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15552,8 +19337,8 @@ func (c *ClientWithResponses) ListClusterTypesWithResponse(ctx context.Context, 
 }
 
 // GetClusterTypeVersionsWithResponse request returning *GetClusterTypeVersionsResponse
-func (c *ClientWithResponses) GetClusterTypeVersionsWithResponse(ctx context.Context, clusterType ClusterType, reqEditors ...RequestEditorFn) (*GetClusterTypeVersionsResponse, error) {
-	rsp, err := c.GetClusterTypeVersions(ctx, clusterType, reqEditors...)
+func (c *ClientWithResponses) GetClusterTypeVersionsWithResponse(ctx context.Context, clusterType ClusterType, params *GetClusterTypeVersionsParams, reqEditors ...RequestEditorFn) (*GetClusterTypeVersionsResponse, error) {
+	rsp, err := c.GetClusterTypeVersions(ctx, clusterType, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15561,8 +19346,8 @@ func (c *ClientWithResponses) GetClusterTypeVersionsWithResponse(ctx context.Con
 }
 
 // ListClustersWithResponse request returning *ListClustersResponse
-func (c *ClientWithResponses) ListClustersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListClustersResponse, error) {
-	rsp, err := c.ListClusters(ctx, reqEditors...)
+func (c *ClientWithResponses) ListClustersWithResponse(ctx context.Context, params *ListClustersParams, reqEditors ...RequestEditorFn) (*ListClustersResponse, error) {
+	rsp, err := c.ListClusters(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15570,16 +19355,16 @@ func (c *ClientWithResponses) ListClustersWithResponse(ctx context.Context, reqE
 }
 
 // CreateClusterWithBodyWithResponse request with arbitrary body returning *CreateClusterResponse
-func (c *ClientWithResponses) CreateClusterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClusterResponse, error) {
-	rsp, err := c.CreateClusterWithBody(ctx, contentType, body, reqEditors...)
+func (c *ClientWithResponses) CreateClusterWithBodyWithResponse(ctx context.Context, params *CreateClusterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClusterResponse, error) {
+	rsp, err := c.CreateClusterWithBody(ctx, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseCreateClusterResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateClusterWithResponse(ctx context.Context, body CreateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClusterResponse, error) {
-	rsp, err := c.CreateCluster(ctx, body, reqEditors...)
+func (c *ClientWithResponses) CreateClusterWithResponse(ctx context.Context, params *CreateClusterParams, body CreateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClusterResponse, error) {
+	rsp, err := c.CreateCluster(ctx, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15587,8 +19372,8 @@ func (c *ClientWithResponses) CreateClusterWithResponse(ctx context.Context, bod
 }
 
 // DeleteClusterWithResponse request returning *DeleteClusterResponse
-func (c *ClientWithResponses) DeleteClusterWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*DeleteClusterResponse, error) {
-	rsp, err := c.DeleteCluster(ctx, clusterId, reqEditors...)
+func (c *ClientWithResponses) DeleteClusterWithResponse(ctx context.Context, clusterId ClusterId, params *DeleteClusterParams, reqEditors ...RequestEditorFn) (*DeleteClusterResponse, error) {
+	rsp, err := c.DeleteCluster(ctx, clusterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15596,8 +19381,8 @@ func (c *ClientWithResponses) DeleteClusterWithResponse(ctx context.Context, clu
 }
 
 // GetClusterWithResponse request returning *GetClusterResponse
-func (c *ClientWithResponses) GetClusterWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*GetClusterResponse, error) {
-	rsp, err := c.GetCluster(ctx, clusterId, reqEditors...)
+func (c *ClientWithResponses) GetClusterWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterParams, reqEditors ...RequestEditorFn) (*GetClusterResponse, error) {
+	rsp, err := c.GetCluster(ctx, clusterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15605,16 +19390,16 @@ func (c *ClientWithResponses) GetClusterWithResponse(ctx context.Context, cluste
 }
 
 // UpdateClusterWithBodyWithResponse request with arbitrary body returning *UpdateClusterResponse
-func (c *ClientWithResponses) UpdateClusterWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error) {
-	rsp, err := c.UpdateClusterWithBody(ctx, clusterId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateClusterWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error) {
+	rsp, err := c.UpdateClusterWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateClusterResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateClusterWithResponse(ctx context.Context, clusterId ClusterId, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error) {
-	rsp, err := c.UpdateCluster(ctx, clusterId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateClusterWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error) {
+	rsp, err := c.UpdateCluster(ctx, clusterId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15622,8 +19407,8 @@ func (c *ClientWithResponses) UpdateClusterWithResponse(ctx context.Context, clu
 }
 
 // ListClusterBuildsWithResponse request returning *ListClusterBuildsResponse
-func (c *ClientWithResponses) ListClusterBuildsWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListClusterBuildsResponse, error) {
-	rsp, err := c.ListClusterBuilds(ctx, clusterId, reqEditors...)
+func (c *ClientWithResponses) ListClusterBuildsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterBuildsParams, reqEditors ...RequestEditorFn) (*ListClusterBuildsResponse, error) {
+	rsp, err := c.ListClusterBuilds(ctx, clusterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15631,8 +19416,8 @@ func (c *ClientWithResponses) ListClusterBuildsWithResponse(ctx context.Context,
 }
 
 // GetClusterBuildWithResponse request returning *GetClusterBuildResponse
-func (c *ClientWithResponses) GetClusterBuildWithResponse(ctx context.Context, clusterId ClusterId, buildId BuildId, reqEditors ...RequestEditorFn) (*GetClusterBuildResponse, error) {
-	rsp, err := c.GetClusterBuild(ctx, clusterId, buildId, reqEditors...)
+func (c *ClientWithResponses) GetClusterBuildWithResponse(ctx context.Context, clusterId ClusterId, buildId BuildId, params *GetClusterBuildParams, reqEditors ...RequestEditorFn) (*GetClusterBuildResponse, error) {
+	rsp, err := c.GetClusterBuild(ctx, clusterId, buildId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15640,8 +19425,8 @@ func (c *ClientWithResponses) GetClusterBuildWithResponse(ctx context.Context, c
 }
 
 // GetClusterCredentialsWithResponse request returning *GetClusterCredentialsResponse
-func (c *ClientWithResponses) GetClusterCredentialsWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*GetClusterCredentialsResponse, error) {
-	rsp, err := c.GetClusterCredentials(ctx, clusterId, reqEditors...)
+func (c *ClientWithResponses) GetClusterCredentialsWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterCredentialsParams, reqEditors ...RequestEditorFn) (*GetClusterCredentialsResponse, error) {
+	rsp, err := c.GetClusterCredentials(ctx, clusterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15658,16 +19443,16 @@ func (c *ClientWithResponses) ListDomainsWithResponse(ctx context.Context, clust
 }
 
 // CreateDomainWithBodyWithResponse request with arbitrary body returning *CreateDomainResponse
-func (c *ClientWithResponses) CreateDomainWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDomainResponse, error) {
-	rsp, err := c.CreateDomainWithBody(ctx, clusterId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) CreateDomainWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *CreateDomainParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDomainResponse, error) {
+	rsp, err := c.CreateDomainWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseCreateDomainResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateDomainWithResponse(ctx context.Context, clusterId ClusterId, body CreateDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDomainResponse, error) {
-	rsp, err := c.CreateDomain(ctx, clusterId, body, reqEditors...)
+func (c *ClientWithResponses) CreateDomainWithResponse(ctx context.Context, clusterId ClusterId, params *CreateDomainParams, body CreateDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDomainResponse, error) {
+	rsp, err := c.CreateDomain(ctx, clusterId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15675,8 +19460,8 @@ func (c *ClientWithResponses) CreateDomainWithResponse(ctx context.Context, clus
 }
 
 // DeleteDomainWithResponse request returning *DeleteDomainResponse
-func (c *ClientWithResponses) DeleteDomainWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*DeleteDomainResponse, error) {
-	rsp, err := c.DeleteDomain(ctx, clusterId, domainId, reqEditors...)
+func (c *ClientWithResponses) DeleteDomainWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, params *DeleteDomainParams, reqEditors ...RequestEditorFn) (*DeleteDomainResponse, error) {
+	rsp, err := c.DeleteDomain(ctx, clusterId, domainId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15684,8 +19469,8 @@ func (c *ClientWithResponses) DeleteDomainWithResponse(ctx context.Context, clus
 }
 
 // GetDomainWithResponse request returning *GetDomainResponse
-func (c *ClientWithResponses) GetDomainWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*GetDomainResponse, error) {
-	rsp, err := c.GetDomain(ctx, clusterId, domainId, reqEditors...)
+func (c *ClientWithResponses) GetDomainWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, params *GetDomainParams, reqEditors ...RequestEditorFn) (*GetDomainResponse, error) {
+	rsp, err := c.GetDomain(ctx, clusterId, domainId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15693,8 +19478,8 @@ func (c *ClientWithResponses) GetDomainWithResponse(ctx context.Context, cluster
 }
 
 // ListDomainRoutesWithResponse request returning *ListDomainRoutesResponse
-func (c *ClientWithResponses) ListDomainRoutesWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*ListDomainRoutesResponse, error) {
-	rsp, err := c.ListDomainRoutes(ctx, clusterId, domainId, reqEditors...)
+func (c *ClientWithResponses) ListDomainRoutesWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, params *ListDomainRoutesParams, reqEditors ...RequestEditorFn) (*ListDomainRoutesResponse, error) {
+	rsp, err := c.ListDomainRoutes(ctx, clusterId, domainId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15702,16 +19487,16 @@ func (c *ClientWithResponses) ListDomainRoutesWithResponse(ctx context.Context, 
 }
 
 // CreateDomainRouteWithBodyWithResponse request with arbitrary body returning *CreateDomainRouteResponse
-func (c *ClientWithResponses) CreateDomainRouteWithBodyWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDomainRouteResponse, error) {
-	rsp, err := c.CreateDomainRouteWithBody(ctx, clusterId, domainId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) CreateDomainRouteWithBodyWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, params *CreateDomainRouteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDomainRouteResponse, error) {
+	rsp, err := c.CreateDomainRouteWithBody(ctx, clusterId, domainId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseCreateDomainRouteResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, body CreateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDomainRouteResponse, error) {
-	rsp, err := c.CreateDomainRoute(ctx, clusterId, domainId, body, reqEditors...)
+func (c *ClientWithResponses) CreateDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, params *CreateDomainRouteParams, body CreateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDomainRouteResponse, error) {
+	rsp, err := c.CreateDomainRoute(ctx, clusterId, domainId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15719,8 +19504,8 @@ func (c *ClientWithResponses) CreateDomainRouteWithResponse(ctx context.Context,
 }
 
 // DeleteDomainRouteWithResponse request returning *DeleteDomainRouteResponse
-func (c *ClientWithResponses) DeleteDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, reqEditors ...RequestEditorFn) (*DeleteDomainRouteResponse, error) {
-	rsp, err := c.DeleteDomainRoute(ctx, clusterId, domainId, routeId, reqEditors...)
+func (c *ClientWithResponses) DeleteDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *DeleteDomainRouteParams, reqEditors ...RequestEditorFn) (*DeleteDomainRouteResponse, error) {
+	rsp, err := c.DeleteDomainRoute(ctx, clusterId, domainId, routeId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15728,8 +19513,8 @@ func (c *ClientWithResponses) DeleteDomainRouteWithResponse(ctx context.Context,
 }
 
 // GetDomainRouteWithResponse request returning *GetDomainRouteResponse
-func (c *ClientWithResponses) GetDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, reqEditors ...RequestEditorFn) (*GetDomainRouteResponse, error) {
-	rsp, err := c.GetDomainRoute(ctx, clusterId, domainId, routeId, reqEditors...)
+func (c *ClientWithResponses) GetDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *GetDomainRouteParams, reqEditors ...RequestEditorFn) (*GetDomainRouteResponse, error) {
+	rsp, err := c.GetDomainRoute(ctx, clusterId, domainId, routeId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15737,16 +19522,16 @@ func (c *ClientWithResponses) GetDomainRouteWithResponse(ctx context.Context, cl
 }
 
 // UpdateDomainRouteWithBodyWithResponse request with arbitrary body returning *UpdateDomainRouteResponse
-func (c *ClientWithResponses) UpdateDomainRouteWithBodyWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateDomainRouteResponse, error) {
-	rsp, err := c.UpdateDomainRouteWithBody(ctx, clusterId, domainId, routeId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateDomainRouteWithBodyWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *UpdateDomainRouteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateDomainRouteResponse, error) {
+	rsp, err := c.UpdateDomainRouteWithBody(ctx, clusterId, domainId, routeId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateDomainRouteResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, body UpdateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateDomainRouteResponse, error) {
-	rsp, err := c.UpdateDomainRoute(ctx, clusterId, domainId, routeId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateDomainRouteWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, routeId DomainRouteId, params *UpdateDomainRouteParams, body UpdateDomainRouteJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateDomainRouteResponse, error) {
+	rsp, err := c.UpdateDomainRoute(ctx, clusterId, domainId, routeId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15754,8 +19539,8 @@ func (c *ClientWithResponses) UpdateDomainRouteWithResponse(ctx context.Context,
 }
 
 // VerifyDomainWithResponse request returning *VerifyDomainResponse
-func (c *ClientWithResponses) VerifyDomainWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, reqEditors ...RequestEditorFn) (*VerifyDomainResponse, error) {
-	rsp, err := c.VerifyDomain(ctx, clusterId, domainId, reqEditors...)
+func (c *ClientWithResponses) VerifyDomainWithResponse(ctx context.Context, clusterId ClusterId, domainId DomainId, params *VerifyDomainParams, reqEditors ...RequestEditorFn) (*VerifyDomainResponse, error) {
+	rsp, err := c.VerifyDomain(ctx, clusterId, domainId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15781,8 +19566,8 @@ func (c *ClientWithResponses) ExportClusterEventsWithResponse(ctx context.Contex
 }
 
 // ListExportsWithResponse request returning *ListExportsResponse
-func (c *ClientWithResponses) ListExportsWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListExportsResponse, error) {
-	rsp, err := c.ListExports(ctx, clusterId, reqEditors...)
+func (c *ClientWithResponses) ListExportsWithResponse(ctx context.Context, clusterId ClusterId, params *ListExportsParams, reqEditors ...RequestEditorFn) (*ListExportsResponse, error) {
+	rsp, err := c.ListExports(ctx, clusterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15790,16 +19575,16 @@ func (c *ClientWithResponses) ListExportsWithResponse(ctx context.Context, clust
 }
 
 // CreateExportWithBodyWithResponse request with arbitrary body returning *CreateExportResponse
-func (c *ClientWithResponses) CreateExportWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateExportResponse, error) {
-	rsp, err := c.CreateExportWithBody(ctx, clusterId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) CreateExportWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *CreateExportParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateExportResponse, error) {
+	rsp, err := c.CreateExportWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseCreateExportResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateExportWithResponse(ctx context.Context, clusterId ClusterId, body CreateExportJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateExportResponse, error) {
-	rsp, err := c.CreateExport(ctx, clusterId, body, reqEditors...)
+func (c *ClientWithResponses) CreateExportWithResponse(ctx context.Context, clusterId ClusterId, params *CreateExportParams, body CreateExportJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateExportResponse, error) {
+	rsp, err := c.CreateExport(ctx, clusterId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15807,8 +19592,8 @@ func (c *ClientWithResponses) CreateExportWithResponse(ctx context.Context, clus
 }
 
 // DeleteExportWithResponse request returning *DeleteExportResponse
-func (c *ClientWithResponses) DeleteExportWithResponse(ctx context.Context, clusterId ClusterId, exportId ExportId, reqEditors ...RequestEditorFn) (*DeleteExportResponse, error) {
-	rsp, err := c.DeleteExport(ctx, clusterId, exportId, reqEditors...)
+func (c *ClientWithResponses) DeleteExportWithResponse(ctx context.Context, clusterId ClusterId, exportId ExportId, params *DeleteExportParams, reqEditors ...RequestEditorFn) (*DeleteExportResponse, error) {
+	rsp, err := c.DeleteExport(ctx, clusterId, exportId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15816,8 +19601,8 @@ func (c *ClientWithResponses) DeleteExportWithResponse(ctx context.Context, clus
 }
 
 // GetExportWithResponse request returning *GetExportResponse
-func (c *ClientWithResponses) GetExportWithResponse(ctx context.Context, clusterId ClusterId, exportId ExportId, reqEditors ...RequestEditorFn) (*GetExportResponse, error) {
-	rsp, err := c.GetExport(ctx, clusterId, exportId, reqEditors...)
+func (c *ClientWithResponses) GetExportWithResponse(ctx context.Context, clusterId ClusterId, exportId ExportId, params *GetExportParams, reqEditors ...RequestEditorFn) (*GetExportResponse, error) {
+	rsp, err := c.GetExport(ctx, clusterId, exportId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15825,8 +19610,8 @@ func (c *ClientWithResponses) GetExportWithResponse(ctx context.Context, cluster
 }
 
 // ListClusterExtensionsWithResponse request returning *ListClusterExtensionsResponse
-func (c *ClientWithResponses) ListClusterExtensionsWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListClusterExtensionsResponse, error) {
-	rsp, err := c.ListClusterExtensions(ctx, clusterId, reqEditors...)
+func (c *ClientWithResponses) ListClusterExtensionsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterExtensionsParams, reqEditors ...RequestEditorFn) (*ListClusterExtensionsResponse, error) {
+	rsp, err := c.ListClusterExtensions(ctx, clusterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15834,16 +19619,16 @@ func (c *ClientWithResponses) ListClusterExtensionsWithResponse(ctx context.Cont
 }
 
 // InstallExtensionWithBodyWithResponse request with arbitrary body returning *InstallExtensionResponse
-func (c *ClientWithResponses) InstallExtensionWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*InstallExtensionResponse, error) {
-	rsp, err := c.InstallExtensionWithBody(ctx, clusterId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) InstallExtensionWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *InstallExtensionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*InstallExtensionResponse, error) {
+	rsp, err := c.InstallExtensionWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseInstallExtensionResponse(rsp)
 }
 
-func (c *ClientWithResponses) InstallExtensionWithResponse(ctx context.Context, clusterId ClusterId, body InstallExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*InstallExtensionResponse, error) {
-	rsp, err := c.InstallExtension(ctx, clusterId, body, reqEditors...)
+func (c *ClientWithResponses) InstallExtensionWithResponse(ctx context.Context, clusterId ClusterId, params *InstallExtensionParams, body InstallExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*InstallExtensionResponse, error) {
+	rsp, err := c.InstallExtension(ctx, clusterId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15851,8 +19636,8 @@ func (c *ClientWithResponses) InstallExtensionWithResponse(ctx context.Context, 
 }
 
 // UninstallExtensionWithResponse request returning *UninstallExtensionResponse
-func (c *ClientWithResponses) UninstallExtensionWithResponse(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*UninstallExtensionResponse, error) {
-	rsp, err := c.UninstallExtension(ctx, clusterId, extensionId, reqEditors...)
+func (c *ClientWithResponses) UninstallExtensionWithResponse(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, params *UninstallExtensionParams, reqEditors ...RequestEditorFn) (*UninstallExtensionResponse, error) {
+	rsp, err := c.UninstallExtension(ctx, clusterId, extensionId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15860,8 +19645,8 @@ func (c *ClientWithResponses) UninstallExtensionWithResponse(ctx context.Context
 }
 
 // UpgradeClusterExtensionWithResponse request returning *UpgradeClusterExtensionResponse
-func (c *ClientWithResponses) UpgradeClusterExtensionWithResponse(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*UpgradeClusterExtensionResponse, error) {
-	rsp, err := c.UpgradeClusterExtension(ctx, clusterId, extensionId, reqEditors...)
+func (c *ClientWithResponses) UpgradeClusterExtensionWithResponse(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, params *UpgradeClusterExtensionParams, reqEditors ...RequestEditorFn) (*UpgradeClusterExtensionResponse, error) {
+	rsp, err := c.UpgradeClusterExtension(ctx, clusterId, extensionId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15923,8 +19708,8 @@ func (c *ClientWithResponses) ListClusterLogsWithResponse(ctx context.Context, c
 }
 
 // ListRealmsWithResponse request returning *ListRealmsResponse
-func (c *ClientWithResponses) ListRealmsWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListRealmsResponse, error) {
-	rsp, err := c.ListRealms(ctx, clusterId, reqEditors...)
+func (c *ClientWithResponses) ListRealmsWithResponse(ctx context.Context, clusterId ClusterId, params *ListRealmsParams, reqEditors ...RequestEditorFn) (*ListRealmsResponse, error) {
+	rsp, err := c.ListRealms(ctx, clusterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15932,16 +19717,16 @@ func (c *ClientWithResponses) ListRealmsWithResponse(ctx context.Context, cluste
 }
 
 // CreateRealmWithBodyWithResponse request with arbitrary body returning *CreateRealmResponse
-func (c *ClientWithResponses) CreateRealmWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmResponse, error) {
-	rsp, err := c.CreateRealmWithBody(ctx, clusterId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) CreateRealmWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *CreateRealmParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmResponse, error) {
+	rsp, err := c.CreateRealmWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseCreateRealmResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateRealmWithResponse(ctx context.Context, clusterId ClusterId, body CreateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmResponse, error) {
-	rsp, err := c.CreateRealm(ctx, clusterId, body, reqEditors...)
+func (c *ClientWithResponses) CreateRealmWithResponse(ctx context.Context, clusterId ClusterId, params *CreateRealmParams, body CreateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmResponse, error) {
+	rsp, err := c.CreateRealm(ctx, clusterId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15949,8 +19734,8 @@ func (c *ClientWithResponses) CreateRealmWithResponse(ctx context.Context, clust
 }
 
 // DeleteRealmWithResponse request returning *DeleteRealmResponse
-func (c *ClientWithResponses) DeleteRealmWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*DeleteRealmResponse, error) {
-	rsp, err := c.DeleteRealm(ctx, clusterId, realmName, reqEditors...)
+func (c *ClientWithResponses) DeleteRealmWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *DeleteRealmParams, reqEditors ...RequestEditorFn) (*DeleteRealmResponse, error) {
+	rsp, err := c.DeleteRealm(ctx, clusterId, realmName, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15958,8 +19743,8 @@ func (c *ClientWithResponses) DeleteRealmWithResponse(ctx context.Context, clust
 }
 
 // GetRealmWithResponse request returning *GetRealmResponse
-func (c *ClientWithResponses) GetRealmWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*GetRealmResponse, error) {
-	rsp, err := c.GetRealm(ctx, clusterId, realmName, reqEditors...)
+func (c *ClientWithResponses) GetRealmWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *GetRealmParams, reqEditors ...RequestEditorFn) (*GetRealmResponse, error) {
+	rsp, err := c.GetRealm(ctx, clusterId, realmName, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15967,16 +19752,16 @@ func (c *ClientWithResponses) GetRealmWithResponse(ctx context.Context, clusterI
 }
 
 // UpdateRealmWithBodyWithResponse request with arbitrary body returning *UpdateRealmResponse
-func (c *ClientWithResponses) UpdateRealmWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmResponse, error) {
-	rsp, err := c.UpdateRealmWithBody(ctx, clusterId, realmName, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateRealmWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *UpdateRealmParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmResponse, error) {
+	rsp, err := c.UpdateRealmWithBody(ctx, clusterId, realmName, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateRealmResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateRealmWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, body UpdateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmResponse, error) {
-	rsp, err := c.UpdateRealm(ctx, clusterId, realmName, body, reqEditors...)
+func (c *ClientWithResponses) UpdateRealmWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *UpdateRealmParams, body UpdateRealmJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmResponse, error) {
+	rsp, err := c.UpdateRealm(ctx, clusterId, realmName, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -15993,16 +19778,16 @@ func (c *ClientWithResponses) ListApplicationsWithResponse(ctx context.Context, 
 }
 
 // CreateApplicationWithBodyWithResponse request with arbitrary body returning *CreateApplicationResponse
-func (c *ClientWithResponses) CreateApplicationWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateApplicationResponse, error) {
-	rsp, err := c.CreateApplicationWithBody(ctx, clusterId, realmName, contentType, body, reqEditors...)
+func (c *ClientWithResponses) CreateApplicationWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateApplicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateApplicationResponse, error) {
+	rsp, err := c.CreateApplicationWithBody(ctx, clusterId, realmName, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseCreateApplicationResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateApplicationResponse, error) {
-	rsp, err := c.CreateApplication(ctx, clusterId, realmName, body, reqEditors...)
+func (c *ClientWithResponses) CreateApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateApplicationParams, body CreateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateApplicationResponse, error) {
+	rsp, err := c.CreateApplication(ctx, clusterId, realmName, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16010,8 +19795,8 @@ func (c *ClientWithResponses) CreateApplicationWithResponse(ctx context.Context,
 }
 
 // DeleteApplicationWithResponse request returning *DeleteApplicationResponse
-func (c *ClientWithResponses) DeleteApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*DeleteApplicationResponse, error) {
-	rsp, err := c.DeleteApplication(ctx, clusterId, realmName, clientId, reqEditors...)
+func (c *ClientWithResponses) DeleteApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *DeleteApplicationParams, reqEditors ...RequestEditorFn) (*DeleteApplicationResponse, error) {
+	rsp, err := c.DeleteApplication(ctx, clusterId, realmName, clientId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16019,8 +19804,8 @@ func (c *ClientWithResponses) DeleteApplicationWithResponse(ctx context.Context,
 }
 
 // GetApplicationWithResponse request returning *GetApplicationResponse
-func (c *ClientWithResponses) GetApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*GetApplicationResponse, error) {
-	rsp, err := c.GetApplication(ctx, clusterId, realmName, clientId, reqEditors...)
+func (c *ClientWithResponses) GetApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *GetApplicationParams, reqEditors ...RequestEditorFn) (*GetApplicationResponse, error) {
+	rsp, err := c.GetApplication(ctx, clusterId, realmName, clientId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16028,16 +19813,16 @@ func (c *ClientWithResponses) GetApplicationWithResponse(ctx context.Context, cl
 }
 
 // UpdateApplicationWithBodyWithResponse request with arbitrary body returning *UpdateApplicationResponse
-func (c *ClientWithResponses) UpdateApplicationWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateApplicationResponse, error) {
-	rsp, err := c.UpdateApplicationWithBody(ctx, clusterId, realmName, clientId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateApplicationWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *UpdateApplicationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateApplicationResponse, error) {
+	rsp, err := c.UpdateApplicationWithBody(ctx, clusterId, realmName, clientId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateApplicationResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateApplicationResponse, error) {
-	rsp, err := c.UpdateApplication(ctx, clusterId, realmName, clientId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateApplicationWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *UpdateApplicationParams, body UpdateApplicationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateApplicationResponse, error) {
+	rsp, err := c.UpdateApplication(ctx, clusterId, realmName, clientId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16045,8 +19830,8 @@ func (c *ClientWithResponses) UpdateApplicationWithResponse(ctx context.Context,
 }
 
 // ListApplicationRolesWithResponse request returning *ListApplicationRolesResponse
-func (c *ClientWithResponses) ListApplicationRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*ListApplicationRolesResponse, error) {
-	rsp, err := c.ListApplicationRoles(ctx, clusterId, realmName, clientId, reqEditors...)
+func (c *ClientWithResponses) ListApplicationRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *ListApplicationRolesParams, reqEditors ...RequestEditorFn) (*ListApplicationRolesResponse, error) {
+	rsp, err := c.ListApplicationRoles(ctx, clusterId, realmName, clientId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16054,16 +19839,16 @@ func (c *ClientWithResponses) ListApplicationRolesWithResponse(ctx context.Conte
 }
 
 // AssignApplicationRoleWithBodyWithResponse request with arbitrary body returning *AssignApplicationRoleResponse
-func (c *ClientWithResponses) AssignApplicationRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AssignApplicationRoleResponse, error) {
-	rsp, err := c.AssignApplicationRoleWithBody(ctx, clusterId, realmName, clientId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) AssignApplicationRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *AssignApplicationRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AssignApplicationRoleResponse, error) {
+	rsp, err := c.AssignApplicationRoleWithBody(ctx, clusterId, realmName, clientId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseAssignApplicationRoleResponse(rsp)
 }
 
-func (c *ClientWithResponses) AssignApplicationRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, body AssignApplicationRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignApplicationRoleResponse, error) {
-	rsp, err := c.AssignApplicationRole(ctx, clusterId, realmName, clientId, body, reqEditors...)
+func (c *ClientWithResponses) AssignApplicationRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *AssignApplicationRoleParams, body AssignApplicationRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignApplicationRoleResponse, error) {
+	rsp, err := c.AssignApplicationRole(ctx, clusterId, realmName, clientId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16080,8 +19865,8 @@ func (c *ClientWithResponses) RemoveApplicationRoleWithResponse(ctx context.Cont
 }
 
 // RotateApplicationSecretWithResponse request returning *RotateApplicationSecretResponse
-func (c *ClientWithResponses) RotateApplicationSecretWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*RotateApplicationSecretResponse, error) {
-	rsp, err := c.RotateApplicationSecret(ctx, clusterId, realmName, clientId, reqEditors...)
+func (c *ClientWithResponses) RotateApplicationSecretWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *RotateApplicationSecretParams, reqEditors ...RequestEditorFn) (*RotateApplicationSecretResponse, error) {
+	rsp, err := c.RotateApplicationSecret(ctx, clusterId, realmName, clientId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16089,8 +19874,8 @@ func (c *ClientWithResponses) RotateApplicationSecretWithResponse(ctx context.Co
 }
 
 // ListApplicationSessionsWithResponse request returning *ListApplicationSessionsResponse
-func (c *ClientWithResponses) ListApplicationSessionsWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*ListApplicationSessionsResponse, error) {
-	rsp, err := c.ListApplicationSessions(ctx, clusterId, realmName, clientId, reqEditors...)
+func (c *ClientWithResponses) ListApplicationSessionsWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *ListApplicationSessionsParams, reqEditors ...RequestEditorFn) (*ListApplicationSessionsResponse, error) {
+	rsp, err := c.ListApplicationSessions(ctx, clusterId, realmName, clientId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16107,16 +19892,16 @@ func (c *ClientWithResponses) ListRealmGroupsWithResponse(ctx context.Context, c
 }
 
 // CreateRealmGroupWithBodyWithResponse request with arbitrary body returning *CreateRealmGroupResponse
-func (c *ClientWithResponses) CreateRealmGroupWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmGroupResponse, error) {
-	rsp, err := c.CreateRealmGroupWithBody(ctx, clusterId, realmName, contentType, body, reqEditors...)
+func (c *ClientWithResponses) CreateRealmGroupWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmGroupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmGroupResponse, error) {
+	rsp, err := c.CreateRealmGroupWithBody(ctx, clusterId, realmName, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseCreateRealmGroupResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmGroupResponse, error) {
-	rsp, err := c.CreateRealmGroup(ctx, clusterId, realmName, body, reqEditors...)
+func (c *ClientWithResponses) CreateRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmGroupParams, body CreateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmGroupResponse, error) {
+	rsp, err := c.CreateRealmGroup(ctx, clusterId, realmName, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16124,8 +19909,8 @@ func (c *ClientWithResponses) CreateRealmGroupWithResponse(ctx context.Context, 
 }
 
 // DeleteRealmGroupWithResponse request returning *DeleteRealmGroupResponse
-func (c *ClientWithResponses) DeleteRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*DeleteRealmGroupResponse, error) {
-	rsp, err := c.DeleteRealmGroup(ctx, clusterId, realmName, groupId, reqEditors...)
+func (c *ClientWithResponses) DeleteRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *DeleteRealmGroupParams, reqEditors ...RequestEditorFn) (*DeleteRealmGroupResponse, error) {
+	rsp, err := c.DeleteRealmGroup(ctx, clusterId, realmName, groupId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16133,8 +19918,8 @@ func (c *ClientWithResponses) DeleteRealmGroupWithResponse(ctx context.Context, 
 }
 
 // GetRealmGroupWithResponse request returning *GetRealmGroupResponse
-func (c *ClientWithResponses) GetRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*GetRealmGroupResponse, error) {
-	rsp, err := c.GetRealmGroup(ctx, clusterId, realmName, groupId, reqEditors...)
+func (c *ClientWithResponses) GetRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *GetRealmGroupParams, reqEditors ...RequestEditorFn) (*GetRealmGroupResponse, error) {
+	rsp, err := c.GetRealmGroup(ctx, clusterId, realmName, groupId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16142,16 +19927,16 @@ func (c *ClientWithResponses) GetRealmGroupWithResponse(ctx context.Context, clu
 }
 
 // UpdateRealmGroupWithBodyWithResponse request with arbitrary body returning *UpdateRealmGroupResponse
-func (c *ClientWithResponses) UpdateRealmGroupWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmGroupResponse, error) {
-	rsp, err := c.UpdateRealmGroupWithBody(ctx, clusterId, realmName, groupId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateRealmGroupWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *UpdateRealmGroupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmGroupResponse, error) {
+	rsp, err := c.UpdateRealmGroupWithBody(ctx, clusterId, realmName, groupId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateRealmGroupResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, body UpdateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmGroupResponse, error) {
-	rsp, err := c.UpdateRealmGroup(ctx, clusterId, realmName, groupId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateRealmGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, groupId RealmGroupId, params *UpdateRealmGroupParams, body UpdateRealmGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmGroupResponse, error) {
+	rsp, err := c.UpdateRealmGroup(ctx, clusterId, realmName, groupId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16168,8 +19953,8 @@ func (c *ClientWithResponses) ListRealmGroupMembersWithResponse(ctx context.Cont
 }
 
 // ListIdentityProvidersWithResponse request returning *ListIdentityProvidersResponse
-func (c *ClientWithResponses) ListIdentityProvidersWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*ListIdentityProvidersResponse, error) {
-	rsp, err := c.ListIdentityProviders(ctx, clusterId, realmName, reqEditors...)
+func (c *ClientWithResponses) ListIdentityProvidersWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListIdentityProvidersParams, reqEditors ...RequestEditorFn) (*ListIdentityProvidersResponse, error) {
+	rsp, err := c.ListIdentityProviders(ctx, clusterId, realmName, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16177,16 +19962,16 @@ func (c *ClientWithResponses) ListIdentityProvidersWithResponse(ctx context.Cont
 }
 
 // CreateIdentityProviderWithBodyWithResponse request with arbitrary body returning *CreateIdentityProviderResponse
-func (c *ClientWithResponses) CreateIdentityProviderWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateIdentityProviderResponse, error) {
-	rsp, err := c.CreateIdentityProviderWithBody(ctx, clusterId, realmName, contentType, body, reqEditors...)
+func (c *ClientWithResponses) CreateIdentityProviderWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateIdentityProviderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateIdentityProviderResponse, error) {
+	rsp, err := c.CreateIdentityProviderWithBody(ctx, clusterId, realmName, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseCreateIdentityProviderResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateIdentityProviderResponse, error) {
-	rsp, err := c.CreateIdentityProvider(ctx, clusterId, realmName, body, reqEditors...)
+func (c *ClientWithResponses) CreateIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateIdentityProviderParams, body CreateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateIdentityProviderResponse, error) {
+	rsp, err := c.CreateIdentityProvider(ctx, clusterId, realmName, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16194,8 +19979,8 @@ func (c *ClientWithResponses) CreateIdentityProviderWithResponse(ctx context.Con
 }
 
 // DeleteIdentityProviderWithResponse request returning *DeleteIdentityProviderResponse
-func (c *ClientWithResponses) DeleteIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, reqEditors ...RequestEditorFn) (*DeleteIdentityProviderResponse, error) {
-	rsp, err := c.DeleteIdentityProvider(ctx, clusterId, realmName, providerId, reqEditors...)
+func (c *ClientWithResponses) DeleteIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *DeleteIdentityProviderParams, reqEditors ...RequestEditorFn) (*DeleteIdentityProviderResponse, error) {
+	rsp, err := c.DeleteIdentityProvider(ctx, clusterId, realmName, providerId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16203,8 +19988,8 @@ func (c *ClientWithResponses) DeleteIdentityProviderWithResponse(ctx context.Con
 }
 
 // GetIdentityProviderWithResponse request returning *GetIdentityProviderResponse
-func (c *ClientWithResponses) GetIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, reqEditors ...RequestEditorFn) (*GetIdentityProviderResponse, error) {
-	rsp, err := c.GetIdentityProvider(ctx, clusterId, realmName, providerId, reqEditors...)
+func (c *ClientWithResponses) GetIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *GetIdentityProviderParams, reqEditors ...RequestEditorFn) (*GetIdentityProviderResponse, error) {
+	rsp, err := c.GetIdentityProvider(ctx, clusterId, realmName, providerId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16212,16 +19997,16 @@ func (c *ClientWithResponses) GetIdentityProviderWithResponse(ctx context.Contex
 }
 
 // UpdateIdentityProviderWithBodyWithResponse request with arbitrary body returning *UpdateIdentityProviderResponse
-func (c *ClientWithResponses) UpdateIdentityProviderWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateIdentityProviderResponse, error) {
-	rsp, err := c.UpdateIdentityProviderWithBody(ctx, clusterId, realmName, providerId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateIdentityProviderWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *UpdateIdentityProviderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateIdentityProviderResponse, error) {
+	rsp, err := c.UpdateIdentityProviderWithBody(ctx, clusterId, realmName, providerId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateIdentityProviderResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, body UpdateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateIdentityProviderResponse, error) {
-	rsp, err := c.UpdateIdentityProvider(ctx, clusterId, realmName, providerId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateIdentityProviderWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *UpdateIdentityProviderParams, body UpdateIdentityProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateIdentityProviderResponse, error) {
+	rsp, err := c.UpdateIdentityProvider(ctx, clusterId, realmName, providerId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16229,16 +20014,16 @@ func (c *ClientWithResponses) UpdateIdentityProviderWithResponse(ctx context.Con
 }
 
 // TestIdentityProviderConnectionWithBodyWithResponse request with arbitrary body returning *TestIdentityProviderConnectionResponse
-func (c *ClientWithResponses) TestIdentityProviderConnectionWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestIdentityProviderConnectionResponse, error) {
-	rsp, err := c.TestIdentityProviderConnectionWithBody(ctx, clusterId, realmName, providerId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) TestIdentityProviderConnectionWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *TestIdentityProviderConnectionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestIdentityProviderConnectionResponse, error) {
+	rsp, err := c.TestIdentityProviderConnectionWithBody(ctx, clusterId, realmName, providerId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseTestIdentityProviderConnectionResponse(rsp)
 }
 
-func (c *ClientWithResponses) TestIdentityProviderConnectionWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, body TestIdentityProviderConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*TestIdentityProviderConnectionResponse, error) {
-	rsp, err := c.TestIdentityProviderConnection(ctx, clusterId, realmName, providerId, body, reqEditors...)
+func (c *ClientWithResponses) TestIdentityProviderConnectionWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, providerId ProviderId, params *TestIdentityProviderConnectionParams, body TestIdentityProviderConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*TestIdentityProviderConnectionResponse, error) {
+	rsp, err := c.TestIdentityProviderConnection(ctx, clusterId, realmName, providerId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16246,8 +20031,8 @@ func (c *ClientWithResponses) TestIdentityProviderConnectionWithResponse(ctx con
 }
 
 // ListRealmRolesWithResponse request returning *ListRealmRolesResponse
-func (c *ClientWithResponses) ListRealmRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, reqEditors ...RequestEditorFn) (*ListRealmRolesResponse, error) {
-	rsp, err := c.ListRealmRoles(ctx, clusterId, realmName, reqEditors...)
+func (c *ClientWithResponses) ListRealmRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListRealmRolesParams, reqEditors ...RequestEditorFn) (*ListRealmRolesResponse, error) {
+	rsp, err := c.ListRealmRoles(ctx, clusterId, realmName, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16255,16 +20040,16 @@ func (c *ClientWithResponses) ListRealmRolesWithResponse(ctx context.Context, cl
 }
 
 // CreateRealmRoleWithBodyWithResponse request with arbitrary body returning *CreateRealmRoleResponse
-func (c *ClientWithResponses) CreateRealmRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmRoleResponse, error) {
-	rsp, err := c.CreateRealmRoleWithBody(ctx, clusterId, realmName, contentType, body, reqEditors...)
+func (c *ClientWithResponses) CreateRealmRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmRoleResponse, error) {
+	rsp, err := c.CreateRealmRoleWithBody(ctx, clusterId, realmName, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseCreateRealmRoleResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmRoleResponse, error) {
-	rsp, err := c.CreateRealmRole(ctx, clusterId, realmName, body, reqEditors...)
+func (c *ClientWithResponses) CreateRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmRoleParams, body CreateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmRoleResponse, error) {
+	rsp, err := c.CreateRealmRole(ctx, clusterId, realmName, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16272,8 +20057,8 @@ func (c *ClientWithResponses) CreateRealmRoleWithResponse(ctx context.Context, c
 }
 
 // DeleteRealmRoleWithResponse request returning *DeleteRealmRoleResponse
-func (c *ClientWithResponses) DeleteRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, reqEditors ...RequestEditorFn) (*DeleteRealmRoleResponse, error) {
-	rsp, err := c.DeleteRealmRole(ctx, clusterId, realmName, roleName, reqEditors...)
+func (c *ClientWithResponses) DeleteRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *DeleteRealmRoleParams, reqEditors ...RequestEditorFn) (*DeleteRealmRoleResponse, error) {
+	rsp, err := c.DeleteRealmRole(ctx, clusterId, realmName, roleName, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16281,8 +20066,8 @@ func (c *ClientWithResponses) DeleteRealmRoleWithResponse(ctx context.Context, c
 }
 
 // GetRealmRoleWithResponse request returning *GetRealmRoleResponse
-func (c *ClientWithResponses) GetRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, reqEditors ...RequestEditorFn) (*GetRealmRoleResponse, error) {
-	rsp, err := c.GetRealmRole(ctx, clusterId, realmName, roleName, reqEditors...)
+func (c *ClientWithResponses) GetRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *GetRealmRoleParams, reqEditors ...RequestEditorFn) (*GetRealmRoleResponse, error) {
+	rsp, err := c.GetRealmRole(ctx, clusterId, realmName, roleName, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16290,16 +20075,16 @@ func (c *ClientWithResponses) GetRealmRoleWithResponse(ctx context.Context, clus
 }
 
 // UpdateRealmRoleWithBodyWithResponse request with arbitrary body returning *UpdateRealmRoleResponse
-func (c *ClientWithResponses) UpdateRealmRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmRoleResponse, error) {
-	rsp, err := c.UpdateRealmRoleWithBody(ctx, clusterId, realmName, roleName, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateRealmRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *UpdateRealmRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmRoleResponse, error) {
+	rsp, err := c.UpdateRealmRoleWithBody(ctx, clusterId, realmName, roleName, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateRealmRoleResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, body UpdateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmRoleResponse, error) {
-	rsp, err := c.UpdateRealmRole(ctx, clusterId, realmName, roleName, body, reqEditors...)
+func (c *ClientWithResponses) UpdateRealmRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, roleName RealmRoleName, params *UpdateRealmRoleParams, body UpdateRealmRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmRoleResponse, error) {
+	rsp, err := c.UpdateRealmRole(ctx, clusterId, realmName, roleName, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16316,16 +20101,16 @@ func (c *ClientWithResponses) ListRealmUsersWithResponse(ctx context.Context, cl
 }
 
 // CreateRealmUserWithBodyWithResponse request with arbitrary body returning *CreateRealmUserResponse
-func (c *ClientWithResponses) CreateRealmUserWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmUserResponse, error) {
-	rsp, err := c.CreateRealmUserWithBody(ctx, clusterId, realmName, contentType, body, reqEditors...)
+func (c *ClientWithResponses) CreateRealmUserWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRealmUserResponse, error) {
+	rsp, err := c.CreateRealmUserWithBody(ctx, clusterId, realmName, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseCreateRealmUserResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, body CreateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmUserResponse, error) {
-	rsp, err := c.CreateRealmUser(ctx, clusterId, realmName, body, reqEditors...)
+func (c *ClientWithResponses) CreateRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *CreateRealmUserParams, body CreateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRealmUserResponse, error) {
+	rsp, err := c.CreateRealmUser(ctx, clusterId, realmName, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16333,8 +20118,8 @@ func (c *ClientWithResponses) CreateRealmUserWithResponse(ctx context.Context, c
 }
 
 // DeleteRealmUserWithResponse request returning *DeleteRealmUserResponse
-func (c *ClientWithResponses) DeleteRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*DeleteRealmUserResponse, error) {
-	rsp, err := c.DeleteRealmUser(ctx, clusterId, realmName, userId, reqEditors...)
+func (c *ClientWithResponses) DeleteRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *DeleteRealmUserParams, reqEditors ...RequestEditorFn) (*DeleteRealmUserResponse, error) {
+	rsp, err := c.DeleteRealmUser(ctx, clusterId, realmName, userId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16342,8 +20127,8 @@ func (c *ClientWithResponses) DeleteRealmUserWithResponse(ctx context.Context, c
 }
 
 // GetRealmUserWithResponse request returning *GetRealmUserResponse
-func (c *ClientWithResponses) GetRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*GetRealmUserResponse, error) {
-	rsp, err := c.GetRealmUser(ctx, clusterId, realmName, userId, reqEditors...)
+func (c *ClientWithResponses) GetRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *GetRealmUserParams, reqEditors ...RequestEditorFn) (*GetRealmUserResponse, error) {
+	rsp, err := c.GetRealmUser(ctx, clusterId, realmName, userId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16351,16 +20136,16 @@ func (c *ClientWithResponses) GetRealmUserWithResponse(ctx context.Context, clus
 }
 
 // UpdateRealmUserWithBodyWithResponse request with arbitrary body returning *UpdateRealmUserResponse
-func (c *ClientWithResponses) UpdateRealmUserWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmUserResponse, error) {
-	rsp, err := c.UpdateRealmUserWithBody(ctx, clusterId, realmName, userId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateRealmUserWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *UpdateRealmUserParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRealmUserResponse, error) {
+	rsp, err := c.UpdateRealmUserWithBody(ctx, clusterId, realmName, userId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateRealmUserResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, body UpdateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmUserResponse, error) {
-	rsp, err := c.UpdateRealmUser(ctx, clusterId, realmName, userId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateRealmUserWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *UpdateRealmUserParams, body UpdateRealmUserJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRealmUserResponse, error) {
+	rsp, err := c.UpdateRealmUser(ctx, clusterId, realmName, userId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16368,8 +20153,8 @@ func (c *ClientWithResponses) UpdateRealmUserWithResponse(ctx context.Context, c
 }
 
 // ListRealmUserGroupsWithResponse request returning *ListRealmUserGroupsResponse
-func (c *ClientWithResponses) ListRealmUserGroupsWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*ListRealmUserGroupsResponse, error) {
-	rsp, err := c.ListRealmUserGroups(ctx, clusterId, realmName, userId, reqEditors...)
+func (c *ClientWithResponses) ListRealmUserGroupsWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *ListRealmUserGroupsParams, reqEditors ...RequestEditorFn) (*ListRealmUserGroupsResponse, error) {
+	rsp, err := c.ListRealmUserGroups(ctx, clusterId, realmName, userId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16377,8 +20162,8 @@ func (c *ClientWithResponses) ListRealmUserGroupsWithResponse(ctx context.Contex
 }
 
 // RemoveRealmUserFromGroupWithResponse request returning *RemoveRealmUserFromGroupResponse
-func (c *ClientWithResponses) RemoveRealmUserFromGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*RemoveRealmUserFromGroupResponse, error) {
-	rsp, err := c.RemoveRealmUserFromGroup(ctx, clusterId, realmName, userId, groupId, reqEditors...)
+func (c *ClientWithResponses) RemoveRealmUserFromGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, params *RemoveRealmUserFromGroupParams, reqEditors ...RequestEditorFn) (*RemoveRealmUserFromGroupResponse, error) {
+	rsp, err := c.RemoveRealmUserFromGroup(ctx, clusterId, realmName, userId, groupId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16386,8 +20171,8 @@ func (c *ClientWithResponses) RemoveRealmUserFromGroupWithResponse(ctx context.C
 }
 
 // AddRealmUserToGroupWithResponse request returning *AddRealmUserToGroupResponse
-func (c *ClientWithResponses) AddRealmUserToGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, reqEditors ...RequestEditorFn) (*AddRealmUserToGroupResponse, error) {
-	rsp, err := c.AddRealmUserToGroup(ctx, clusterId, realmName, userId, groupId, reqEditors...)
+func (c *ClientWithResponses) AddRealmUserToGroupWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, groupId RealmGroupId, params *AddRealmUserToGroupParams, reqEditors ...RequestEditorFn) (*AddRealmUserToGroupResponse, error) {
+	rsp, err := c.AddRealmUserToGroup(ctx, clusterId, realmName, userId, groupId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16395,8 +20180,8 @@ func (c *ClientWithResponses) AddRealmUserToGroupWithResponse(ctx context.Contex
 }
 
 // ListRealmUserRolesWithResponse request returning *ListRealmUserRolesResponse
-func (c *ClientWithResponses) ListRealmUserRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, reqEditors ...RequestEditorFn) (*ListRealmUserRolesResponse, error) {
-	rsp, err := c.ListRealmUserRoles(ctx, clusterId, realmName, userId, reqEditors...)
+func (c *ClientWithResponses) ListRealmUserRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *ListRealmUserRolesParams, reqEditors ...RequestEditorFn) (*ListRealmUserRolesResponse, error) {
+	rsp, err := c.ListRealmUserRoles(ctx, clusterId, realmName, userId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16404,16 +20189,16 @@ func (c *ClientWithResponses) ListRealmUserRolesWithResponse(ctx context.Context
 }
 
 // AssignRealmUserRolesWithBodyWithResponse request with arbitrary body returning *AssignRealmUserRolesResponse
-func (c *ClientWithResponses) AssignRealmUserRolesWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AssignRealmUserRolesResponse, error) {
-	rsp, err := c.AssignRealmUserRolesWithBody(ctx, clusterId, realmName, userId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) AssignRealmUserRolesWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *AssignRealmUserRolesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AssignRealmUserRolesResponse, error) {
+	rsp, err := c.AssignRealmUserRolesWithBody(ctx, clusterId, realmName, userId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseAssignRealmUserRolesResponse(rsp)
 }
 
-func (c *ClientWithResponses) AssignRealmUserRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, body AssignRealmUserRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignRealmUserRolesResponse, error) {
-	rsp, err := c.AssignRealmUserRoles(ctx, clusterId, realmName, userId, body, reqEditors...)
+func (c *ClientWithResponses) AssignRealmUserRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, params *AssignRealmUserRolesParams, body AssignRealmUserRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignRealmUserRolesResponse, error) {
+	rsp, err := c.AssignRealmUserRoles(ctx, clusterId, realmName, userId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16421,8 +20206,8 @@ func (c *ClientWithResponses) AssignRealmUserRolesWithResponse(ctx context.Conte
 }
 
 // RemoveRealmUserRoleWithResponse request returning *RemoveRealmUserRoleResponse
-func (c *ClientWithResponses) RemoveRealmUserRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, roleName RealmRoleName, reqEditors ...RequestEditorFn) (*RemoveRealmUserRoleResponse, error) {
-	rsp, err := c.RemoveRealmUserRole(ctx, clusterId, realmName, userId, roleName, reqEditors...)
+func (c *ClientWithResponses) RemoveRealmUserRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, userId RealmUserId, roleName RealmRoleName, params *RemoveRealmUserRoleParams, reqEditors ...RequestEditorFn) (*RemoveRealmUserRoleResponse, error) {
+	rsp, err := c.RemoveRealmUserRole(ctx, clusterId, realmName, userId, roleName, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16430,8 +20215,8 @@ func (c *ClientWithResponses) RemoveRealmUserRoleWithResponse(ctx context.Contex
 }
 
 // GetClientThemeAssignmentWithResponse request returning *GetClientThemeAssignmentResponse
-func (c *ClientWithResponses) GetClientThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, reqEditors ...RequestEditorFn) (*GetClientThemeAssignmentResponse, error) {
-	rsp, err := c.GetClientThemeAssignment(ctx, clusterId, realm, clientId, reqEditors...)
+func (c *ClientWithResponses) GetClientThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *GetClientThemeAssignmentParams, reqEditors ...RequestEditorFn) (*GetClientThemeAssignmentResponse, error) {
+	rsp, err := c.GetClientThemeAssignment(ctx, clusterId, realm, clientId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16439,16 +20224,16 @@ func (c *ClientWithResponses) GetClientThemeAssignmentWithResponse(ctx context.C
 }
 
 // SetClientThemeAssignmentWithBodyWithResponse request with arbitrary body returning *SetClientThemeAssignmentResponse
-func (c *ClientWithResponses) SetClientThemeAssignmentWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetClientThemeAssignmentResponse, error) {
-	rsp, err := c.SetClientThemeAssignmentWithBody(ctx, clusterId, realm, clientId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) SetClientThemeAssignmentWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *SetClientThemeAssignmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetClientThemeAssignmentResponse, error) {
+	rsp, err := c.SetClientThemeAssignmentWithBody(ctx, clusterId, realm, clientId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseSetClientThemeAssignmentResponse(rsp)
 }
 
-func (c *ClientWithResponses) SetClientThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, body SetClientThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*SetClientThemeAssignmentResponse, error) {
-	rsp, err := c.SetClientThemeAssignment(ctx, clusterId, realm, clientId, body, reqEditors...)
+func (c *ClientWithResponses) SetClientThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, clientId ApplicationClientId, params *SetClientThemeAssignmentParams, body SetClientThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*SetClientThemeAssignmentResponse, error) {
+	rsp, err := c.SetClientThemeAssignment(ctx, clusterId, realm, clientId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16456,8 +20241,8 @@ func (c *ClientWithResponses) SetClientThemeAssignmentWithResponse(ctx context.C
 }
 
 // DeleteEmailBrandingWithResponse request returning *DeleteEmailBrandingResponse
-func (c *ClientWithResponses) DeleteEmailBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*DeleteEmailBrandingResponse, error) {
-	rsp, err := c.DeleteEmailBranding(ctx, clusterId, realm, reqEditors...)
+func (c *ClientWithResponses) DeleteEmailBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *DeleteEmailBrandingParams, reqEditors ...RequestEditorFn) (*DeleteEmailBrandingResponse, error) {
+	rsp, err := c.DeleteEmailBranding(ctx, clusterId, realm, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16465,8 +20250,8 @@ func (c *ClientWithResponses) DeleteEmailBrandingWithResponse(ctx context.Contex
 }
 
 // GetEmailBrandingWithResponse request returning *GetEmailBrandingResponse
-func (c *ClientWithResponses) GetEmailBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*GetEmailBrandingResponse, error) {
-	rsp, err := c.GetEmailBranding(ctx, clusterId, realm, reqEditors...)
+func (c *ClientWithResponses) GetEmailBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetEmailBrandingParams, reqEditors ...RequestEditorFn) (*GetEmailBrandingResponse, error) {
+	rsp, err := c.GetEmailBranding(ctx, clusterId, realm, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16474,16 +20259,16 @@ func (c *ClientWithResponses) GetEmailBrandingWithResponse(ctx context.Context, 
 }
 
 // UpsertEmailBrandingWithBodyWithResponse request with arbitrary body returning *UpsertEmailBrandingResponse
-func (c *ClientWithResponses) UpsertEmailBrandingWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertEmailBrandingResponse, error) {
-	rsp, err := c.UpsertEmailBrandingWithBody(ctx, clusterId, realm, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpsertEmailBrandingWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertEmailBrandingParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertEmailBrandingResponse, error) {
+	rsp, err := c.UpsertEmailBrandingWithBody(ctx, clusterId, realm, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpsertEmailBrandingResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpsertEmailBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, body UpsertEmailBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertEmailBrandingResponse, error) {
-	rsp, err := c.UpsertEmailBranding(ctx, clusterId, realm, body, reqEditors...)
+func (c *ClientWithResponses) UpsertEmailBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertEmailBrandingParams, body UpsertEmailBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertEmailBrandingResponse, error) {
+	rsp, err := c.UpsertEmailBranding(ctx, clusterId, realm, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16491,8 +20276,8 @@ func (c *ClientWithResponses) UpsertEmailBrandingWithResponse(ctx context.Contex
 }
 
 // DeleteLoginBrandingWithResponse request returning *DeleteLoginBrandingResponse
-func (c *ClientWithResponses) DeleteLoginBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*DeleteLoginBrandingResponse, error) {
-	rsp, err := c.DeleteLoginBranding(ctx, clusterId, realm, reqEditors...)
+func (c *ClientWithResponses) DeleteLoginBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *DeleteLoginBrandingParams, reqEditors ...RequestEditorFn) (*DeleteLoginBrandingResponse, error) {
+	rsp, err := c.DeleteLoginBranding(ctx, clusterId, realm, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16500,8 +20285,8 @@ func (c *ClientWithResponses) DeleteLoginBrandingWithResponse(ctx context.Contex
 }
 
 // GetLoginBrandingWithResponse request returning *GetLoginBrandingResponse
-func (c *ClientWithResponses) GetLoginBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*GetLoginBrandingResponse, error) {
-	rsp, err := c.GetLoginBranding(ctx, clusterId, realm, reqEditors...)
+func (c *ClientWithResponses) GetLoginBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetLoginBrandingParams, reqEditors ...RequestEditorFn) (*GetLoginBrandingResponse, error) {
+	rsp, err := c.GetLoginBranding(ctx, clusterId, realm, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16509,16 +20294,16 @@ func (c *ClientWithResponses) GetLoginBrandingWithResponse(ctx context.Context, 
 }
 
 // UpsertLoginBrandingWithBodyWithResponse request with arbitrary body returning *UpsertLoginBrandingResponse
-func (c *ClientWithResponses) UpsertLoginBrandingWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertLoginBrandingResponse, error) {
-	rsp, err := c.UpsertLoginBrandingWithBody(ctx, clusterId, realm, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpsertLoginBrandingWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertLoginBrandingParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertLoginBrandingResponse, error) {
+	rsp, err := c.UpsertLoginBrandingWithBody(ctx, clusterId, realm, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpsertLoginBrandingResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpsertLoginBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, body UpsertLoginBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertLoginBrandingResponse, error) {
-	rsp, err := c.UpsertLoginBranding(ctx, clusterId, realm, body, reqEditors...)
+func (c *ClientWithResponses) UpsertLoginBrandingWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertLoginBrandingParams, body UpsertLoginBrandingJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertLoginBrandingResponse, error) {
+	rsp, err := c.UpsertLoginBranding(ctx, clusterId, realm, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16526,8 +20311,8 @@ func (c *ClientWithResponses) UpsertLoginBrandingWithResponse(ctx context.Contex
 }
 
 // DeleteSmtpConfigWithResponse request returning *DeleteSmtpConfigResponse
-func (c *ClientWithResponses) DeleteSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*DeleteSmtpConfigResponse, error) {
-	rsp, err := c.DeleteSmtpConfig(ctx, clusterId, realm, reqEditors...)
+func (c *ClientWithResponses) DeleteSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *DeleteSmtpConfigParams, reqEditors ...RequestEditorFn) (*DeleteSmtpConfigResponse, error) {
+	rsp, err := c.DeleteSmtpConfig(ctx, clusterId, realm, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16535,8 +20320,8 @@ func (c *ClientWithResponses) DeleteSmtpConfigWithResponse(ctx context.Context, 
 }
 
 // GetSmtpConfigWithResponse request returning *GetSmtpConfigResponse
-func (c *ClientWithResponses) GetSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*GetSmtpConfigResponse, error) {
-	rsp, err := c.GetSmtpConfig(ctx, clusterId, realm, reqEditors...)
+func (c *ClientWithResponses) GetSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetSmtpConfigParams, reqEditors ...RequestEditorFn) (*GetSmtpConfigResponse, error) {
+	rsp, err := c.GetSmtpConfig(ctx, clusterId, realm, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16544,16 +20329,16 @@ func (c *ClientWithResponses) GetSmtpConfigWithResponse(ctx context.Context, clu
 }
 
 // UpsertSmtpConfigWithBodyWithResponse request with arbitrary body returning *UpsertSmtpConfigResponse
-func (c *ClientWithResponses) UpsertSmtpConfigWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertSmtpConfigResponse, error) {
-	rsp, err := c.UpsertSmtpConfigWithBody(ctx, clusterId, realm, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpsertSmtpConfigWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertSmtpConfigParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertSmtpConfigResponse, error) {
+	rsp, err := c.UpsertSmtpConfigWithBody(ctx, clusterId, realm, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpsertSmtpConfigResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpsertSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, body UpsertSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertSmtpConfigResponse, error) {
-	rsp, err := c.UpsertSmtpConfig(ctx, clusterId, realm, body, reqEditors...)
+func (c *ClientWithResponses) UpsertSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *UpsertSmtpConfigParams, body UpsertSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertSmtpConfigResponse, error) {
+	rsp, err := c.UpsertSmtpConfig(ctx, clusterId, realm, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16561,16 +20346,16 @@ func (c *ClientWithResponses) UpsertSmtpConfigWithResponse(ctx context.Context, 
 }
 
 // TestSmtpConfigWithBodyWithResponse request with arbitrary body returning *TestSmtpConfigResponse
-func (c *ClientWithResponses) TestSmtpConfigWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestSmtpConfigResponse, error) {
-	rsp, err := c.TestSmtpConfigWithBody(ctx, clusterId, realm, contentType, body, reqEditors...)
+func (c *ClientWithResponses) TestSmtpConfigWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *TestSmtpConfigParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestSmtpConfigResponse, error) {
+	rsp, err := c.TestSmtpConfigWithBody(ctx, clusterId, realm, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseTestSmtpConfigResponse(rsp)
 }
 
-func (c *ClientWithResponses) TestSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, body TestSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*TestSmtpConfigResponse, error) {
-	rsp, err := c.TestSmtpConfig(ctx, clusterId, realm, body, reqEditors...)
+func (c *ClientWithResponses) TestSmtpConfigWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *TestSmtpConfigParams, body TestSmtpConfigJSONRequestBody, reqEditors ...RequestEditorFn) (*TestSmtpConfigResponse, error) {
+	rsp, err := c.TestSmtpConfig(ctx, clusterId, realm, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16578,8 +20363,8 @@ func (c *ClientWithResponses) TestSmtpConfigWithResponse(ctx context.Context, cl
 }
 
 // GetThemeAssignmentWithResponse request returning *GetThemeAssignmentResponse
-func (c *ClientWithResponses) GetThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, reqEditors ...RequestEditorFn) (*GetThemeAssignmentResponse, error) {
-	rsp, err := c.GetThemeAssignment(ctx, clusterId, realm, reqEditors...)
+func (c *ClientWithResponses) GetThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *GetThemeAssignmentParams, reqEditors ...RequestEditorFn) (*GetThemeAssignmentResponse, error) {
+	rsp, err := c.GetThemeAssignment(ctx, clusterId, realm, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16587,16 +20372,16 @@ func (c *ClientWithResponses) GetThemeAssignmentWithResponse(ctx context.Context
 }
 
 // SetThemeAssignmentWithBodyWithResponse request with arbitrary body returning *SetThemeAssignmentResponse
-func (c *ClientWithResponses) SetThemeAssignmentWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetThemeAssignmentResponse, error) {
-	rsp, err := c.SetThemeAssignmentWithBody(ctx, clusterId, realm, contentType, body, reqEditors...)
+func (c *ClientWithResponses) SetThemeAssignmentWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *SetThemeAssignmentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetThemeAssignmentResponse, error) {
+	rsp, err := c.SetThemeAssignmentWithBody(ctx, clusterId, realm, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseSetThemeAssignmentResponse(rsp)
 }
 
-func (c *ClientWithResponses) SetThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, body SetThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*SetThemeAssignmentResponse, error) {
-	rsp, err := c.SetThemeAssignment(ctx, clusterId, realm, body, reqEditors...)
+func (c *ClientWithResponses) SetThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *SetThemeAssignmentParams, body SetThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*SetThemeAssignmentResponse, error) {
+	rsp, err := c.SetThemeAssignment(ctx, clusterId, realm, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16604,8 +20389,8 @@ func (c *ClientWithResponses) SetThemeAssignmentWithResponse(ctx context.Context
 }
 
 // GetClusterSecurityWithResponse request returning *GetClusterSecurityResponse
-func (c *ClientWithResponses) GetClusterSecurityWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*GetClusterSecurityResponse, error) {
-	rsp, err := c.GetClusterSecurity(ctx, clusterId, reqEditors...)
+func (c *ClientWithResponses) GetClusterSecurityWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterSecurityParams, reqEditors ...RequestEditorFn) (*GetClusterSecurityResponse, error) {
+	rsp, err := c.GetClusterSecurity(ctx, clusterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16613,16 +20398,16 @@ func (c *ClientWithResponses) GetClusterSecurityWithResponse(ctx context.Context
 }
 
 // UpdateClusterSecurityWithBodyWithResponse request with arbitrary body returning *UpdateClusterSecurityResponse
-func (c *ClientWithResponses) UpdateClusterSecurityWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterSecurityResponse, error) {
-	rsp, err := c.UpdateClusterSecurityWithBody(ctx, clusterId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateClusterSecurityWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterSecurityParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterSecurityResponse, error) {
+	rsp, err := c.UpdateClusterSecurityWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateClusterSecurityResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateClusterSecurityWithResponse(ctx context.Context, clusterId ClusterId, body UpdateClusterSecurityJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterSecurityResponse, error) {
-	rsp, err := c.UpdateClusterSecurity(ctx, clusterId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateClusterSecurityWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterSecurityParams, body UpdateClusterSecurityJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterSecurityResponse, error) {
+	rsp, err := c.UpdateClusterSecurity(ctx, clusterId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16639,8 +20424,8 @@ func (c *ClientWithResponses) ListClusterSecurityLogsWithResponse(ctx context.Co
 }
 
 // ListClusterCAPTCHADomainsWithResponse request returning *ListClusterCAPTCHADomainsResponse
-func (c *ClientWithResponses) ListClusterCAPTCHADomainsWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListClusterCAPTCHADomainsResponse, error) {
-	rsp, err := c.ListClusterCAPTCHADomains(ctx, clusterId, reqEditors...)
+func (c *ClientWithResponses) ListClusterCAPTCHADomainsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterCAPTCHADomainsParams, reqEditors ...RequestEditorFn) (*ListClusterCAPTCHADomainsResponse, error) {
+	rsp, err := c.ListClusterCAPTCHADomains(ctx, clusterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16648,16 +20433,16 @@ func (c *ClientWithResponses) ListClusterCAPTCHADomainsWithResponse(ctx context.
 }
 
 // AddClusterCAPTCHADomainWithBodyWithResponse request with arbitrary body returning *AddClusterCAPTCHADomainResponse
-func (c *ClientWithResponses) AddClusterCAPTCHADomainWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddClusterCAPTCHADomainResponse, error) {
-	rsp, err := c.AddClusterCAPTCHADomainWithBody(ctx, clusterId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) AddClusterCAPTCHADomainWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *AddClusterCAPTCHADomainParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddClusterCAPTCHADomainResponse, error) {
+	rsp, err := c.AddClusterCAPTCHADomainWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseAddClusterCAPTCHADomainResponse(rsp)
 }
 
-func (c *ClientWithResponses) AddClusterCAPTCHADomainWithResponse(ctx context.Context, clusterId ClusterId, body AddClusterCAPTCHADomainJSONRequestBody, reqEditors ...RequestEditorFn) (*AddClusterCAPTCHADomainResponse, error) {
-	rsp, err := c.AddClusterCAPTCHADomain(ctx, clusterId, body, reqEditors...)
+func (c *ClientWithResponses) AddClusterCAPTCHADomainWithResponse(ctx context.Context, clusterId ClusterId, params *AddClusterCAPTCHADomainParams, body AddClusterCAPTCHADomainJSONRequestBody, reqEditors ...RequestEditorFn) (*AddClusterCAPTCHADomainResponse, error) {
+	rsp, err := c.AddClusterCAPTCHADomain(ctx, clusterId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16665,8 +20450,8 @@ func (c *ClientWithResponses) AddClusterCAPTCHADomainWithResponse(ctx context.Co
 }
 
 // RemoveClusterCAPTCHADomainWithResponse request returning *RemoveClusterCAPTCHADomainResponse
-func (c *ClientWithResponses) RemoveClusterCAPTCHADomainWithResponse(ctx context.Context, clusterId ClusterId, hostname string, reqEditors ...RequestEditorFn) (*RemoveClusterCAPTCHADomainResponse, error) {
-	rsp, err := c.RemoveClusterCAPTCHADomain(ctx, clusterId, hostname, reqEditors...)
+func (c *ClientWithResponses) RemoveClusterCAPTCHADomainWithResponse(ctx context.Context, clusterId ClusterId, hostname string, params *RemoveClusterCAPTCHADomainParams, reqEditors ...RequestEditorFn) (*RemoveClusterCAPTCHADomainResponse, error) {
+	rsp, err := c.RemoveClusterCAPTCHADomain(ctx, clusterId, hostname, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16674,8 +20459,8 @@ func (c *ClientWithResponses) RemoveClusterCAPTCHADomainWithResponse(ctx context
 }
 
 // ListThemesWithResponse request returning *ListThemesResponse
-func (c *ClientWithResponses) ListThemesWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListThemesResponse, error) {
-	rsp, err := c.ListThemes(ctx, clusterId, reqEditors...)
+func (c *ClientWithResponses) ListThemesWithResponse(ctx context.Context, clusterId ClusterId, params *ListThemesParams, reqEditors ...RequestEditorFn) (*ListThemesResponse, error) {
+	rsp, err := c.ListThemes(ctx, clusterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16683,8 +20468,8 @@ func (c *ClientWithResponses) ListThemesWithResponse(ctx context.Context, cluste
 }
 
 // UploadThemeWithBodyWithResponse request with arbitrary body returning *UploadThemeResponse
-func (c *ClientWithResponses) UploadThemeWithBodyWithResponse(ctx context.Context, clusterId ClusterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadThemeResponse, error) {
-	rsp, err := c.UploadThemeWithBody(ctx, clusterId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UploadThemeWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *UploadThemeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadThemeResponse, error) {
+	rsp, err := c.UploadThemeWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16692,8 +20477,8 @@ func (c *ClientWithResponses) UploadThemeWithBodyWithResponse(ctx context.Contex
 }
 
 // DeleteThemeWithResponse request returning *DeleteThemeResponse
-func (c *ClientWithResponses) DeleteThemeWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, reqEditors ...RequestEditorFn) (*DeleteThemeResponse, error) {
-	rsp, err := c.DeleteTheme(ctx, clusterId, themeId, reqEditors...)
+func (c *ClientWithResponses) DeleteThemeWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *DeleteThemeParams, reqEditors ...RequestEditorFn) (*DeleteThemeResponse, error) {
+	rsp, err := c.DeleteTheme(ctx, clusterId, themeId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16701,8 +20486,8 @@ func (c *ClientWithResponses) DeleteThemeWithResponse(ctx context.Context, clust
 }
 
 // GetThemeWithResponse request returning *GetThemeResponse
-func (c *ClientWithResponses) GetThemeWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, reqEditors ...RequestEditorFn) (*GetThemeResponse, error) {
-	rsp, err := c.GetTheme(ctx, clusterId, themeId, reqEditors...)
+func (c *ClientWithResponses) GetThemeWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *GetThemeParams, reqEditors ...RequestEditorFn) (*GetThemeResponse, error) {
+	rsp, err := c.GetTheme(ctx, clusterId, themeId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16710,16 +20495,16 @@ func (c *ClientWithResponses) GetThemeWithResponse(ctx context.Context, clusterI
 }
 
 // UpdateThemeWithBodyWithResponse request with arbitrary body returning *UpdateThemeResponse
-func (c *ClientWithResponses) UpdateThemeWithBodyWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateThemeResponse, error) {
-	rsp, err := c.UpdateThemeWithBody(ctx, clusterId, themeId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateThemeWithBodyWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateThemeResponse, error) {
+	rsp, err := c.UpdateThemeWithBody(ctx, clusterId, themeId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateThemeResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateThemeWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, body UpdateThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateThemeResponse, error) {
-	rsp, err := c.UpdateTheme(ctx, clusterId, themeId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateThemeWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, body UpdateThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateThemeResponse, error) {
+	rsp, err := c.UpdateTheme(ctx, clusterId, themeId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16727,8 +20512,8 @@ func (c *ClientWithResponses) UpdateThemeWithResponse(ctx context.Context, clust
 }
 
 // GetClusterUpgradePathWithResponse request returning *GetClusterUpgradePathResponse
-func (c *ClientWithResponses) GetClusterUpgradePathWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*GetClusterUpgradePathResponse, error) {
-	rsp, err := c.GetClusterUpgradePath(ctx, clusterId, reqEditors...)
+func (c *ClientWithResponses) GetClusterUpgradePathWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterUpgradePathParams, reqEditors ...RequestEditorFn) (*GetClusterUpgradePathResponse, error) {
+	rsp, err := c.GetClusterUpgradePath(ctx, clusterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16736,8 +20521,8 @@ func (c *ClientWithResponses) GetClusterUpgradePathWithResponse(ctx context.Cont
 }
 
 // ListClusterUpgradesWithResponse request returning *ListClusterUpgradesResponse
-func (c *ClientWithResponses) ListClusterUpgradesWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*ListClusterUpgradesResponse, error) {
-	rsp, err := c.ListClusterUpgrades(ctx, clusterId, reqEditors...)
+func (c *ClientWithResponses) ListClusterUpgradesWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterUpgradesParams, reqEditors ...RequestEditorFn) (*ListClusterUpgradesResponse, error) {
+	rsp, err := c.ListClusterUpgrades(ctx, clusterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16745,8 +20530,8 @@ func (c *ClientWithResponses) ListClusterUpgradesWithResponse(ctx context.Contex
 }
 
 // CancelClusterUpgradeWithResponse request returning *CancelClusterUpgradeResponse
-func (c *ClientWithResponses) CancelClusterUpgradeWithResponse(ctx context.Context, clusterId ClusterId, reqEditors ...RequestEditorFn) (*CancelClusterUpgradeResponse, error) {
-	rsp, err := c.CancelClusterUpgrade(ctx, clusterId, reqEditors...)
+func (c *ClientWithResponses) CancelClusterUpgradeWithResponse(ctx context.Context, clusterId ClusterId, params *CancelClusterUpgradeParams, reqEditors ...RequestEditorFn) (*CancelClusterUpgradeResponse, error) {
+	rsp, err := c.CancelClusterUpgrade(ctx, clusterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16754,8 +20539,8 @@ func (c *ClientWithResponses) CancelClusterUpgradeWithResponse(ctx context.Conte
 }
 
 // ListExtensionsWithResponse request returning *ListExtensionsResponse
-func (c *ClientWithResponses) ListExtensionsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListExtensionsResponse, error) {
-	rsp, err := c.ListExtensions(ctx, reqEditors...)
+func (c *ClientWithResponses) ListExtensionsWithResponse(ctx context.Context, params *ListExtensionsParams, reqEditors ...RequestEditorFn) (*ListExtensionsResponse, error) {
+	rsp, err := c.ListExtensions(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16763,8 +20548,8 @@ func (c *ClientWithResponses) ListExtensionsWithResponse(ctx context.Context, re
 }
 
 // UploadExtensionWithBodyWithResponse request with arbitrary body returning *UploadExtensionResponse
-func (c *ClientWithResponses) UploadExtensionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadExtensionResponse, error) {
-	rsp, err := c.UploadExtensionWithBody(ctx, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UploadExtensionWithBodyWithResponse(ctx context.Context, params *UploadExtensionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadExtensionResponse, error) {
+	rsp, err := c.UploadExtensionWithBody(ctx, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16772,8 +20557,8 @@ func (c *ClientWithResponses) UploadExtensionWithBodyWithResponse(ctx context.Co
 }
 
 // DeleteExtensionWithResponse request returning *DeleteExtensionResponse
-func (c *ClientWithResponses) DeleteExtensionWithResponse(ctx context.Context, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*DeleteExtensionResponse, error) {
-	rsp, err := c.DeleteExtension(ctx, extensionId, reqEditors...)
+func (c *ClientWithResponses) DeleteExtensionWithResponse(ctx context.Context, extensionId ExtensionId, params *DeleteExtensionParams, reqEditors ...RequestEditorFn) (*DeleteExtensionResponse, error) {
+	rsp, err := c.DeleteExtension(ctx, extensionId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16781,8 +20566,8 @@ func (c *ClientWithResponses) DeleteExtensionWithResponse(ctx context.Context, e
 }
 
 // GetExtensionWithResponse request returning *GetExtensionResponse
-func (c *ClientWithResponses) GetExtensionWithResponse(ctx context.Context, extensionId ExtensionId, reqEditors ...RequestEditorFn) (*GetExtensionResponse, error) {
-	rsp, err := c.GetExtension(ctx, extensionId, reqEditors...)
+func (c *ClientWithResponses) GetExtensionWithResponse(ctx context.Context, extensionId ExtensionId, params *GetExtensionParams, reqEditors ...RequestEditorFn) (*GetExtensionResponse, error) {
+	rsp, err := c.GetExtension(ctx, extensionId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16790,16 +20575,16 @@ func (c *ClientWithResponses) GetExtensionWithResponse(ctx context.Context, exte
 }
 
 // UpdateExtensionWithBodyWithResponse request with arbitrary body returning *UpdateExtensionResponse
-func (c *ClientWithResponses) UpdateExtensionWithBodyWithResponse(ctx context.Context, extensionId ExtensionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateExtensionResponse, error) {
-	rsp, err := c.UpdateExtensionWithBody(ctx, extensionId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateExtensionWithBodyWithResponse(ctx context.Context, extensionId ExtensionId, params *UpdateExtensionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateExtensionResponse, error) {
+	rsp, err := c.UpdateExtensionWithBody(ctx, extensionId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateExtensionResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateExtensionWithResponse(ctx context.Context, extensionId ExtensionId, body UpdateExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateExtensionResponse, error) {
-	rsp, err := c.UpdateExtension(ctx, extensionId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateExtensionWithResponse(ctx context.Context, extensionId ExtensionId, params *UpdateExtensionParams, body UpdateExtensionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateExtensionResponse, error) {
+	rsp, err := c.UpdateExtension(ctx, extensionId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16807,8 +20592,8 @@ func (c *ClientWithResponses) UpdateExtensionWithResponse(ctx context.Context, e
 }
 
 // PublishExtensionVersionWithBodyWithResponse request with arbitrary body returning *PublishExtensionVersionResponse
-func (c *ClientWithResponses) PublishExtensionVersionWithBodyWithResponse(ctx context.Context, extensionId ExtensionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PublishExtensionVersionResponse, error) {
-	rsp, err := c.PublishExtensionVersionWithBody(ctx, extensionId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PublishExtensionVersionWithBodyWithResponse(ctx context.Context, extensionId ExtensionId, params *PublishExtensionVersionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PublishExtensionVersionResponse, error) {
+	rsp, err := c.PublishExtensionVersionWithBody(ctx, extensionId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16816,8 +20601,8 @@ func (c *ClientWithResponses) PublishExtensionVersionWithBodyWithResponse(ctx co
 }
 
 // ListIdentityProviderTemplatesWithResponse request returning *ListIdentityProviderTemplatesResponse
-func (c *ClientWithResponses) ListIdentityProviderTemplatesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListIdentityProviderTemplatesResponse, error) {
-	rsp, err := c.ListIdentityProviderTemplates(ctx, reqEditors...)
+func (c *ClientWithResponses) ListIdentityProviderTemplatesWithResponse(ctx context.Context, params *ListIdentityProviderTemplatesParams, reqEditors ...RequestEditorFn) (*ListIdentityProviderTemplatesResponse, error) {
+	rsp, err := c.ListIdentityProviderTemplates(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -16825,20 +20610,177 @@ func (c *ClientWithResponses) ListIdentityProviderTemplatesWithResponse(ctx cont
 }
 
 // DiscoverOIDCWithBodyWithResponse request with arbitrary body returning *DiscoverOIDCResponse
-func (c *ClientWithResponses) DiscoverOIDCWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DiscoverOIDCResponse, error) {
-	rsp, err := c.DiscoverOIDCWithBody(ctx, contentType, body, reqEditors...)
+func (c *ClientWithResponses) DiscoverOIDCWithBodyWithResponse(ctx context.Context, params *DiscoverOIDCParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DiscoverOIDCResponse, error) {
+	rsp, err := c.DiscoverOIDCWithBody(ctx, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseDiscoverOIDCResponse(rsp)
 }
 
-func (c *ClientWithResponses) DiscoverOIDCWithResponse(ctx context.Context, body DiscoverOIDCJSONRequestBody, reqEditors ...RequestEditorFn) (*DiscoverOIDCResponse, error) {
-	rsp, err := c.DiscoverOIDC(ctx, body, reqEditors...)
+func (c *ClientWithResponses) DiscoverOIDCWithResponse(ctx context.Context, params *DiscoverOIDCParams, body DiscoverOIDCJSONRequestBody, reqEditors ...RequestEditorFn) (*DiscoverOIDCResponse, error) {
+	rsp, err := c.DiscoverOIDC(ctx, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseDiscoverOIDCResponse(rsp)
+}
+
+// ListSIEMDestinationsWithResponse request returning *ListSIEMDestinationsResponse
+func (c *ClientWithResponses) ListSIEMDestinationsWithResponse(ctx context.Context, params *ListSIEMDestinationsParams, reqEditors ...RequestEditorFn) (*ListSIEMDestinationsResponse, error) {
+	rsp, err := c.ListSIEMDestinations(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListSIEMDestinationsResponse(rsp)
+}
+
+// CreateSIEMDestinationWithBodyWithResponse request with arbitrary body returning *CreateSIEMDestinationResponse
+func (c *ClientWithResponses) CreateSIEMDestinationWithBodyWithResponse(ctx context.Context, params *CreateSIEMDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateSIEMDestinationResponse, error) {
+	rsp, err := c.CreateSIEMDestinationWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateSIEMDestinationResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateSIEMDestinationWithResponse(ctx context.Context, params *CreateSIEMDestinationParams, body CreateSIEMDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateSIEMDestinationResponse, error) {
+	rsp, err := c.CreateSIEMDestination(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateSIEMDestinationResponse(rsp)
+}
+
+// DeleteSIEMDestinationWithResponse request returning *DeleteSIEMDestinationResponse
+func (c *ClientWithResponses) DeleteSIEMDestinationWithResponse(ctx context.Context, destinationId SIEMDestinationId, params *DeleteSIEMDestinationParams, reqEditors ...RequestEditorFn) (*DeleteSIEMDestinationResponse, error) {
+	rsp, err := c.DeleteSIEMDestination(ctx, destinationId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteSIEMDestinationResponse(rsp)
+}
+
+// GetSIEMDestinationWithResponse request returning *GetSIEMDestinationResponse
+func (c *ClientWithResponses) GetSIEMDestinationWithResponse(ctx context.Context, destinationId SIEMDestinationId, params *GetSIEMDestinationParams, reqEditors ...RequestEditorFn) (*GetSIEMDestinationResponse, error) {
+	rsp, err := c.GetSIEMDestination(ctx, destinationId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetSIEMDestinationResponse(rsp)
+}
+
+// UpdateSIEMDestinationWithBodyWithResponse request with arbitrary body returning *UpdateSIEMDestinationResponse
+func (c *ClientWithResponses) UpdateSIEMDestinationWithBodyWithResponse(ctx context.Context, destinationId SIEMDestinationId, params *UpdateSIEMDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSIEMDestinationResponse, error) {
+	rsp, err := c.UpdateSIEMDestinationWithBody(ctx, destinationId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateSIEMDestinationResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateSIEMDestinationWithResponse(ctx context.Context, destinationId SIEMDestinationId, params *UpdateSIEMDestinationParams, body UpdateSIEMDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSIEMDestinationResponse, error) {
+	rsp, err := c.UpdateSIEMDestination(ctx, destinationId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateSIEMDestinationResponse(rsp)
+}
+
+// TestSIEMDestinationWithResponse request returning *TestSIEMDestinationResponse
+func (c *ClientWithResponses) TestSIEMDestinationWithResponse(ctx context.Context, destinationId SIEMDestinationId, params *TestSIEMDestinationParams, reqEditors ...RequestEditorFn) (*TestSIEMDestinationResponse, error) {
+	rsp, err := c.TestSIEMDestination(ctx, destinationId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTestSIEMDestinationResponse(rsp)
+}
+
+// ListWebhookEventTypesWithResponse request returning *ListWebhookEventTypesResponse
+func (c *ClientWithResponses) ListWebhookEventTypesWithResponse(ctx context.Context, params *ListWebhookEventTypesParams, reqEditors ...RequestEditorFn) (*ListWebhookEventTypesResponse, error) {
+	rsp, err := c.ListWebhookEventTypes(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWebhookEventTypesResponse(rsp)
+}
+
+// ListWebhookSubscriptionsWithResponse request returning *ListWebhookSubscriptionsResponse
+func (c *ClientWithResponses) ListWebhookSubscriptionsWithResponse(ctx context.Context, params *ListWebhookSubscriptionsParams, reqEditors ...RequestEditorFn) (*ListWebhookSubscriptionsResponse, error) {
+	rsp, err := c.ListWebhookSubscriptions(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWebhookSubscriptionsResponse(rsp)
+}
+
+// CreateWebhookSubscriptionWithBodyWithResponse request with arbitrary body returning *CreateWebhookSubscriptionResponse
+func (c *ClientWithResponses) CreateWebhookSubscriptionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateWebhookSubscriptionResponse, error) {
+	rsp, err := c.CreateWebhookSubscriptionWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateWebhookSubscriptionResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateWebhookSubscriptionWithResponse(ctx context.Context, body CreateWebhookSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateWebhookSubscriptionResponse, error) {
+	rsp, err := c.CreateWebhookSubscription(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateWebhookSubscriptionResponse(rsp)
+}
+
+// DeleteWebhookSubscriptionWithResponse request returning *DeleteWebhookSubscriptionResponse
+func (c *ClientWithResponses) DeleteWebhookSubscriptionWithResponse(ctx context.Context, webhookId WebhookId, reqEditors ...RequestEditorFn) (*DeleteWebhookSubscriptionResponse, error) {
+	rsp, err := c.DeleteWebhookSubscription(ctx, webhookId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteWebhookSubscriptionResponse(rsp)
+}
+
+// GetWebhookSubscriptionWithResponse request returning *GetWebhookSubscriptionResponse
+func (c *ClientWithResponses) GetWebhookSubscriptionWithResponse(ctx context.Context, webhookId WebhookId, reqEditors ...RequestEditorFn) (*GetWebhookSubscriptionResponse, error) {
+	rsp, err := c.GetWebhookSubscription(ctx, webhookId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWebhookSubscriptionResponse(rsp)
+}
+
+// UpdateWebhookSubscriptionWithBodyWithResponse request with arbitrary body returning *UpdateWebhookSubscriptionResponse
+func (c *ClientWithResponses) UpdateWebhookSubscriptionWithBodyWithResponse(ctx context.Context, webhookId WebhookId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateWebhookSubscriptionResponse, error) {
+	rsp, err := c.UpdateWebhookSubscriptionWithBody(ctx, webhookId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateWebhookSubscriptionResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateWebhookSubscriptionWithResponse(ctx context.Context, webhookId WebhookId, body UpdateWebhookSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateWebhookSubscriptionResponse, error) {
+	rsp, err := c.UpdateWebhookSubscription(ctx, webhookId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateWebhookSubscriptionResponse(rsp)
+}
+
+// TestWebhookSubscriptionWithBodyWithResponse request with arbitrary body returning *TestWebhookSubscriptionResponse
+func (c *ClientWithResponses) TestWebhookSubscriptionWithBodyWithResponse(ctx context.Context, webhookId WebhookId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestWebhookSubscriptionResponse, error) {
+	rsp, err := c.TestWebhookSubscriptionWithBody(ctx, webhookId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTestWebhookSubscriptionResponse(rsp)
+}
+
+func (c *ClientWithResponses) TestWebhookSubscriptionWithResponse(ctx context.Context, webhookId WebhookId, body TestWebhookSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*TestWebhookSubscriptionResponse, error) {
+	rsp, err := c.TestWebhookSubscription(ctx, webhookId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTestWebhookSubscriptionResponse(rsp)
 }
 
 // ParseListClusterFeaturesResponse parses an HTTP response from a ListClusterFeaturesWithResponse call
@@ -25205,6 +29147,1086 @@ func ParseDiscoverOIDCResponse(rsp *http.Response) (*DiscoverOIDCResponse, error
 			return nil, err
 		}
 		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListSIEMDestinationsResponse parses an HTTP response from a ListSIEMDestinationsWithResponse call
+func ParseListSIEMDestinationsResponse(rsp *http.Response) (*ListSIEMDestinationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListSIEMDestinationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []SIEMDestination
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateSIEMDestinationResponse parses an HTTP response from a CreateSIEMDestinationWithResponse call
+func ParseCreateSIEMDestinationResponse(rsp *http.Response) (*CreateSIEMDestinationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateSIEMDestinationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest SIEMDestination
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 402:
+		var dest PlanLimitErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteSIEMDestinationResponse parses an HTTP response from a DeleteSIEMDestinationWithResponse call
+func ParseDeleteSIEMDestinationResponse(rsp *http.Response) (*DeleteSIEMDestinationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteSIEMDestinationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 402:
+		var dest PlanLimitErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetSIEMDestinationResponse parses an HTTP response from a GetSIEMDestinationWithResponse call
+func ParseGetSIEMDestinationResponse(rsp *http.Response) (*GetSIEMDestinationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetSIEMDestinationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SIEMDestination
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateSIEMDestinationResponse parses an HTTP response from a UpdateSIEMDestinationWithResponse call
+func ParseUpdateSIEMDestinationResponse(rsp *http.Response) (*UpdateSIEMDestinationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateSIEMDestinationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SIEMDestination
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 402:
+		var dest PlanLimitErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseTestSIEMDestinationResponse parses an HTTP response from a TestSIEMDestinationWithResponse call
+func ParseTestSIEMDestinationResponse(rsp *http.Response) (*TestSIEMDestinationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &TestSIEMDestinationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SIEMDestinationTestResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 402:
+		var dest PlanLimitErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListWebhookEventTypesResponse parses an HTTP response from a ListWebhookEventTypesWithResponse call
+func ParseListWebhookEventTypesResponse(rsp *http.Response) (*ListWebhookEventTypesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWebhookEventTypesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []WebhookEventType
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListWebhookSubscriptionsResponse parses an HTTP response from a ListWebhookSubscriptionsWithResponse call
+func ParseListWebhookSubscriptionsResponse(rsp *http.Response) (*ListWebhookSubscriptionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWebhookSubscriptionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []WebhookSubscription
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateWebhookSubscriptionResponse parses an HTTP response from a CreateWebhookSubscriptionWithResponse call
+func ParseCreateWebhookSubscriptionResponse(rsp *http.Response) (*CreateWebhookSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateWebhookSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest WebhookSubscription
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 402:
+		var dest PlanLimitErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteWebhookSubscriptionResponse parses an HTTP response from a DeleteWebhookSubscriptionWithResponse call
+func ParseDeleteWebhookSubscriptionResponse(rsp *http.Response) (*DeleteWebhookSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteWebhookSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 402:
+		var dest PlanLimitErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWebhookSubscriptionResponse parses an HTTP response from a GetWebhookSubscriptionWithResponse call
+func ParseGetWebhookSubscriptionResponse(rsp *http.Response) (*GetWebhookSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWebhookSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest WebhookSubscription
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateWebhookSubscriptionResponse parses an HTTP response from a UpdateWebhookSubscriptionWithResponse call
+func ParseUpdateWebhookSubscriptionResponse(rsp *http.Response) (*UpdateWebhookSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateWebhookSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest WebhookSubscription
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 402:
+		var dest PlanLimitErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseTestWebhookSubscriptionResponse parses an HTTP response from a TestWebhookSubscriptionWithResponse call
+func ParseTestWebhookSubscriptionResponse(rsp *http.Response) (*TestWebhookSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &TestWebhookSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest WebhookTestResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 402:
+		var dest PlanLimitErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest ValidationErrorBody

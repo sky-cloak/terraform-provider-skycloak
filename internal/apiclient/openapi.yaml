@@ -34,13 +34,16 @@ tags:
   - name: Extensions
   - name: Cluster Extensions
   - name: Exports
+  - name: SIEM
+  - name: Webhooks
 paths:
   /cluster-features:
     get:
       operationId: listClusterFeatures
       summary: List cluster features
       description: Returns the catalog of Keycloak feature flags that can be toggled on tenant clusters.
-      parameters: []
+      parameters:
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -132,7 +135,8 @@ paths:
       operationId: listClusterLocations
       summary: List cluster locations
       description: Returns metadata for all supported deployment regions.
-      parameters: []
+      parameters:
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -224,7 +228,8 @@ paths:
       operationId: listClusterTypes
       summary: List cluster types
       description: Returns metadata for all supported cluster types.
-      parameters: []
+      parameters:
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -322,6 +327,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterType'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -430,7 +436,8 @@ paths:
         Returns all clusters in the workspace.
 
         Required scope: `clusters:read`
-      parameters: []
+      parameters:
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -523,7 +530,8 @@ paths:
       operationId: createCluster
       summary: Create a cluster
       description: 'Required scope: `clusters:write`'
-      parameters: []
+      parameters:
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '201':
           description: The request has succeeded and a new resource has been created as a result.
@@ -651,6 +659,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -769,6 +778,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -898,6 +908,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -1006,6 +1017,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -1119,6 +1131,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/BuildId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -1225,6 +1238,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -1340,6 +1354,7 @@ paths:
           schema:
             $ref: '#/components/schemas/DomainVerificationStatus'
           explode: false
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -1464,6 +1479,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '201':
           description: The request has succeeded and a new resource has been created as a result.
@@ -1611,6 +1627,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/DomainId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -1727,6 +1744,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/DomainId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -1840,6 +1858,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/DomainId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -1958,6 +1977,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/DomainId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '201':
           description: The request has succeeded and a new resource has been created as a result.
@@ -2101,6 +2121,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/DomainRouteId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -2222,6 +2243,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/DomainRouteId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -2361,6 +2383,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/DomainRouteId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -2474,6 +2497,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/DomainId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -2721,6 +2745,7 @@ paths:
               - $ref: '#/components/schemas/SortOrder'
             default: desc
           explode: false
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -2973,6 +2998,7 @@ paths:
               - $ref: '#/components/schemas/SortOrder'
             default: desc
           explode: false
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -3104,6 +3130,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -3222,6 +3249,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '202':
           description: Returned when an export has been accepted for processing. Poll the `Location` URL until `status` is `completed` or `failed`.
@@ -3374,6 +3402,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ExportId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -3492,6 +3521,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ExportId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -3606,6 +3636,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -3722,6 +3753,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '202':
           description: Returned for async operations. Poll the `Location` URL to track completion.
@@ -3882,6 +3914,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ExtensionId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '202':
           description: Returned for async operations. Poll the `Location` URL to track completion.
@@ -4019,6 +4052,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ExtensionId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '202':
           description: Returned for async operations. Poll the `Location` URL to track completion.
@@ -4172,6 +4206,7 @@ paths:
           schema:
             type: string
             format: date-time
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -4317,6 +4352,7 @@ paths:
           schema:
             type: string
             format: date-time
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -4465,6 +4501,7 @@ paths:
           schema:
             type: string
             format: date-time
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -4613,6 +4650,7 @@ paths:
           schema:
             type: string
             format: date-time
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -4761,6 +4799,7 @@ paths:
           schema:
             type: string
             format: date-time
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -4962,6 +5001,7 @@ paths:
               - $ref: '#/components/schemas/SortOrder'
             default: desc
           explode: false
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -5099,6 +5139,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -5212,6 +5253,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '201':
           description: The request has succeeded and a new resource has been created as a result.
@@ -5347,6 +5389,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -5463,6 +5506,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -5591,6 +5635,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -5714,6 +5759,7 @@ paths:
             minLength: 1
             maxLength: 256
           explode: false
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -5837,6 +5883,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '201':
           description: The request has succeeded and a new resource has been created as a result.
@@ -5986,6 +6033,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ApplicationClientId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -6101,6 +6149,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ApplicationClientId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -6246,6 +6295,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ApplicationClientId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -6364,6 +6414,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ApplicationClientId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -6493,6 +6544,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ApplicationClientId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -6635,6 +6687,7 @@ paths:
           schema:
             type: string
           explode: false
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -6759,6 +6812,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ApplicationClientId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -6894,6 +6948,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ApplicationClientId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -7022,6 +7077,7 @@ paths:
           schema:
             type: boolean
           explode: false
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -7140,6 +7196,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '201':
           description: The request has succeeded and a new resource has been created as a result.
@@ -7280,6 +7337,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmGroupId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -7401,6 +7459,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmGroupId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -7534,6 +7593,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmGroupId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -7674,6 +7734,7 @@ paths:
               - $ref: '#/components/schemas/PageOffset'
             default: 0
           explode: false
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -7793,6 +7854,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -7905,6 +7967,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '201':
           description: The request has succeeded and a new resource has been created as a result.
@@ -8054,6 +8117,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ProviderId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -8169,6 +8233,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ProviderId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -8308,6 +8373,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ProviderId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -8426,6 +8492,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ProviderId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -8570,6 +8637,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -8688,6 +8756,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '201':
           description: The request has succeeded and a new resource has been created as a result.
@@ -8828,6 +8897,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmRoleName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -8949,6 +9019,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmRoleName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -9082,6 +9153,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmRoleName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -9241,6 +9313,7 @@ paths:
               - $ref: '#/components/schemas/SortOrder'
             default: asc
           explode: false
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -9376,6 +9449,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '201':
           description: The request has succeeded and a new resource has been created as a result.
@@ -9516,6 +9590,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmUserId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -9637,6 +9712,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmUserId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -9776,6 +9852,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmUserId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -9894,6 +9971,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmUserId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -10023,6 +10101,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmGroupId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -10151,6 +10230,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmGroupId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -10275,6 +10355,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmUserId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -10398,6 +10479,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmUserId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -10533,6 +10615,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmRoleName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -10657,6 +10740,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ApplicationClientId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -10778,6 +10862,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ApplicationClientId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -10913,6 +10998,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -11029,6 +11115,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -11163,6 +11250,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -11276,6 +11364,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -11392,6 +11481,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -11526,6 +11616,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -11639,6 +11730,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -11755,6 +11847,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -11889,6 +11982,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -12002,6 +12096,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -12137,6 +12232,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -12253,6 +12349,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/RealmName'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -12384,6 +12481,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -12500,6 +12598,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -12724,6 +12823,7 @@ paths:
               - $ref: '#/components/schemas/SortOrder'
             default: desc
           explode: false
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -12861,6 +12961,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -12972,6 +13073,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '201':
           description: The request has succeeded and a new resource has been created as a result.
@@ -13113,6 +13215,7 @@ paths:
           required: true
           schema:
             type: string
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -13221,6 +13324,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -13340,6 +13444,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '201':
           description: The request has succeeded and a new resource has been created as a result.
@@ -13511,6 +13616,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ThemeId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -13627,6 +13733,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ThemeId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -13761,6 +13868,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ThemeId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '202':
           description: The request has been accepted for processing, but processing has not yet completed.
@@ -13881,6 +13989,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -13989,6 +14098,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -14094,6 +14204,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -14200,7 +14311,8 @@ paths:
         Returns all platform extensions and the workspace's custom extensions.
 
         Required scope: `extensions:read`
-      parameters: []
+      parameters:
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -14299,7 +14411,8 @@ paths:
         Maximum body size is 150 MB.
 
         Required scope: `extensions:write`
-      parameters: []
+      parameters:
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '201':
           description: The request has succeeded and a new resource has been created as a result.
@@ -14436,6 +14549,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ExtensionId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -14541,6 +14655,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ExtensionId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -14664,6 +14779,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ExtensionId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '204':
           description: There is no content to send for this request, but the headers may be useful.
@@ -14779,6 +14895,7 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/ExtensionId'
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -14918,7 +15035,8 @@ paths:
         Returns the catalog of pre-configured templates available to this workspace. Templates are filtered by plan. Pass `template_id` to `createIdentityProvider` to pre-fill protocol endpoints and defaults.
 
         Required scope: `identity-providers:read`
-      parameters: []
+      parameters:
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -15015,7 +15133,8 @@ paths:
         Fetches and parses the `/.well-known/openid-configuration` document for an OIDC issuer. Use the returned endpoints to populate `config.oidc` when creating a custom OIDC provider.
 
         Required scope: `identity-providers:read`
-      parameters: []
+      parameters:
+        - $ref: '#/components/parameters/CommonParameters'
       responses:
         '200':
           description: The request has succeeded.
@@ -15120,8 +15239,1667 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - identity-providers:read
+  /siem/destinations:
+    get:
+      operationId: listSIEMDestinations
+      summary: List SIEM destinations
+      description: |-
+        Returns SIEM destinations configured for the workspace.
+
+        Required scope: `siem:read`
+      parameters:
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SIEMDestination'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - SIEM
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - siem:read
+    post:
+      operationId: createSIEMDestination
+      summary: Create a SIEM destination
+      description: |-
+        Creates a SIEM destination for the workspace. Credentials are write-only and are never returned.
+
+        Required scope: `siem:write`
+      parameters:
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SIEMDestination'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '402':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PlanLimitErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - SIEM
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSIEMDestinationRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - siem:write
+  /siem/destinations/{destination_id}:
+    get:
+      operationId: getSIEMDestination
+      summary: Get a SIEM destination
+      description: 'Required scope: `siem:read`'
+      parameters:
+        - name: destination_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/SIEMDestinationId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SIEMDestination'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - SIEM
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - siem:read
+    patch:
+      operationId: updateSIEMDestination
+      summary: Update a SIEM destination
+      description: |-
+        Partially updates a saved destination. Omitted credentials retain their stored values.
+
+        Required scope: `siem:write`
+      parameters:
+        - name: destination_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/SIEMDestinationId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SIEMDestination'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '402':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PlanLimitErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - SIEM
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSIEMDestinationRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - siem:write
+    delete:
+      operationId: deleteSIEMDestination
+      summary: Delete a SIEM destination
+      description: 'Required scope: `siem:write`'
+      parameters:
+        - name: destination_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/SIEMDestinationId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '204':
+          description: There is no content to send for this request, but the headers may be useful.
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '402':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PlanLimitErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - SIEM
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - siem:write
+  /siem/destinations/{destination_id}/test:
+    post:
+      operationId: testSIEMDestination
+      summary: Test a SIEM destination
+      description: |-
+        Sends a synthetic test payload using the saved destination configuration. This does not advance delivery checkpoints or counters.
+
+        Required scope: `siem:write`
+      parameters:
+        - name: destination_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/SIEMDestinationId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SIEMDestinationTestResult'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '402':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PlanLimitErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - SIEM
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - siem:write
+  /webhook-event-types:
+    get:
+      operationId: listWebhookEventTypes
+      summary: List webhook event types
+      description: |-
+        Returns event types that can be subscribed to by webhook subscriptions.
+
+        Required scope: `webhooks:read`
+      parameters:
+        - name: source
+          in: query
+          required: false
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/WebhookSource'
+            default: keycloak
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WebhookEventType'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Webhooks
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - webhooks:read
+  /webhooks:
+    get:
+      operationId: listWebhookSubscriptions
+      summary: List webhook subscriptions
+      description: |-
+        Returns webhook subscriptions configured for the authenticated workspace.
+
+        Required scope: `webhooks:read`
+      parameters:
+        - name: cluster_id
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+          explode: false
+        - name: source
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/WebhookSource'
+          explode: false
+        - name: enabled
+          in: query
+          required: false
+          schema:
+            type: boolean
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WebhookSubscription'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Webhooks
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - webhooks:read
+    post:
+      operationId: createWebhookSubscription
+      summary: Create a webhook subscription
+      description: |-
+        Creates a webhook subscription. Secrets are write-only and are never returned.
+
+        Required scope: `webhooks:write`
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookSubscription'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '402':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PlanLimitErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookSubscriptionRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - webhooks:write
+  /webhooks/{webhook_id}:
+    get:
+      operationId: getWebhookSubscription
+      summary: Get a webhook subscription
+      description: 'Required scope: `webhooks:read`'
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/WebhookId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookSubscription'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Webhooks
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - webhooks:read
+    patch:
+      operationId: updateWebhookSubscription
+      summary: Update a webhook subscription
+      description: |-
+        Partially updates a subscription. Omitted secrets retain their stored values.
+
+        Required scope: `webhooks:write`
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/WebhookId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookSubscription'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '402':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PlanLimitErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWebhookSubscriptionRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - webhooks:write
+    delete:
+      operationId: deleteWebhookSubscription
+      summary: Delete a webhook subscription
+      description: 'Required scope: `webhooks:write`'
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/WebhookId'
+      responses:
+        '204':
+          description: There is no content to send for this request, but the headers may be useful.
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '402':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PlanLimitErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Webhooks
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - webhooks:write
+  /webhooks/{webhook_id}/test:
+    post:
+      operationId: testWebhookSubscription
+      summary: Test a webhook subscription
+      description: |-
+        Sends a signed synthetic payload using the saved subscription configuration.
+
+        Required scope: `webhooks:write`
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/WebhookId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookTestResult'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '402':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PlanLimitErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestWebhookSubscriptionRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - webhooks:write
 components:
   parameters:
+    CommonParameters:
+      name: API-Version
+      in: header
+      required: true
+      schema:
+        $ref: '#/components/schemas/Versions'
     Pagination.limit:
       name: limit
       in: query
@@ -16397,6 +18175,63 @@ components:
         enabled: true
         roles:
           - admin
+    CreateSIEMDestinationRequest:
+      type: object
+      required:
+        - name
+        - type
+        - source
+      properties:
+        name:
+          $ref: '#/components/schemas/SIEMDestinationName'
+        enabled:
+          type: boolean
+          default: true
+        type:
+          $ref: '#/components/schemas/SIEMDestinationType'
+        source:
+          $ref: '#/components/schemas/SIEMSourceConfig'
+        batch:
+          $ref: '#/components/schemas/SIEMBatchConfig'
+        syslog:
+          $ref: '#/components/schemas/SIEMSyslogConfig'
+        s3:
+          $ref: '#/components/schemas/SIEMS3Config'
+        http:
+          $ref: '#/components/schemas/SIEMHTTPConfig'
+    CreateWebhookSubscriptionRequest:
+      type: object
+      required:
+        - name
+        - url
+        - source
+        - event_types
+        - signing_secret
+      properties:
+        name:
+          $ref: '#/components/schemas/WebhookSubscriptionName'
+        url:
+          $ref: '#/components/schemas/WebhookUrl'
+        source:
+          $ref: '#/components/schemas/WebhookSource'
+        event_types:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          minItems: 1
+        signing_secret:
+          $ref: '#/components/schemas/WebhookSigningSecret'
+        enabled:
+          type: boolean
+          default: true
+        cluster_id:
+          $ref: '#/components/schemas/ClusterId'
+        realm_id:
+          $ref: '#/components/schemas/RealmId'
+        authorization_header:
+          $ref: '#/components/schemas/WebhookAuthorizationHeader'
     CustomDomain:
       type: string
       minLength: 3
@@ -17308,6 +19143,12 @@ components:
         - client_credentials
         - refresh_token
       description: OAuth 2.0 grant type (flow).
+    HTTPAuthType:
+      type: string
+      enum:
+        - none
+        - bearer
+        - basic
     HexColor:
       type: string
       description: CSS hex color code.
@@ -17983,6 +19824,7 @@ components:
     Realm:
       type: object
       required:
+        - id
         - name
         - display_name
         - enabled
@@ -17992,6 +19834,10 @@ components:
         - login_with_email_allowed
         - duplicate_emails_allowed
       properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/RealmId'
+          example: 123e4567-e89b-12d3-a456-426614174000
         name:
           allOf:
             - $ref: '#/components/schemas/RealmName'
@@ -18028,6 +19874,7 @@ components:
           description: Time when the realm was created, when available.
       description: Realm details.
       example:
+        id: 123e4567-e89b-12d3-a456-426614174000
         name: customer-portal
         display_name: Customer Portal
         enabled: true
@@ -18084,6 +19931,11 @@ components:
       pattern: ^/.+$
       description: Canonical realm group path.
       example: /engineering/platform
+    RealmId:
+      type: string
+      format: uuid
+      description: Keycloak realm ID. This is a UUID generated by Keycloak.
+      example: 123e4567-e89b-12d3-a456-426614174000
     RealmName:
       type: string
       minLength: 1
@@ -18299,6 +20151,13 @@ components:
             $ref: '#/components/schemas/EndpointStat'
           description: Per-endpoint breakdown for the top auth endpoints by request volume.
       description: Response time statistics for authentication endpoints.
+    S3AuthType:
+      type: string
+      enum:
+        - access_key
+        - iam_role
+        - assume_role
+        - irsa
     SAMLConfiguration:
       type: object
       properties:
@@ -18368,6 +20227,312 @@ components:
           type: string
           maxLength: 65536
           description: Raw SAML metadata XML. Used when the IdP does not publish a metadata URL.
+    SIEMBatchConfig:
+      type: object
+      properties:
+        max_events:
+          allOf:
+            - $ref: '#/components/schemas/SIEMBatchMaxEvents'
+          default: 1000
+        max_interval_seconds:
+          allOf:
+            - $ref: '#/components/schemas/SIEMBatchMaxIntervalSeconds'
+          default: 60
+    SIEMBatchMaxEvents:
+      type: integer
+      minimum: 1
+      maximum: 1000
+    SIEMBatchMaxIntervalSeconds:
+      type: integer
+      minimum: 10
+      maximum: 600
+    SIEMDestination:
+      type: object
+      required:
+        - id
+        - name
+        - enabled
+        - type
+        - source
+        - batch
+        - health_status
+        - failure_count
+        - total_events_sent
+        - total_logs_sent
+        - total_bytes_sent
+        - created_at
+        - updated_at
+      properties:
+        id:
+          $ref: '#/components/schemas/SIEMDestinationId'
+        name:
+          $ref: '#/components/schemas/SIEMDestinationName'
+        enabled:
+          type: boolean
+        type:
+          $ref: '#/components/schemas/SIEMDestinationType'
+        source:
+          $ref: '#/components/schemas/SIEMSourceConfig'
+        batch:
+          $ref: '#/components/schemas/SIEMBatchConfig'
+        syslog:
+          $ref: '#/components/schemas/SIEMSyslogConfig'
+        s3:
+          $ref: '#/components/schemas/SIEMS3DestinationConfig'
+        http:
+          $ref: '#/components/schemas/SIEMHTTPDestinationConfig'
+        health_status:
+          $ref: '#/components/schemas/SIEMHealthStatus'
+        failure_count:
+          type: integer
+        last_error:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        last_sent_at:
+          type: string
+          format: date-time
+        total_events_sent:
+          type: integer
+          format: int64
+        total_logs_sent:
+          type: integer
+          format: int64
+        total_bytes_sent:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      description: Saved SIEM forwarding destination for a workspace.
+    SIEMDestinationId:
+      type: string
+      format: uuid
+    SIEMDestinationName:
+      type: string
+      minLength: 1
+      maxLength: 255
+    SIEMDestinationTestResult:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+    SIEMDestinationType:
+      type: string
+      enum:
+        - syslog
+        - s3
+        - http
+      description: External SIEM destination type.
+    SIEMHTTPConfig:
+      type: object
+      required:
+        - url
+        - auth_type
+      properties:
+        url:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: url
+          format: uri
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          description: Optional HTTP headers to include in the request. Values are write-only and are never returned.
+        auth_type:
+          $ref: '#/components/schemas/HTTPAuthType'
+        bearer_token:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          format: password
+          description: Required when `auth_type` is `bearer`. Write-only.
+        username:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: Required when `auth_type` is `basic`. Write-only.
+        password:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          format: password
+          description: Required when `auth_type` is `basic`. Write-only.
+    SIEMHTTPDestinationConfig:
+      type: object
+      required:
+        - url
+        - auth_type
+        - header_names
+        - has_auth_credentials
+      properties:
+        url:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        auth_type:
+          $ref: '#/components/schemas/HTTPAuthType'
+        header_names:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+        has_auth_credentials:
+          type: boolean
+    SIEMHealthStatus:
+      type: string
+      enum:
+        - healthy
+        - degraded
+        - failed
+    SIEMS3Config:
+      type: object
+      required:
+        - bucket
+        - region
+        - auth_type
+      properties:
+        bucket:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          minLength: 3
+          maxLength: 63
+        region:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          minLength: 1
+          maxLength: 50
+        prefix:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 500
+        auth_type:
+          $ref: '#/components/schemas/S3AuthType'
+        access_key_id:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          format: password
+          description: Required when `auth_type` is `access_key`. Write-only.
+        secret_access_key:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          format: password
+          description: Required when `auth_type` is `access_key`. Write-only.
+        role_arn:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 500
+          description: Required when `auth_type` is `assume_role`.
+        external_id:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 255
+    SIEMS3DestinationConfig:
+      type: object
+      required:
+        - bucket
+        - region
+        - auth_type
+        - has_access_key_secret
+      properties:
+        bucket:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        region:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        prefix:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        auth_type:
+          $ref: '#/components/schemas/S3AuthType'
+        role_arn:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        external_id:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        has_access_key_secret:
+          type: boolean
+    SIEMSourceConfig:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/SIEMSourceType'
+        cluster_ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterId'
+          minItems: 1
+          description: Cluster IDs to include. Omit to include all clusters in the workspace.
+        realms:
+          type: array
+          items:
+            $ref: '#/components/schemas/RealmName'
+          description: Realm names to include. Omit to include all realms in the selected clusters.
+        keycloak_event_types:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          minItems: 1
+          description: Keycloak event type codes to include. Required when `type` is `keycloak_events`; rejected for other source types.
+    SIEMSourceType:
+      type: string
+      enum:
+        - keycloak_events
+        - application_logs
+        - security_logs
+        - skycloak_audit
+      description: Workspace data stream forwarded to the destination.
+    SIEMSyslogConfig:
+      type: object
+      required:
+        - host
+        - port
+        - protocol
+        - format
+      properties:
+        host:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: hostname|ip
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        protocol:
+          $ref: '#/components/schemas/SyslogProtocol'
+        format:
+          $ref: '#/components/schemas/SyslogFormat'
     SecurityDetectionBreakdown:
       type: object
       required:
@@ -18797,6 +20962,19 @@ components:
         - force
         - legacy
       description: Controls how Keycloak imports and synchronises user attributes from the provider on login.
+    SyslogFormat:
+      type: string
+      enum:
+        - cef
+        - leef
+        - rfc5424
+        - json
+    SyslogProtocol:
+      type: string
+      enum:
+        - udp
+        - tcp
+        - tls
     TestProviderConnectionRequest:
       type: object
       properties:
@@ -18810,6 +20988,16 @@ components:
           format: password
           description: Override client secret or LDAP bind password for this test only. Not persisted.
       description: Optional credential overrides for a connectivity test. When omitted, the provider's stored credentials are used.
+    TestWebhookSubscriptionRequest:
+      type: object
+      required:
+        - event_type
+      properties:
+        event_type:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          minLength: 1
     Theme:
       type: object
       required:
@@ -19228,6 +21416,24 @@ components:
         last_name: Doe
         enabled: true
         email_verified: true
+    UpdateSIEMDestinationRequest:
+      type: object
+      properties:
+        name:
+          $ref: '#/components/schemas/SIEMDestinationName'
+        enabled:
+          type: boolean
+        source:
+          $ref: '#/components/schemas/SIEMSourceConfig'
+        batch:
+          $ref: '#/components/schemas/SIEMBatchConfig'
+        syslog:
+          $ref: '#/components/schemas/SIEMSyslogConfig'
+        s3:
+          $ref: '#/components/schemas/SIEMS3Config'
+        http:
+          $ref: '#/components/schemas/SIEMHTTPConfig'
+      description: Patch request for updating a SIEM destination. At least one field should be provided.
     UpdateThemeRequest:
       type: object
       properties:
@@ -19247,6 +21453,42 @@ components:
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
           maxLength: 50
+    UpdateWebhookSubscriptionRequest:
+      type: object
+      properties:
+        name:
+          $ref: '#/components/schemas/WebhookSubscriptionName'
+        url:
+          $ref: '#/components/schemas/WebhookUrl'
+        enabled:
+          type: boolean
+        source:
+          $ref: '#/components/schemas/WebhookSource'
+        event_types:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          minItems: 1
+        signing_secret:
+          $ref: '#/components/schemas/WebhookSigningSecret'
+        cluster_id:
+          type: string
+          allOf:
+            - $ref: '#/components/schemas/ClusterId'
+          nullable: true
+        realm_id:
+          type: string
+          allOf:
+            - $ref: '#/components/schemas/RealmId'
+          nullable: true
+        authorization_header:
+          type: string
+          allOf:
+            - $ref: '#/components/schemas/WebhookAuthorizationHeader'
+          nullable: true
+      description: Patch request for updating a webhook subscription. At least one field should be provided.
     UploadExtensionMetadata:
       type: object
       required:
@@ -19494,6 +21736,10 @@ components:
           items:
             $ref: '#/components/schemas/FieldError'
           minItems: 1
+    Versions:
+      type: string
+      enum:
+        - 2026-06-01.beta
     WAFCategories:
       type: object
       required:
@@ -19612,11 +21858,154 @@ components:
             x-oapi-codegen-extra-tags:
               validate: omitnil,max=500
           description: Restrict this exclusion to specific URL paths. Applies globally when omitted.
+    WebhookAuthorizationHeader:
+      type: string
+      maxLength: 2048
+      format: password
+    WebhookEventType:
+      type: object
+      required:
+        - type
+        - category
+        - description
+        - sample_payload
+      properties:
+        type:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        category:
+          $ref: '#/components/schemas/WebhookEventTypeCategory'
+        description:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        sample_payload:
+          type: object
+          additionalProperties: {}
+    WebhookEventTypeCategory:
+      type: string
+      enum:
+        - auth
+        - user
+        - admin
+        - tokens
+        - mfa
+        - email
+        - federated
+        - cluster
+        - extension
+        - theme
+        - domain
+        - migration
+        - export
+    WebhookId:
+      type: string
+      format: uuid
+    WebhookSigningSecret:
+      type: string
+      minLength: 32
+      maxLength: 512
+      format: password
+    WebhookSource:
+      type: string
+      enum:
+        - keycloak
+        - platform
+    WebhookSubscription:
+      type: object
+      required:
+        - id
+        - name
+        - url
+        - enabled
+        - source
+        - event_types
+        - has_authorization_header
+        - has_signing_secret
+        - created_at
+        - updated_at
+      properties:
+        id:
+          $ref: '#/components/schemas/WebhookId'
+        name:
+          $ref: '#/components/schemas/WebhookSubscriptionName'
+        url:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        enabled:
+          type: boolean
+        source:
+          $ref: '#/components/schemas/WebhookSource'
+        event_types:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+        cluster_id:
+          $ref: '#/components/schemas/ClusterId'
+        realm_id:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        has_authorization_header:
+          type: boolean
+        has_signing_secret:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      description: Saved webhook subscription for the authenticated workspace.
+    WebhookSubscriptionName:
+      type: string
+      minLength: 1
+      maxLength: 255
+    WebhookTestResult:
+      type: object
+      required:
+        - delivery_id
+        - success
+        - duration_ms
+        - attempted_at
+      properties:
+        delivery_id:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        success:
+          type: boolean
+        response_code:
+          type: integer
+        response_body:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        error_message:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        duration_ms:
+          type: integer
+          format: int64
+        attempted_at:
+          type: string
+          format: date-time
+    WebhookUrl:
+      type: string
+      maxLength: 1000
+      format: uri
+      x-oapi-codegen-extra-tags:
+        validate: url
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
       in: header
-      name: apikey
+      name: API-Key
 servers:
   - url: http://localhost:8000
     description: Local development
