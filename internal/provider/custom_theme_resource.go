@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -16,6 +17,11 @@ import (
 
 	"github.com/sky-cloak/terraform-provider-skycloak/internal/skycloak"
 )
+
+// themeDeployTimeout bounds the wait for an uploaded theme to finish
+// deploying. Extraction and rollout of a theme package is far lighter than a
+// cluster provision, so this is much shorter than createTimeout.
+const themeDeployTimeout = 5 * time.Minute
 
 var (
 	_ resource.Resource                = (*customThemeResource)(nil)
@@ -135,7 +141,21 @@ func (r *customThemeResource) Create(ctx context.Context, req resource.CreateReq
 		resp.Diagnostics.AddError("Unable to upload theme", err.Error())
 		return
 	}
-	applyThemeToModel(theme, &plan)
+
+	// Upload returns while Keycloak is still deploying the package; only a
+	// deployed theme can be assigned to a realm or application client, so a
+	// same-apply theme_assignment would otherwise race the async rollout.
+	waitCtx, cancel := context.WithTimeout(ctx, themeDeployTimeout)
+	defer cancel()
+	deployed, err := r.client.WaitForThemeDeployed(waitCtx, plan.ClusterID.ValueString(), theme.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("Theme did not finish deploying", err.Error())
+		// Persist the ID so the half-deployed theme is tracked, not leaked.
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), theme.ID)...)
+		return
+	}
+
+	applyThemeToModel(deployed, &plan)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 

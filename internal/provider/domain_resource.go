@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -14,6 +16,14 @@ import (
 
 	"github.com/sky-cloak/terraform-provider-skycloak/internal/skycloak"
 )
+
+// dnsRecordObjectType is the element type of domainModel.DNSRecords. A plain Go
+// slice can't represent an Unknown container, so this Computed-only list must
+// be modeled as types.List (unlike data-source-only lists elsewhere in this
+// package, which never see an Unknown planned value).
+var dnsRecordObjectType = types.ObjectType{AttrTypes: map[string]attr.Type{
+	"type": types.StringType, "name": types.StringType, "value": types.StringType,
+}}
 
 var (
 	_ resource.Resource                = (*domainResource)(nil)
@@ -35,7 +45,7 @@ type domainModel struct {
 	SSLStatus          types.String     `tfsdk:"ssl_status"`
 	VerificationStatus types.String     `tfsdk:"verification_status"`
 	IsActive           types.Bool       `tfsdk:"is_active"`
-	DNSRecords         []dnsRecordModel `tfsdk:"dns_records"`
+	DNSRecords         types.List       `tfsdk:"dns_records"`
 	CreatedAt          types.String     `tfsdk:"created_at"`
 	UpdatedAt          types.String     `tfsdk:"updated_at"`
 }
@@ -105,7 +115,10 @@ func (r *domainResource) Create(ctx context.Context, req resource.CreateRequest,
 		resp.Diagnostics.AddError("Unable to create domain", err.Error())
 		return
 	}
-	applyDomainToModel(d, &plan)
+	resp.Diagnostics.Append(applyDomainToModel(ctx, d, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -124,7 +137,10 @@ func (r *domainResource) Read(ctx context.Context, req resource.ReadRequest, res
 		resp.Diagnostics.AddError("Unable to read domain", err.Error())
 		return
 	}
-	applyDomainToModel(d, &state)
+	resp.Diagnostics.Append(applyDomainToModel(ctx, d, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -157,7 +173,8 @@ func (r *domainResource) ImportState(ctx context.Context, req resource.ImportSta
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), domainID)...)
 }
 
-func applyDomainToModel(d *skycloak.Domain, m *domainModel) {
+func applyDomainToModel(ctx context.Context, d *skycloak.Domain, m *domainModel) diag.Diagnostics {
+	var diags diag.Diagnostics
 	m.ID = types.StringValue(d.ID)
 	m.ClusterID = types.StringValue(d.ClusterID)
 	m.Domain = types.StringValue(d.Domain)
@@ -168,10 +185,15 @@ func applyDomainToModel(d *skycloak.Domain, m *domainModel) {
 	m.IsActive = types.BoolValue(d.IsActive)
 	m.CreatedAt = types.StringValue(d.CreatedAt)
 	m.UpdatedAt = types.StringValue(d.UpdatedAt)
-	m.DNSRecords = nil
+
+	records := make([]dnsRecordModel, 0, len(d.DNSRecords))
 	for _, rec := range d.DNSRecords {
-		m.DNSRecords = append(m.DNSRecords, dnsRecordModel{
+		records = append(records, dnsRecordModel{
 			Type: types.StringValue(rec.Type), Name: types.StringValue(rec.Name), Value: types.StringValue(rec.Value),
 		})
 	}
+	list, d2 := types.ListValueFrom(ctx, dnsRecordObjectType, records)
+	diags.Append(d2...)
+	m.DNSRecords = list
+	return diags
 }

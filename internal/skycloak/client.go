@@ -1541,6 +1541,32 @@ func (c *Client) GetTheme(ctx context.Context, clusterID, themeID string) (*Them
 	return &t, nil
 }
 
+// WaitForThemeDeployed polls a just-uploaded theme until it reaches
+// "deployed". Upload returns while Keycloak is still extracting and rolling
+// out the package (status "deploying"); only a deployed theme can be
+// assigned to a realm or application client.
+func (c *Client) WaitForThemeDeployed(ctx context.Context, clusterID, themeID string) (*Theme, error) {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+	for {
+		t, err := c.GetTheme(ctx, clusterID, themeID)
+		if err != nil {
+			return nil, err
+		}
+		switch t.Status {
+		case "deployed":
+			return t, nil
+		case "failed":
+			return t, fmt.Errorf("theme %s failed to deploy: %s", themeID, t.ErrorMessage)
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+		}
+	}
+}
+
 // ThemeAssignment is the active theme per Keycloak theme type for a realm. An
 // empty field means the realm uses Keycloak's built-in default.
 type ThemeAssignment struct {
