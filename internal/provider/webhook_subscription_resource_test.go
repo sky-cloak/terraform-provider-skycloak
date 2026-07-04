@@ -21,7 +21,7 @@ resource "skycloak_webhook_subscription" "test" {
   url            = "https://hooks.invalid.example.com/skycloak-tf-acc"
   source         = "keycloak"
   event_types    = ["LOGIN_ERROR"]
-  signing_secret = "whsec_tf_acc_test_secret"
+  signing_secret = "whsec_tf_acc_test_secret_0123456789abcdef"
 }`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("skycloak_webhook_subscription.test", "id"),
@@ -37,7 +37,7 @@ resource "skycloak_webhook_subscription" "test" {
   source         = "keycloak"
   enabled        = false
   event_types    = ["LOGIN_ERROR", "LOGIN"]
-  signing_secret = "whsec_tf_acc_test_secret"
+  signing_secret = "whsec_tf_acc_test_secret_0123456789abcdef"
 }`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("skycloak_webhook_subscription.test", "name", "tf-acc-webhook-renamed"),

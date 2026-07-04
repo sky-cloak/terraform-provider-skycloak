@@ -25,7 +25,7 @@ resource "skycloak_captcha_domain" "login" {
 ### Required
 
 - `cluster_id` (String) Cluster ID. Immutable.
-- `hostname` (String) Hostname to protect. Immutable.
+- `hostname` (String) Hostname to protect; must be one of the cluster's verified custom domains. Immutable.
 
 ### Read-Only
 

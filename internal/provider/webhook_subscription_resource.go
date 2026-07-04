@@ -72,7 +72,7 @@ func (r *webhookSubscriptionResource) Schema(_ context.Context, _ resource.Schem
 			"signing_secret": schema.StringAttribute{
 				Required:            true,
 				Sensitive:           true,
-				MarkdownDescription: "HMAC secret used to sign deliveries. Write-only; never read back.",
+				MarkdownDescription: "HMAC secret used to sign deliveries, 32 to 512 characters. Write-only; never read back.",
 			},
 			"authorization_header": schema.StringAttribute{
 				Optional:            true,

@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -131,11 +134,17 @@ func (r *siemDestinationResource) Schema(_ context.Context, _ resource.SchemaReq
 				},
 			},
 			"batch": schema.SingleNestedAttribute{
-				Optional:            true,
-				MarkdownDescription: "Batching tuning.",
+				Optional: true,
+				Computed: true,
+				MarkdownDescription: "Batching tuning. Defaults to the API contract values " +
+					"(1000 events, 60 seconds) so an omitted block plans exactly what the server applies.",
+				Default: objectdefault.StaticValue(types.ObjectValueMust(
+					map[string]attr.Type{"max_events": types.Int64Type, "max_interval_seconds": types.Int64Type},
+					map[string]attr.Value{"max_events": types.Int64Value(1000), "max_interval_seconds": types.Int64Value(60)},
+				)),
 				Attributes: map[string]schema.Attribute{
-					"max_events":           schema.Int64Attribute{Optional: true, MarkdownDescription: "Flush after this many events."},
-					"max_interval_seconds": schema.Int64Attribute{Optional: true, MarkdownDescription: "Flush at least this often."},
+					"max_events":           schema.Int64Attribute{Optional: true, Computed: true, Default: int64default.StaticInt64(1000), MarkdownDescription: "Flush after this many events. Defaults to `1000`."},
+					"max_interval_seconds": schema.Int64Attribute{Optional: true, Computed: true, Default: int64default.StaticInt64(60), MarkdownDescription: "Flush at least this often. Defaults to `60`."},
 				},
 			},
 			"syslog": schema.SingleNestedAttribute{

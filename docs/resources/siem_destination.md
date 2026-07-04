@@ -64,7 +64,7 @@ resource "skycloak_siem_destination" "splunk" {
 
 ### Optional
 
-- `batch` (Attributes) Batching tuning. (see [below for nested schema](#nestedatt--batch))
+- `batch` (Attributes) Batching tuning. Defaults to the API contract values (1000 events, 60 seconds) so an omitted block plans exactly what the server applies. (see [below for nested schema](#nestedatt--batch))
 - `enabled` (Boolean) Whether forwarding is active. Defaults to `true`.
 - `http` (Attributes) HTTP destination config (when `type` is `http`). (see [below for nested schema](#nestedatt--http))
 - `s3` (Attributes) S3 destination config (when `type` is `s3`). (see [below for nested schema](#nestedatt--s3))
@@ -102,8 +102,8 @@ Optional:
 
 Optional:
 
-- `max_events` (Number) Flush after this many events.
-- `max_interval_seconds` (Number) Flush at least this often.
+- `max_events` (Number) Flush after this many events. Defaults to `1000`.
+- `max_interval_seconds` (Number) Flush at least this often. Defaults to `60`.
 
 
 <a id="nestedatt--http"></a>

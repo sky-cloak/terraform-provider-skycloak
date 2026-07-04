@@ -32,7 +32,7 @@ resource "skycloak_webhook_subscription" "ops" {
 
 - `event_types` (List of String) Event types to deliver. See the `skycloak_webhook_event_types` data source for the catalog.
 - `name` (String) Subscription name.
-- `signing_secret` (String, Sensitive) HMAC secret used to sign deliveries. Write-only; never read back.
+- `signing_secret` (String, Sensitive) HMAC secret used to sign deliveries, 32 to 512 characters. Write-only; never read back.
 - `source` (String) Event source: `keycloak` or `platform`.
 - `url` (String) HTTPS endpoint receiving deliveries.
 

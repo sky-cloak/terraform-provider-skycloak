@@ -49,7 +49,7 @@ func (r *captchaDomainResource) Schema(_ context.Context, _ resource.SchemaReque
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"cluster_id": schema.StringAttribute{Required: true, MarkdownDescription: "Cluster ID. Immutable.", PlanModifiers: rr},
-			"hostname":   schema.StringAttribute{Required: true, MarkdownDescription: "Hostname to protect. Immutable.", PlanModifiers: rr},
+			"hostname":   schema.StringAttribute{Required: true, MarkdownDescription: "Hostname to protect; must be one of the cluster's verified custom domains. Immutable.", PlanModifiers: rr},
 			"created_at": schema.StringAttribute{Computed: true, MarkdownDescription: "Registration timestamp."},
 		},
 	}
