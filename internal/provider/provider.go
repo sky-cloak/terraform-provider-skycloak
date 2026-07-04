@@ -55,7 +55,7 @@ func (p *skycloakProvider) Schema(_ context.Context, _ provider.SchemaRequest, r
 			},
 			"api_version": schema.StringAttribute{
 				Optional:            true,
-				MarkdownDescription: "Date-based API version, e.g. `2026-03-01` (env `SKYCLOAK_API_VERSION`). Defaults to the current version.",
+				MarkdownDescription: "Date-based API version, e.g. `2026-06-01.beta` (env `SKYCLOAK_API_VERSION`). Defaults to the version this provider release was built against.",
 			},
 		},
 	}

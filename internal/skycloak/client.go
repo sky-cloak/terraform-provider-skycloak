@@ -26,6 +26,12 @@ import (
 
 const defaultEndpoint = "https://api.skycloak.io"
 
+// DefaultAPIVersion is the API version this provider build is generated and
+// tested against. It must match the Versions enum in the committed
+// internal/apiclient/openapi.yaml. The API requires the API-Version header on
+// every request, so an unpinned client sends this default.
+const DefaultAPIVersion = "2026-06-01.beta"
+
 // Client wraps the generated API client.
 type Client struct {
 	gen        *apiclient.ClientWithResponses
@@ -62,19 +68,16 @@ func New(endpoint, apiKey, apiVersion string, opts ...Option) *Client {
 	if endpoint == "" {
 		endpoint = defaultEndpoint
 	}
+	if apiVersion == "" {
+		apiVersion = DefaultAPIVersion
+	}
 	// Retry 429/5xx with Retry-After-aware backoff.
 	cfg.httpClient.Transport = &retryTransport{base: cfg.httpClient.Transport, maxRetries: 4}
 
 	editor := func(_ context.Context, req *http.Request) error {
-		req.Header.Set("apikey", apiKey)
+		req.Header.Set("API-Key", apiKey)
 		req.Header.Set("Accept", "application/json")
-		if apiVersion != "" {
-			req.Header.Set("API-Version", apiVersion)
-		} else {
-			// The generated per-operation params always serialize the
-			// API-Version header; drop it when no version is pinned.
-			req.Header.Del("API-Version")
-		}
+		req.Header.Set("API-Version", apiVersion)
 		if cfg.userAgent != "" {
 			req.Header.Set("User-Agent", cfg.userAgent)
 		}

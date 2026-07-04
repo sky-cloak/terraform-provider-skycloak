@@ -16,6 +16,22 @@ func newTestClient(url string) *Client {
 	return New(url, "sk_sc_test_aaa_bbb", "2026-03-01")
 }
 
+// TestDefaultAPIVersion verifies an unpinned client sends the baked-in
+// default version (the API requires the header on every request).
+func TestDefaultAPIVersion(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("API-Version"); got != DefaultAPIVersion {
+			t.Errorf("API-Version header = %q, want %q", got, DefaultAPIVersion)
+		}
+		writeJSON(w, 200, `[]`)
+	}))
+	defer srv.Close()
+
+	if _, err := New(srv.URL, "sk_sc_test_aaa_bbb", "").ListClusters(context.Background()); err != nil {
+		t.Fatalf("ListClusters: %v", err)
+	}
+}
+
 // writeJSON writes a JSON body with the Content-Type the generated client
 // requires in order to unmarshal a typed response.
 func writeJSON(w http.ResponseWriter, status int, body string) {
@@ -26,8 +42,8 @@ func writeJSON(w http.ResponseWriter, status int, body string) {
 
 func TestListClusters(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if got := r.Header.Get("apikey"); got != "sk_sc_test_aaa_bbb" {
-			t.Errorf("apikey header = %q", got)
+		if got := r.Header.Get("API-Key"); got != "sk_sc_test_aaa_bbb" {
+			t.Errorf("API-Key header = %q", got)
 		}
 		if got := r.Header.Get("API-Version"); got != "2026-03-01" {
 			t.Errorf("API-Version header = %q", got)

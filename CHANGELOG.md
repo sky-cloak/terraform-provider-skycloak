@@ -6,8 +6,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- Authentication header renamed from `apikey` to `API-Key`, matching the API's new auth header (requests were failing with 401).
+
 ### Changed
 - Every API call now sends the pinned `API-Version` through the generated per-operation parameters (the API made the header a required parameter).
+- An unpinned `api_version` now defaults to the version the provider was built against (`2026-06-01.beta`) instead of omitting the header, since the API requires it.
 - `skycloak_cluster_credentials` data source now returns the cluster automation service account (`client_id`, `client_secret`, `token_url`) instead of admin console credentials, following the API change.
 
 ### Removed
