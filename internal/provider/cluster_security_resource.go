@@ -91,6 +91,11 @@ type botManagementModel struct {
 	BlacklistedAgents types.List   `tfsdk:"blacklisted_agents"`
 }
 
+type captchaModel struct {
+	Enabled       types.Bool `tfsdk:"enabled"`
+	EnabledRealms types.List `tfsdk:"enabled_realms"`
+}
+
 type clusterSecurityModel struct {
 	ID              types.String        `tfsdk:"id"`
 	ClusterID       types.String        `tfsdk:"cluster_id"`
@@ -99,6 +104,7 @@ type clusterSecurityModel struct {
 	WAF             *wafModel           `tfsdk:"waf"`
 	GeoBlocking     *geoBlockingModel   `tfsdk:"geo_blocking"`
 	BotManagement   *botManagementModel `tfsdk:"bot_management"`
+	CAPTCHA         *captchaModel       `tfsdk:"captcha"`
 }
 
 func (r *clusterSecurityResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -107,7 +113,7 @@ func (r *clusterSecurityResource) Metadata(_ context.Context, req resource.Metad
 
 func (r *clusterSecurityResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Edge-security configuration for a cluster: IP allow-listing, rate limiting, WAF, geo-blocking, and bot management. A singleton per cluster. (CAPTCHA settings are managed separately and left untouched.)",
+		MarkdownDescription: "Edge-security configuration for a cluster: IP allow-listing, rate limiting, WAF, geo-blocking, bot management, and CAPTCHA. A singleton per cluster. When the `captcha` block is omitted, the server's CAPTCHA settings are left untouched. CAPTCHA hostnames are registered via `skycloak_captcha_domain`.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -206,6 +212,17 @@ func (r *clusterSecurityResource) Schema(_ context.Context, _ resource.SchemaReq
 					"challenge_mode":     schema.StringAttribute{Required: true, MarkdownDescription: "`none`, `javascript`, or `captcha`."},
 					"whitelisted_agents": schema.ListAttribute{Optional: true, ElementType: types.StringType, MarkdownDescription: "User-agent regex patterns to always allow."},
 					"blacklisted_agents": schema.ListAttribute{Optional: true, ElementType: types.StringType, MarkdownDescription: "User-agent regex patterns to always block."},
+				},
+			},
+			"captcha": schema.SingleNestedAttribute{
+				Optional:            true,
+				MarkdownDescription: "Login-flow CAPTCHA challenges. Omit to leave the server's CAPTCHA settings unmanaged.",
+				Attributes: map[string]schema.Attribute{
+					"enabled": schema.BoolAttribute{Required: true, MarkdownDescription: "Whether CAPTCHA challenges are presented."},
+					"enabled_realms": schema.ListAttribute{
+						Optional: true, ElementType: types.StringType,
+						MarkdownDescription: "Realm IDs where challenges are presented during login.",
+					},
 				},
 			},
 		},

@@ -26,12 +26,6 @@ import (
 
 const defaultEndpoint = "https://api.skycloak.io"
 
-// DefaultAPIVersion is the API version this provider build is generated and
-// tested against. It must match the Versions enum in the committed
-// internal/apiclient/openapi.yaml. The API requires the API-Version header on
-// every request, so an unpinned client sends this default.
-const DefaultAPIVersion = "2026-06-01.beta"
-
 // Client wraps the generated API client.
 type Client struct {
 	gen        *apiclient.ClientWithResponses
@@ -171,38 +165,46 @@ func cid(s string) apiclient.ClusterId {
 
 // Cluster mirrors the public API Cluster resource (subset the provider uses).
 type Cluster struct {
-	ID        string
-	Name      string
-	Type      string
-	Size      string
-	Version   string
-	Location  string
-	Status    string
-	URL       string
-	CreatedAt string
-	UpdatedAt string
+	ID                 string
+	Name               string
+	Type               string
+	Size               string
+	Version            string
+	Location           string
+	Status             string
+	URL                string
+	AutoUpgradeEnabled bool
+	CreatedAt          string
+	UpdatedAt          string
 }
 
 // CreateClusterRequest is the body for creating a cluster.
 type CreateClusterRequest struct {
-	Name     string
-	Type     string
-	Size     string
-	Version  string
-	Location string
+	Name               string
+	Type               string
+	Size               string
+	Version            string
+	Location           string
+	AutoUpgradeEnabled *bool
 }
 
 // UpdateClusterRequest holds the mutable cluster fields.
 type UpdateClusterRequest struct {
-	Size    *string
-	Version *string
+	Size               *string
+	Version            *string
+	AutoUpgradeEnabled *bool
+}
+
+func boolDeref(p *bool) bool {
+	return p != nil && *p
 }
 
 func clusterFromAPI(c *apiclient.Cluster) *Cluster {
 	return &Cluster{
 		ID: c.Id.String(), Name: string(c.Name), Type: string(c.Type), Size: string(c.Size),
 		Version: string(c.Version), Location: string(c.Location), Status: string(c.Status),
-		URL: c.Url, CreatedAt: fmtTime(c.CreatedAt), UpdatedAt: fmtTime(c.UpdatedAt),
+		URL: c.Url, AutoUpgradeEnabled: boolDeref(c.AutoUpgradeEnabled),
+		CreatedAt: fmtTime(c.CreatedAt), UpdatedAt: fmtTime(c.UpdatedAt),
 	}
 }
 
@@ -220,7 +222,8 @@ func (c *Client) ListClusters(ctx context.Context) ([]Cluster, error) {
 		out = append(out, Cluster{
 			ID: s.Id.String(), Name: string(s.Name), Type: string(s.Type), Size: string(s.Size),
 			Version: string(s.Version), Location: string(s.Location), Status: string(s.Status),
-			URL: s.Url, CreatedAt: fmtTime(s.CreatedAt), UpdatedAt: fmtTime(s.UpdatedAt),
+			URL: s.Url, AutoUpgradeEnabled: boolDeref(s.AutoUpgradeEnabled),
+			CreatedAt: fmtTime(s.CreatedAt), UpdatedAt: fmtTime(s.UpdatedAt),
 		})
 	}
 	return out, nil
@@ -241,10 +244,11 @@ func (c *Client) GetCluster(ctx context.Context, id string) (*Cluster, error) {
 // CreateCluster creates a cluster.
 func (c *Client) CreateCluster(ctx context.Context, req CreateClusterRequest) (*Cluster, error) {
 	body := apiclient.CreateClusterJSONRequestBody{
-		Name:     apiclient.ClusterName(req.Name),
-		Size:     apiclient.ClusterSize(req.Size),
-		Version:  apiclient.KeycloakVersion(req.Version),
-		Location: apiclient.ClusterLocation(req.Location),
+		Name:               apiclient.ClusterName(req.Name),
+		Size:               apiclient.ClusterSize(req.Size),
+		Version:            apiclient.KeycloakVersion(req.Version),
+		Location:           apiclient.ClusterLocation(req.Location),
+		AutoUpgradeEnabled: req.AutoUpgradeEnabled,
 	}
 	if req.Type != "" {
 		t := apiclient.ClusterType(req.Type)
@@ -262,7 +266,7 @@ func (c *Client) CreateCluster(ctx context.Context, req CreateClusterRequest) (*
 
 // UpdateCluster patches mutable fields of a cluster.
 func (c *Client) UpdateCluster(ctx context.Context, id string, req UpdateClusterRequest) (*Cluster, error) {
-	body := apiclient.UpdateClusterJSONRequestBody{}
+	body := apiclient.UpdateClusterJSONRequestBody{AutoUpgradeEnabled: req.AutoUpgradeEnabled}
 	if req.Size != nil {
 		s := apiclient.ClusterSize(*req.Size)
 		body.Size = &s

@@ -7,15 +7,22 @@ import (
 )
 
 // ClusterSecurity is the edge-security configuration for a cluster (IP access
-// control, rate limiting, WAF, geo-blocking, bot management). The CAPTCHA
-// sub-config is intentionally not surfaced here; it is preserved untouched on
-// update.
+// control, rate limiting, WAF, geo-blocking, bot management, CAPTCHA). A nil
+// CAPTCHA leaves the server-side CAPTCHA config untouched on update.
 type ClusterSecurity struct {
 	IPAccessControl *IPAccessControl
 	RateLimiting    *RateLimiting
 	WAF             *WAF
 	GeoBlocking     *GeoBlocking
 	BotManagement   *BotManagement
+	CAPTCHA         *CAPTCHA
+}
+
+// CAPTCHA toggles login-flow CAPTCHA challenges per realm. Domains are managed
+// separately via the CAPTCHA domain endpoints.
+type CAPTCHA struct {
+	Enabled       bool
+	EnabledRealms []string
 }
 
 // IPPathRule restricts a URL path to a set of IPs/CIDRs.
@@ -158,6 +165,9 @@ func securityFromAPI(c *apiclient.ClusterSecurityConfig) *ClusterSecurity {
 			WhitelistedAgents: derefSlice(c.BotManagement.WhitelistedAgents), BlacklistedAgents: derefSlice(c.BotManagement.BlacklistedAgents),
 		}
 	}
+	if c.Captcha != nil {
+		out.CAPTCHA = &CAPTCHA{Enabled: c.Captcha.Enabled, EnabledRealms: derefSlice(c.Captcha.EnabledRealms)}
+	}
 	return out
 }
 
@@ -247,6 +257,14 @@ func (s *ClusterSecurity) applyToAPI(c *apiclient.ClusterSecurityConfig) {
 		}
 		c.BotManagement = b
 	}
+	if s.CAPTCHA != nil {
+		cc := &apiclient.CAPTCHAConfig{Enabled: s.CAPTCHA.Enabled}
+		if len(s.CAPTCHA.EnabledRealms) > 0 {
+			realms := s.CAPTCHA.EnabledRealms
+			cc.EnabledRealms = &realms
+		}
+		c.Captcha = cc
+	}
 }
 
 // GetClusterSecurity returns a cluster's edge-security configuration.
@@ -272,8 +290,13 @@ func (c *Client) UpdateClusterSecurity(ctx context.Context, clusterID string, se
 	if cur.JSON200 != nil {
 		body = *cur.JSON200
 	}
-	// Clear the sections this facade manages, then re-apply from the desired state.
+	// Clear the sections this facade manages, then re-apply from the desired
+	// state. CAPTCHA is cleared only when managed (sec.CAPTCHA set); otherwise
+	// the server value is preserved.
 	body.IpAccessControl, body.RateLimiting, body.Waf, body.GeoBlocking, body.BotManagement = nil, nil, nil, nil, nil
+	if sec.CAPTCHA != nil {
+		body.Captcha = nil
+	}
 	sec.applyToAPI(&body)
 
 	resp, err := c.gen.UpdateClusterSecurityWithResponse(ctx, cid(clusterID), &apiclient.UpdateClusterSecurityParams{APIVersion: c.ver()}, apiclient.UpdateClusterSecurityJSONRequestBody(body))

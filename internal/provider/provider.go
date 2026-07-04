@@ -3,8 +3,10 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"os"
 
+	"github.com/hashicorp/terraform-plugin-framework/action"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -15,8 +17,11 @@ import (
 	"github.com/sky-cloak/terraform-provider-skycloak/internal/skycloak"
 )
 
-// Ensure skycloakProvider satisfies the provider.Provider interface.
-var _ provider.Provider = (*skycloakProvider)(nil)
+// Ensure skycloakProvider satisfies the provider interfaces.
+var (
+	_ provider.Provider            = (*skycloakProvider)(nil)
+	_ provider.ProviderWithActions = (*skycloakProvider)(nil)
+)
 
 type skycloakProvider struct {
 	version string
@@ -82,9 +87,19 @@ func (p *skycloakProvider) Configure(ctx context.Context, req provider.Configure
 		return
 	}
 
+	if apiVersion != "" && apiVersion != skycloak.DefaultAPIVersion {
+		resp.Diagnostics.AddAttributeWarning(
+			path.Root("api_version"),
+			"API version differs from the provider's built-against version",
+			fmt.Sprintf("This provider release was generated and tested against API version %s; you pinned %s. "+
+				"Newer response shapes may not be fully mapped.", skycloak.DefaultAPIVersion, apiVersion),
+		)
+	}
+
 	client := skycloak.New(endpoint, apiKey, apiVersion, skycloak.WithUserAgent("terraform-provider-skycloak/"+p.version))
 	resp.ResourceData = client
 	resp.DataSourceData = client
+	resp.ActionData = client
 }
 
 func (p *skycloakProvider) Resources(_ context.Context) []func() resource.Resource {
@@ -103,7 +118,7 @@ func (p *skycloakProvider) Resources(_ context.Context) []func() resource.Resour
 		NewClientThemeAssignmentResource,
 		NewClusterExtensionResource,
 		NewExportResource,
-		NewThemeResource,
+		NewCustomThemeResource,
 		NewCustomExtensionResource,
 		NewClusterSecurityResource,
 		NewRealmRoleResource,
@@ -112,6 +127,20 @@ func (p *skycloakProvider) Resources(_ context.Context) []func() resource.Resour
 		NewRealmUserRoleAssignmentResource,
 		NewRealmGroupMembershipResource,
 		NewApplicationRoleAssignmentResource,
+		NewClusterMaintenanceWindowResource,
+		NewCAPTCHADomainResource,
+		NewSIEMDestinationResource,
+		NewWebhookSubscriptionResource,
+	}
+}
+
+func (p *skycloakProvider) Actions(_ context.Context) []func() action.Action {
+	return []func() action.Action{
+		NewTestSMTPAction,
+		NewTestIdentityProviderAction,
+		NewCancelClusterUpgradeAction,
+		NewTestSIEMDestinationAction,
+		NewTestWebhookSubscriptionAction,
 	}
 }
 
@@ -141,6 +170,10 @@ func (p *skycloakProvider) DataSources(_ context.Context) []func() datasource.Da
 		NewClusterSecurityLogsDataSource,
 		NewClusterEventsDataSource,
 		NewClusterEventsExportDataSource,
+		NewSIEMDestinationDataSource,
+		NewSIEMDestinationsDataSource,
+		NewWebhookSubscriptionsDataSource,
+		NewWebhookEventTypesDataSource,
 	}
 }
 

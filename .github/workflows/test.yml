@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
     inputs:
       test_run:
-        description: "Acceptance test filter (go test -run). Default is the read-only smoke; pass '.' to run the full create/destroy suite."
-        default: "TestAccClusterLocations"
+        description: "Acceptance test filter (go test -run). Default is the read-only smoke set; pass '.' to run the full create/destroy suite."
+        default: "TestAccSmoke"
 
 permissions:
   contents: read
@@ -51,10 +51,10 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: "1.25"
-      - name: Check the generated API client is in sync with openapi.yaml
+      - name: Check the generated API client and version constant are in sync with openapi.yaml
         run: |
           go generate ./internal/apiclient/...
-          git diff --exit-code internal/apiclient
+          git diff --exit-code internal/apiclient internal/skycloak/version.gen.go
 
   docs:
     runs-on: ubuntu-latest
@@ -72,7 +72,7 @@ jobs:
           git diff --exit-code
 
   # Acceptance tests run against a real dev workspace. Manually dispatched.
-  # Defaults to the read-only TestAccClusterLocations smoke test; pass
+  # Defaults to the read-only TestAccSmoke set; pass
   # test_run=. to run the full suite (creates real clusters).
   acceptance:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
@@ -90,4 +90,4 @@ jobs:
           TF_ACC: "1"
           SKYCLOAK_API_KEY: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_API_KEY }}
           SKYCLOAK_ENDPOINT: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_ENDPOINT }}
-        run: go test ./internal/provider/... -v -timeout 120m -run "${{ inputs.test_run || 'TestAccClusterLocations' }}"
+        run: go test ./internal/provider/... -v -timeout 120m -run "${{ inputs.test_run || 'TestAccSmoke' }}"

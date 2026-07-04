@@ -3,12 +3,12 @@
 page_title: "skycloak_cluster_security Resource - skycloak"
 subcategory: ""
 description: |-
-  Edge-security configuration for a cluster: IP allow-listing, rate limiting, WAF, geo-blocking, and bot management. A singleton per cluster. (CAPTCHA settings are managed separately and left untouched.)
+  Edge-security configuration for a cluster: IP allow-listing, rate limiting, WAF, geo-blocking, bot management, and CAPTCHA. A singleton per cluster. When the captcha block is omitted, the server's CAPTCHA settings are left untouched. CAPTCHA hostnames are registered via skycloak_captcha_domain.
 ---
 
 # skycloak_cluster_security (Resource)
 
-Edge-security configuration for a cluster: IP allow-listing, rate limiting, WAF, geo-blocking, and bot management. A singleton per cluster. (CAPTCHA settings are managed separately and left untouched.)
+Edge-security configuration for a cluster: IP allow-listing, rate limiting, WAF, geo-blocking, bot management, and CAPTCHA. A singleton per cluster. When the `captcha` block is omitted, the server's CAPTCHA settings are left untouched. CAPTCHA hostnames are registered via `skycloak_captcha_domain`.
 
 ## Example Usage
 
@@ -62,6 +62,7 @@ resource "skycloak_cluster_security" "production" {
 ### Optional
 
 - `bot_management` (Attributes) Bot detection and challenges. (see [below for nested schema](#nestedatt--bot_management))
+- `captcha` (Attributes) Login-flow CAPTCHA challenges. Omit to leave the server's CAPTCHA settings unmanaged. (see [below for nested schema](#nestedatt--captcha))
 - `geo_blocking` (Attributes) Country-based access control. (see [below for nested schema](#nestedatt--geo_blocking))
 - `ip_access_control` (Attributes List) Per-path IP allow rules. (see [below for nested schema](#nestedatt--ip_access_control))
 - `rate_limiting` (Attributes) Request-rate ceilings. (see [below for nested schema](#nestedatt--rate_limiting))
@@ -84,6 +85,18 @@ Optional:
 
 - `blacklisted_agents` (List of String) User-agent regex patterns to always block.
 - `whitelisted_agents` (List of String) User-agent regex patterns to always allow.
+
+
+<a id="nestedatt--captcha"></a>
+### Nested Schema for `captcha`
+
+Required:
+
+- `enabled` (Boolean) Whether CAPTCHA challenges are presented.
+
+Optional:
+
+- `enabled_realms` (List of String) Realm IDs where challenges are presented during login.
 
 
 <a id="nestedatt--geo_blocking"></a>

@@ -64,6 +64,12 @@ func securityFromModel(ctx context.Context, m *clusterSecurityModel, diags *diag
 		}
 	}
 
+	if c := m.CAPTCHA; c != nil {
+		sec.CAPTCHA = &skycloak.CAPTCHA{
+			Enabled: c.Enabled.ValueBool(), EnabledRealms: stringListToSlice(ctx, c.EnabledRealms, diags),
+		}
+	}
+
 	return sec
 }
 
@@ -127,6 +133,17 @@ func applySecurityToModel(ctx context.Context, sec *skycloak.ClusterSecurity, m 
 		}
 	} else {
 		m.BotManagement = nil
+	}
+
+	// The API always returns the server's CAPTCHA config, but the block is only
+	// reflected into state when the configuration manages it; an omitted block
+	// stays omitted so unmanaged server settings never surface as drift.
+	if m.CAPTCHA != nil && sec.CAPTCHA != nil {
+		m.CAPTCHA = &captchaModel{
+			Enabled: types.BoolValue(sec.CAPTCHA.Enabled), EnabledRealms: sliceToStringList(ctx, sec.CAPTCHA.EnabledRealms, diags),
+		}
+	} else {
+		m.CAPTCHA = nil
 	}
 }
 
