@@ -33,8 +33,8 @@ type Client struct {
 }
 
 // ver returns the pinned API version for the generated per-operation params
-// structs. The request editor stays authoritative for the final header value
-// so an unpinned client omits the header entirely.
+// structs. The request editor also sets the header, so the two always agree;
+// an unpinned client carries DefaultAPIVersion.
 func (c *Client) ver() apiclient.CommonParameters {
 	return apiclient.CommonParameters(c.apiVersion)
 }
@@ -496,7 +496,7 @@ func (c *Client) ListApplications(ctx context.Context, clusterID, realm string) 
 		l := apiclient.PaginationLimit(limit)
 		o := apiclient.PaginationOffset(offset)
 		resp, err := c.gen.ListApplicationsWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm),
-			&apiclient.ListApplicationsParams{Limit: &l, Offset: &o})
+			&apiclient.ListApplicationsParams{Limit: &l, Offset: &o, APIVersion: c.ver()})
 		if err != nil {
 			return nil, err
 		}
@@ -1090,7 +1090,7 @@ func domainFromAPI(d *apiclient.Domain) *Domain {
 
 // ListDomains returns the custom domains on a cluster.
 func (c *Client) ListDomains(ctx context.Context, clusterID string) ([]Domain, error) {
-	resp, err := c.gen.ListDomainsWithResponse(ctx, cid(clusterID), nil)
+	resp, err := c.gen.ListDomainsWithResponse(ctx, cid(clusterID), &apiclient.ListDomainsParams{APIVersion: c.ver()})
 	if err != nil {
 		return nil, err
 	}
@@ -2348,7 +2348,7 @@ func realmGroupFromAPI(g *apiclient.RealmGroup) RealmGroup {
 
 // ListRealmGroups returns the top-level groups of a realm.
 func (c *Client) ListRealmGroups(ctx context.Context, clusterID, realm string) ([]RealmGroup, error) {
-	resp, err := c.gen.ListRealmGroupsWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), nil)
+	resp, err := c.gen.ListRealmGroupsWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), &apiclient.ListRealmGroupsParams{APIVersion: c.ver()})
 	if err != nil {
 		return nil, err
 	}
@@ -2471,7 +2471,7 @@ type CreateRealmUserRequest struct {
 
 // ListRealmUsers returns the users of a realm.
 func (c *Client) ListRealmUsers(ctx context.Context, clusterID, realm string) ([]RealmUser, error) {
-	resp, err := c.gen.ListRealmUsersWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), nil)
+	resp, err := c.gen.ListRealmUsersWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), &apiclient.ListRealmUsersParams{APIVersion: c.ver()})
 	if err != nil {
 		return nil, err
 	}
@@ -2676,9 +2676,9 @@ func (c *Client) AssignApplicationRole(ctx context.Context, clusterID, realm, cl
 
 // RemoveApplicationRole removes a role from an application's service account.
 func (c *Client) RemoveApplicationRole(ctx context.Context, clusterID, realm, clientID, roleName, roleClientID string) error {
-	var params *apiclient.RemoveApplicationRoleParams
+	params := &apiclient.RemoveApplicationRoleParams{APIVersion: c.ver()}
 	if roleClientID != "" {
-		params = &apiclient.RemoveApplicationRoleParams{RoleClientId: &roleClientID}
+		params.RoleClientId = &roleClientID
 	}
 	resp, err := c.gen.RemoveApplicationRoleWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), apiclient.ApplicationClientId(clientID), roleName, params)
 	if err != nil {
@@ -2846,31 +2846,31 @@ func (c *Client) ClusterInsights(ctx context.Context, clusterID, kind string) ([
 	var err error
 	switch kind {
 	case "authentication":
-		r, e := c.gen.GetClusterInsightsAuthenticationWithResponse(ctx, id, nil)
+		r, e := c.gen.GetClusterInsightsAuthenticationWithResponse(ctx, id, &apiclient.GetClusterInsightsAuthenticationParams{APIVersion: c.ver()})
 		err = e
 		if r != nil {
 			raw, resp = r.Body, r.HTTPResponse
 		}
 	case "events":
-		r, e := c.gen.GetClusterInsightsEventsWithResponse(ctx, id, nil)
+		r, e := c.gen.GetClusterInsightsEventsWithResponse(ctx, id, &apiclient.GetClusterInsightsEventsParams{APIVersion: c.ver()})
 		err = e
 		if r != nil {
 			raw, resp = r.Body, r.HTTPResponse
 		}
 	case "performance":
-		r, e := c.gen.GetClusterInsightsPerformanceWithResponse(ctx, id, nil)
+		r, e := c.gen.GetClusterInsightsPerformanceWithResponse(ctx, id, &apiclient.GetClusterInsightsPerformanceParams{APIVersion: c.ver()})
 		err = e
 		if r != nil {
 			raw, resp = r.Body, r.HTTPResponse
 		}
 	case "security":
-		r, e := c.gen.GetClusterInsightsSecurityWithResponse(ctx, id, nil)
+		r, e := c.gen.GetClusterInsightsSecurityWithResponse(ctx, id, &apiclient.GetClusterInsightsSecurityParams{APIVersion: c.ver()})
 		err = e
 		if r != nil {
 			raw, resp = r.Body, r.HTTPResponse
 		}
 	default: // overview
-		r, e := c.gen.GetClusterInsightsOverviewWithResponse(ctx, id, nil)
+		r, e := c.gen.GetClusterInsightsOverviewWithResponse(ctx, id, &apiclient.GetClusterInsightsOverviewParams{APIVersion: c.ver()})
 		err = e
 		if r != nil {
 			raw, resp = r.Body, r.HTTPResponse
@@ -2911,7 +2911,7 @@ func (c *Client) GetClusterCredentials(ctx context.Context, clusterID string) (*
 
 // ListRealmGroupMembers returns the users that belong to a group.
 func (c *Client) ListRealmGroupMembers(ctx context.Context, clusterID, realm, groupID string) ([]RealmUser, error) {
-	resp, err := c.gen.ListRealmGroupMembersWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), uid(groupID), nil)
+	resp, err := c.gen.ListRealmGroupMembersWithResponse(ctx, cid(clusterID), apiclient.RealmName(realm), uid(groupID), &apiclient.ListRealmGroupMembersParams{APIVersion: c.ver()})
 	if err != nil {
 		return nil, err
 	}
@@ -2967,7 +2967,7 @@ type LogQuery struct {
 
 // ListClusterLogs returns cluster application logs.
 func (c *Client) ListClusterLogs(ctx context.Context, clusterID string, q LogQuery) ([]LogEntry, error) {
-	params := &apiclient.ListClusterLogsParams{}
+	params := &apiclient.ListClusterLogsParams{APIVersion: c.ver()}
 	if q.Limit > 0 {
 		l := apiclient.LogPageLimit(q.Limit)
 		params.Limit = &l
@@ -3007,7 +3007,7 @@ type SecurityLogEntry struct {
 
 // ListClusterSecurityLogs returns cluster edge-security logs (WAF, geo, etc.).
 func (c *Client) ListClusterSecurityLogs(ctx context.Context, clusterID string, limit int, search string) ([]SecurityLogEntry, error) {
-	params := &apiclient.ListClusterSecurityLogsParams{}
+	params := &apiclient.ListClusterSecurityLogsParams{APIVersion: c.ver()}
 	if limit > 0 {
 		l := apiclient.LogPageLimit(limit)
 		params.Limit = &l
@@ -3055,7 +3055,7 @@ type EventQuery struct {
 
 // ListClusterEvents returns Keycloak admin/user events.
 func (c *Client) ListClusterEvents(ctx context.Context, clusterID string, q EventQuery) ([]EventEntry, error) {
-	params := &apiclient.ListClusterEventsParams{}
+	params := &apiclient.ListClusterEventsParams{APIVersion: c.ver()}
 	if q.Limit > 0 {
 		l := apiclient.PageLimit(q.Limit)
 		params.Limit = &l
@@ -3098,7 +3098,7 @@ func (c *Client) ListClusterEvents(ctx context.Context, clusterID string, q Even
 
 // ExportClusterEvents exports a cluster's events as a raw document (CSV/JSON).
 func (c *Client) ExportClusterEvents(ctx context.Context, clusterID string) ([]byte, error) {
-	resp, err := c.gen.ExportClusterEventsWithResponse(ctx, cid(clusterID), nil)
+	resp, err := c.gen.ExportClusterEventsWithResponse(ctx, cid(clusterID), &apiclient.ExportClusterEventsParams{APIVersion: c.ver()})
 	if err != nil {
 		return nil, err
 	}
