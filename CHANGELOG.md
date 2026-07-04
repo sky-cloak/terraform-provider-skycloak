@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-07-04
+
+### Fixed
+- `skycloak_siem_destination`: an omitted `batch` block caused "Provider produced inconsistent result after apply". `batch` and its fields are now Optional+Computed with the API's defaults (`max_events` 1000, `max_interval_seconds` 60).
+- `skycloak_webhook_subscription`: documented that `signing_secret` must be 32 to 512 characters (the API rejects shorter values).
+- `skycloak_captcha_domain`: documented that `hostname` must be one of the cluster's verified custom domains.
+
 ## [0.3.0] - 2026-07-03
 
 ### Added
@@ -63,6 +70,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `skycloak_application`: `type` is immutable (changing it replaces the resource) and `service_account_enabled` is read-only, matching the API contract.
 - `skycloak_identity_provider`: `config` is a structured block (`oidc` / `ldap` / `saml` sub-objects plus `attribute_mappings`, `button_text`, `icon_url`, `sync_mode`, `trust_email`), matching the API contract.
 
+[0.3.1]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/sky-cloak/terraform-provider-skycloak/releases/tag/v0.1.0
