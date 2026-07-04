@@ -37,6 +37,10 @@ output "cluster_url" {
 - `type` (String) Cluster type (`keycloak` or `tidecloak`). Immutable — changing it replaces the cluster.
 - `version` (String) Keycloak version, e.g. `26.1`.
 
+### Optional
+
+- `auto_upgrade_enabled` (Boolean) Enable automatic patch upgrades, applied inside the cluster's maintenance window. Defaults to `false`.
+
 ### Read-Only
 
 - `id` (String) Cluster ID (UUID).

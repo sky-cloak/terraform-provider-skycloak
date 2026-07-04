@@ -6,12 +6,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- `skycloak_siem_destination` resource: SIEM forwarding to syslog, S3, or HTTP collectors, with source/batch tuning and write-only credentials. Plus `skycloak_siem_destination` and `skycloak_siem_destinations` data sources.
+- `skycloak_webhook_subscription` resource: webhook deliveries with per-subscription event types, optional cluster/realm scoping, and write-only `signing_secret`/`authorization_header`. Plus `skycloak_webhook_subscriptions` and `skycloak_webhook_event_types` data sources.
+- `skycloak_cluster_maintenance_window` resource: the cluster's own upgrade/maintenance window. Destroy reverts the cluster to the workspace default window.
+- `skycloak_captcha_domain` resource: hostnames registered for CAPTCHA protection.
+- `captcha` block on `skycloak_cluster_security` (`enabled`, `enabled_realms`); omitted blocks keep the server value untouched, as before.
+- `auto_upgrade_enabled` on the `skycloak_cluster` resource and data source.
+- Terraform **actions** (require Terraform >= 1.14): `skycloak_test_smtp`, `skycloak_test_identity_provider`, `skycloak_cancel_cluster_upgrade`, `skycloak_test_siem_destination`, `skycloak_test_webhook_subscription`.
+- With these, the provider covers 100% of the public API's generated operations (`scripts/check-api-coverage.sh`).
+
 ### Fixed
 - Authentication header renamed from `apikey` to `API-Key`, matching the API's new auth header (requests were failing with 401).
 
 ### Changed
+- `skycloak_theme` is renamed to `skycloak_custom_theme` (symmetry with `skycloak_custom_extension`). State must be re-imported under the new type; `moved` blocks cannot cross resource types.
+- The unpinned default `api_version` is now generated from the committed OpenAPI spec (`tools/gen-version`), and pinning a different version emits a warning diagnostic.
 - Every API call now sends the pinned `API-Version` through the generated per-operation parameters (the API made the header a required parameter).
-- An unpinned `api_version` now defaults to the version the provider was built against (`2026-06-01.beta`) instead of omitting the header, since the API requires it.
+- An unpinned `api_version` now defaults to the version the provider was built against instead of omitting the header, since the API requires it.
 - `skycloak_cluster_credentials` data source now returns the cluster automation service account (`client_id`, `client_secret`, `token_url`) instead of admin console credentials, following the API change.
 
 ### Removed

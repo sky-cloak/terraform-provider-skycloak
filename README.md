@@ -54,8 +54,10 @@ honor the `Retry-After` header.
 
 | Resource | Description |
 |---|---|
-| `skycloak_cluster` | A managed Keycloak cluster |
-| `skycloak_cluster_security` | Edge security: IP allow-listing, rate limiting, WAF, geo-blocking, bot management |
+| `skycloak_cluster` | A managed Keycloak cluster (incl. `auto_upgrade_enabled`) |
+| `skycloak_cluster_maintenance_window` | The cluster's upgrade/maintenance window |
+| `skycloak_cluster_security` | Edge security: IP allow-listing, rate limiting, WAF, geo-blocking, bot management, CAPTCHA |
+| `skycloak_captcha_domain` | A hostname registered for CAPTCHA protection |
 | `skycloak_domain` | A custom domain on a cluster |
 | `skycloak_domain_route` | Maps a realm onto a custom domain |
 | `skycloak_realm` | A realm within a cluster |
@@ -70,13 +72,15 @@ honor the `Retry-After` header.
 | `skycloak_identity_provider` | An SSO connection (OIDC/LDAP/SAML) |
 | `skycloak_login_branding` | Login-page branding for a realm |
 | `skycloak_email_branding` | Email-template branding for a realm |
-| `skycloak_theme` | Uploads a custom theme archive to a cluster |
+| `skycloak_custom_theme` | Uploads a custom theme archive to a cluster |
 | `skycloak_theme_assignment` | Realm-level custom theme per Keycloak theme type |
 | `skycloak_client_theme_assignment` | Per-client login-theme override |
 | `skycloak_cluster_extension` | A marketplace extension installed on a cluster |
 | `skycloak_custom_extension` | Uploads a custom extension JAR to the workspace catalog |
 | `skycloak_smtp` | Realm SMTP configuration |
 | `skycloak_export` | A database export job (waits for completion) |
+| `skycloak_siem_destination` | SIEM forwarding to syslog, S3, or HTTP collectors |
+| `skycloak_webhook_subscription` | Webhook deliveries for workspace and Keycloak events |
 
 | Data source | Description |
 |---|---|
@@ -87,7 +91,7 @@ honor the `Retry-After` header.
 | `skycloak_cluster_features` | Available Keycloak feature flags |
 | `skycloak_cluster_upgrades` | Version-upgrade history for a cluster |
 | `skycloak_cluster_upgrade_path` | Recommended version-upgrade path |
-| `skycloak_cluster_credentials` | A cluster's Keycloak admin credentials |
+| `skycloak_cluster_credentials` | A cluster's automation service account credentials |
 | `skycloak_cluster_insights` | Cluster analytics (overview/auth/events/performance/security) as JSON |
 | `skycloak_cluster_logs` | Recent application logs |
 | `skycloak_cluster_security_logs` | Recent edge-security logs (WAF, geo, rate limiting) |
@@ -104,6 +108,18 @@ honor the `Retry-After` header.
 | `skycloak_oidc_discovery` | Resolve an OIDC issuer's endpoints |
 | `skycloak_themes` | Custom themes uploaded to a cluster |
 | `skycloak_extensions` | Extension catalog available to the workspace |
+| `skycloak_siem_destination` | Look up a SIEM destination and its delivery health |
+| `skycloak_siem_destinations` | All SIEM destinations in the workspace |
+| `skycloak_webhook_subscriptions` | All webhook subscriptions in the workspace |
+| `skycloak_webhook_event_types` | Webhook event type catalog |
+
+| Action (Terraform >= 1.14) | Description |
+|---|---|
+| `skycloak_test_smtp` | Sends a probe email through a realm's SMTP configuration |
+| `skycloak_test_identity_provider` | Validates an identity provider's connection |
+| `skycloak_cancel_cluster_upgrade` | Cancels a scheduled or in-progress upgrade |
+| `skycloak_test_siem_destination` | Sends a synthetic event through a SIEM destination |
+| `skycloak_test_webhook_subscription` | Delivers a sample event to a webhook endpoint |
 
 Full reference docs are generated under [`docs/`](./docs) and published on the Terraform Registry.
 
