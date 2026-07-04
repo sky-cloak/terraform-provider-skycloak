@@ -41,6 +41,7 @@ func (d *clusterDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 			"location": schema.StringAttribute{Computed: true, MarkdownDescription: "Region."},
 			"status":   schema.StringAttribute{Computed: true, MarkdownDescription: "Lifecycle status."},
 			"url":      schema.StringAttribute{Computed: true, MarkdownDescription: "Cluster base URL."},
+			"auto_upgrade_enabled": schema.BoolAttribute{Computed: true, MarkdownDescription: "Whether automatic patch upgrades are enabled."},
 		},
 	}
 }

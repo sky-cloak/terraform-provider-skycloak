@@ -56,3 +56,41 @@ func TestClusterSecurityGetUpdate(t *testing.T) {
 		t.Fatalf("update body retained a stale ip rule: %s", putBody)
 	}
 }
+
+func TestClusterSecurityManagedCAPTCHA(t *testing.T) {
+	path := "/clusters/" + cuid + "/security"
+	current := `{"captcha":{"enabled":true,"enabled_realms":["old"]},"waf":{"enabled":true,"mode":"block","preset":"custom","paranoia_level":1}}`
+	var putBody string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != path {
+			http.NotFound(w, r)
+			return
+		}
+		switch r.Method {
+		case http.MethodGet:
+			writeJSON(w, 200, current)
+		case http.MethodPut, http.MethodPatch:
+			raw, _ := io.ReadAll(r.Body)
+			putBody = string(raw)
+			writeJSON(w, 200, putBody)
+		}
+	}))
+	defer srv.Close()
+
+	c := newTestClient(srv.URL)
+	got, err := c.GetClusterSecurity(context.Background(), cuid)
+	if err != nil || got.CAPTCHA == nil || !got.CAPTCHA.Enabled || got.CAPTCHA.EnabledRealms[0] != "old" {
+		t.Fatalf("GetClusterSecurity captcha: %+v, %v", got, err)
+	}
+
+	// Managed block replaces the server captcha config instead of preserving it.
+	_, err = c.UpdateClusterSecurity(context.Background(), cuid, &ClusterSecurity{
+		CAPTCHA: &CAPTCHA{Enabled: false, EnabledRealms: []string{"customers"}},
+	})
+	if err != nil {
+		t.Fatalf("UpdateClusterSecurity: %v", err)
+	}
+	if !strings.Contains(putBody, `"enabled_realms":["customers"]`) || strings.Contains(putBody, `"old"`) {
+		t.Fatalf("managed captcha not applied: %s", putBody)
+	}
+}

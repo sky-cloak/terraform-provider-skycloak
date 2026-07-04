@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -34,14 +35,15 @@ func NewClusterResource() resource.Resource {
 }
 
 type clusterModel struct {
-	ID       types.String `tfsdk:"id"`
-	Name     types.String `tfsdk:"name"`
-	Type     types.String `tfsdk:"type"`
-	Size     types.String `tfsdk:"size"`
-	Version  types.String `tfsdk:"version"`
-	Location types.String `tfsdk:"location"`
-	Status   types.String `tfsdk:"status"`
-	URL      types.String `tfsdk:"url"`
+	ID                 types.String `tfsdk:"id"`
+	Name               types.String `tfsdk:"name"`
+	Type               types.String `tfsdk:"type"`
+	Size               types.String `tfsdk:"size"`
+	Version            types.String `tfsdk:"version"`
+	Location           types.String `tfsdk:"location"`
+	Status             types.String `tfsdk:"status"`
+	URL                types.String `tfsdk:"url"`
+	AutoUpgradeEnabled types.Bool   `tfsdk:"auto_upgrade_enabled"`
 }
 
 func (r *clusterResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -87,6 +89,12 @@ func (r *clusterResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Computed:            true,
 				MarkdownDescription: "Cluster base URL once available.",
 			},
+			"auto_upgrade_enabled": schema.BoolAttribute{
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
+				MarkdownDescription: "Enable automatic patch upgrades, applied inside the cluster's maintenance window. Defaults to `false`.",
+			},
 		},
 	}
 }
@@ -110,12 +118,14 @@ func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
+	autoUpgrade := plan.AutoUpgradeEnabled.ValueBool()
 	created, err := r.client.CreateCluster(ctx, skycloak.CreateClusterRequest{
-		Name:     plan.Name.ValueString(),
-		Type:     plan.Type.ValueString(),
-		Size:     plan.Size.ValueString(),
-		Version:  plan.Version.ValueString(),
-		Location: plan.Location.ValueString(),
+		Name:               plan.Name.ValueString(),
+		Type:               plan.Type.ValueString(),
+		Size:               plan.Size.ValueString(),
+		Version:            plan.Version.ValueString(),
+		Location:           plan.Location.ValueString(),
+		AutoUpgradeEnabled: &autoUpgrade,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create cluster", err.Error())
@@ -167,9 +177,11 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 
 	size := plan.Size.ValueString()
 	version := plan.Version.ValueString()
+	autoUpgrade := plan.AutoUpgradeEnabled.ValueBool()
 	updated, err := r.client.UpdateCluster(ctx, plan.ID.ValueString(), skycloak.UpdateClusterRequest{
-		Size:    &size,
-		Version: &version,
+		Size:               &size,
+		Version:            &version,
+		AutoUpgradeEnabled: &autoUpgrade,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update cluster", err.Error())
@@ -205,4 +217,5 @@ func applyClusterToModel(c *skycloak.Cluster, m *clusterModel) {
 	m.Location = types.StringValue(c.Location)
 	m.Status = types.StringValue(c.Status)
 	m.URL = types.StringValue(c.URL)
+	m.AutoUpgradeEnabled = types.BoolValue(c.AutoUpgradeEnabled)
 }

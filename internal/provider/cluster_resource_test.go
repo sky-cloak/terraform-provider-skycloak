@@ -7,6 +7,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+
+	"github.com/sky-cloak/terraform-provider-skycloak/internal/skycloak"
 )
 
 // testAccProtoV6ProviderFactories wires the provider for acceptance tests.
@@ -18,6 +20,26 @@ func testAccPreCheck(t *testing.T) {
 	if os.Getenv("SKYCLOAK_API_KEY") == "" {
 		t.Skip("SKYCLOAK_API_KEY not set; skipping acceptance test")
 	}
+}
+
+// testAccClient returns a facade client built from the acceptance env vars,
+// for probes that decide whether a test can run at all.
+func testAccClient() *skycloak.Client {
+	return skycloak.New(os.Getenv("SKYCLOAK_ENDPOINT"), os.Getenv("SKYCLOAK_API_KEY"), os.Getenv("SKYCLOAK_API_VERSION"))
+}
+
+// testAccClusterID returns the pre-provisioned cluster acceptance tests that
+// need an existing cluster should target, skipping when none is configured.
+// Provisioning a cluster per test run is disproportionate for sub-resource
+// tests; SKYCLOAK_ACCEPTANCE_CLUSTER_ID points them at a long-lived dev
+// cluster instead.
+func testAccClusterID(t *testing.T) string {
+	t.Helper()
+	id := os.Getenv("SKYCLOAK_ACCEPTANCE_CLUSTER_ID")
+	if id == "" {
+		t.Skip("SKYCLOAK_ACCEPTANCE_CLUSTER_ID not set; skipping cluster-scoped acceptance test")
+	}
+	return id
 }
 
 // TestAccClusterResource exercises create → read → import → destroy against a

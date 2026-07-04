@@ -18,20 +18,20 @@ import (
 )
 
 var (
-	_ resource.Resource                = (*themeResource)(nil)
-	_ resource.ResourceWithConfigure   = (*themeResource)(nil)
-	_ resource.ResourceWithImportState = (*themeResource)(nil)
-	_ resource.ResourceWithModifyPlan  = (*themeResource)(nil)
+	_ resource.Resource                = (*customThemeResource)(nil)
+	_ resource.ResourceWithConfigure   = (*customThemeResource)(nil)
+	_ resource.ResourceWithImportState = (*customThemeResource)(nil)
+	_ resource.ResourceWithModifyPlan  = (*customThemeResource)(nil)
 )
 
-type themeResource struct {
+type customThemeResource struct {
 	client *skycloak.Client
 }
 
-// NewThemeResource returns the skycloak_theme resource (custom theme upload).
-func NewThemeResource() resource.Resource { return &themeResource{} }
+// NewCustomThemeResource returns the skycloak_custom_theme resource (custom theme upload).
+func NewCustomThemeResource() resource.Resource { return &customThemeResource{} }
 
-type themeResourceModel struct {
+type customThemeResourceModel struct {
 	ID            types.String `tfsdk:"id"`
 	ClusterID     types.String `tfsdk:"cluster_id"`
 	Source        types.String `tfsdk:"source"`
@@ -45,11 +45,11 @@ type themeResourceModel struct {
 	DeployedAt    types.String `tfsdk:"deployed_at"`
 }
 
-func (r *themeResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_theme"
+func (r *customThemeResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_custom_theme"
 }
 
-func (r *themeResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *customThemeResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	rrStr := []planmodifier.String{stringplanmodifier.RequiresReplace()}
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Uploads a custom Keycloak theme (ZIP or Keycloakify JAR) to a cluster. Replacing the file contents or `theme_types` recreates the theme; `name`, `description`, and `version` update in place.",
@@ -81,7 +81,7 @@ func (r *themeResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 	}
 }
 
-func (r *themeResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *customThemeResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -95,11 +95,11 @@ func (r *themeResource) Configure(_ context.Context, req resource.ConfigureReque
 
 // ModifyPlan hashes the local file so a change in its bytes is detected even
 // when the path is unchanged.
-func (r *themeResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+func (r *customThemeResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	if req.Plan.Raw.IsNull() {
 		return // destroy plan
 	}
-	var plan themeResourceModel
+	var plan customThemeResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() || plan.Source.IsUnknown() || plan.Source.IsNull() {
 		return
@@ -112,8 +112,8 @@ func (r *themeResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanR
 	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("content_sha256"), hash)...)
 }
 
-func (r *themeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan themeResourceModel
+func (r *customThemeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan customThemeResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -139,8 +139,8 @@ func (r *themeResource) Create(ctx context.Context, req resource.CreateRequest, 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *themeResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state themeResourceModel
+func (r *customThemeResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state customThemeResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -158,8 +158,8 @@ func (r *themeResource) Read(ctx context.Context, req resource.ReadRequest, resp
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *themeResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan themeResourceModel
+func (r *customThemeResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan customThemeResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -174,8 +174,8 @@ func (r *themeResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *themeResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state themeResourceModel
+func (r *customThemeResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state customThemeResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -185,7 +185,7 @@ func (r *themeResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 	}
 }
 
-func (r *themeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *customThemeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	parts := strings.Split(req.ID, "/")
 	if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
 		resp.Diagnostics.AddError("Invalid import ID", "expected import ID in the form cluster_id/theme_id")
@@ -197,7 +197,7 @@ func (r *themeResource) ImportState(ctx context.Context, req resource.ImportStat
 
 // applyThemeToModel copies API fields into the model, leaving the source path
 // and content hash (managed from config/plan) untouched.
-func applyThemeToModel(t *skycloak.Theme, m *themeResourceModel) {
+func applyThemeToModel(t *skycloak.Theme, m *customThemeResourceModel) {
 	m.ID = types.StringValue(t.ID)
 	m.Name = types.StringValue(t.Name)
 	m.Description = optionalString(t.Description)
