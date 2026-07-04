@@ -3,12 +3,12 @@
 page_title: "skycloak_cluster_credentials Data Source - skycloak"
 subcategory: ""
 description: |-
-  A cluster's Keycloak admin credentials. Treat the password as sensitive.
+  The cluster automation service account credentials for the OAuth2 client_credentials grant.
 ---
 
 # skycloak_cluster_credentials (Data Source)
 
-A cluster's Keycloak admin credentials. Treat the password as sensitive.
+The cluster automation service account credentials for the OAuth2 client_credentials grant.
 
 ## Example Usage
 
@@ -27,5 +27,6 @@ data "skycloak_cluster_credentials" "production" {
 
 ### Read-Only
 
-- `admin_password` (String, Sensitive) Keycloak admin console password.
-- `admin_username` (String) Keycloak admin console username.
+- `client_id` (String) Client ID of the cluster's automation service account.
+- `client_secret` (String, Sensitive) Client secret for the automation service account.
+- `token_url` (String) Token endpoint URL (master realm) for the client_credentials grant.

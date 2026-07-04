@@ -35,8 +35,4 @@ func TestClusterLogsEventsBuild(t *testing.T) {
 	if ev, err := c.ListClusterEvents(context.Background(), cuid, EventQuery{Limit: 10, Category: "user"}); err != nil || len(ev) != 1 || ev[0].Username != "jdoe" {
 		t.Fatalf("ListClusterEvents: %+v, %v", ev, err)
 	}
-	b, buildLogs, err := c.GetClusterBuild(context.Background(), cuid, bid)
-	if err != nil || b.Status != "completed" || len(buildLogs) != 2 {
-		t.Fatalf("GetClusterBuild: %+v, %v, %v", b, buildLogs, err)
-	}
 }

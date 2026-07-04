@@ -14,7 +14,7 @@ func TestInsightsAndClusterReads(t *testing.T) {
 		case "/clusters/" + cuid + "/insights/overview":
 			writeJSON(w, 200, `{"total_logins":42,"active_users":7}`)
 		case "/clusters/" + cuid + "/credentials":
-			writeJSON(w, 200, `{"admin_username":"admin","admin_password":"s3cr3t"}`)
+			writeJSON(w, 200, `{"client_id":"skycloak-automation","client_secret":"s3cr3t","token_url":"https://kc.example.com/realms/master/protocol/openid-connect/token"}`)
 		case "/clusters/" + cuid + "/upgrade-path":
 			writeJSON(w, 200, `[{"version":"25.0","required":false},{"version":"26.1","required":true}]`)
 		case "/clusters/" + cuid + "/realms/app/groups/" + gid + "/members":
@@ -31,7 +31,7 @@ func TestInsightsAndClusterReads(t *testing.T) {
 		t.Fatalf("ClusterInsights: %q, %v", raw, err)
 	}
 	creds, err := c.GetClusterCredentials(context.Background(), cuid)
-	if err != nil || creds.AdminUsername != "admin" || creds.AdminPassword != "s3cr3t" {
+	if err != nil || creds.ClientID != "skycloak-automation" || creds.ClientSecret != "s3cr3t" {
 		t.Fatalf("GetClusterCredentials: %+v, %v", creds, err)
 	}
 	steps, err := c.GetClusterUpgradePath(context.Background(), cuid)
