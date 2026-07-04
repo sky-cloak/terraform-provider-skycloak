@@ -3,12 +3,12 @@
 page_title: "skycloak_test_identity_provider Action - skycloak"
 subcategory: ""
 description: |-
-  Validates an identity provider's connection (discovery, credentials) and fails on an unreachable or misconfigured provider.
+  Validates an identity provider's connection (discovery, credentials) and fails on an unreachable or misconfigured provider. Requires Terraform 1.14 or later.
 ---
 
 # skycloak_test_identity_provider (Action)
 
-Validates an identity provider's connection (discovery, credentials) and fails on an unreachable or misconfigured provider.
+Validates an identity provider's connection (discovery, credentials) and fails on an unreachable or misconfigured provider. Requires Terraform 1.14 or later.
 
 
 

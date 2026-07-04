@@ -3,12 +3,12 @@
 page_title: "skycloak_test_siem_destination Action - skycloak"
 subcategory: ""
 description: |-
-  Sends a synthetic event through a saved SIEM destination and fails if delivery fails.
+  Sends a synthetic event through a saved SIEM destination and fails if delivery fails. Requires Terraform 1.14 or later.
 ---
 
 # skycloak_test_siem_destination (Action)
 
-Sends a synthetic event through a saved SIEM destination and fails if delivery fails.
+Sends a synthetic event through a saved SIEM destination and fails if delivery fails. Requires Terraform 1.14 or later.
 
 
 

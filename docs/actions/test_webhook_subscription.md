@@ -3,12 +3,12 @@
 page_title: "skycloak_test_webhook_subscription Action - skycloak"
 subcategory: ""
 description: |-
-  Delivers a sample event to a webhook subscription's endpoint and fails on a non-2xx response.
+  Delivers a sample event to a webhook subscription's endpoint and fails on a non-2xx response. Requires Terraform 1.14 or later.
 ---
 
 # skycloak_test_webhook_subscription (Action)
 
-Delivers a sample event to a webhook subscription's endpoint and fails on a non-2xx response.
+Delivers a sample event to a webhook subscription's endpoint and fails on a non-2xx response. Requires Terraform 1.14 or later.
 
 
 

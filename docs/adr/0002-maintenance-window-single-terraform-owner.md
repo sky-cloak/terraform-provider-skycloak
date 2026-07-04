@@ -1,6 +1,6 @@
 # 2. The maintenance window has a single Terraform owner
 
-Date: 2026-07-04
+Date: 2026-07-03
 
 ## Status
 

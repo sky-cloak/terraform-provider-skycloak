@@ -3,12 +3,12 @@
 page_title: "skycloak_test_smtp Action - skycloak"
 subcategory: ""
 description: |-
-  Sends a probe email through a realm's saved SMTP configuration and fails if delivery fails.
+  Sends a probe email through a realm's saved SMTP configuration and fails if delivery fails. Requires Terraform 1.14 or later.
 ---
 
 # skycloak_test_smtp (Action)
 
-Sends a probe email through a realm's saved SMTP configuration and fails if delivery fails.
+Sends a probe email through a realm's saved SMTP configuration and fails if delivery fails. Requires Terraform 1.14 or later.
 
 
 

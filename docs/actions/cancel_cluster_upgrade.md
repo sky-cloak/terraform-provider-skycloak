@@ -3,12 +3,12 @@
 page_title: "skycloak_cancel_cluster_upgrade Action - skycloak"
 subcategory: ""
 description: |-
-  Cancels a scheduled or in-progress Keycloak upgrade on a cluster. Fails when no upgrade is cancellable.
+  Cancels a scheduled or in-progress Keycloak upgrade on a cluster. Fails when no upgrade is cancellable. Requires Terraform 1.14 or later.
 ---
 
 # skycloak_cancel_cluster_upgrade (Action)
 
-Cancels a scheduled or in-progress Keycloak upgrade on a cluster. Fails when no upgrade is cancellable.
+Cancels a scheduled or in-progress Keycloak upgrade on a cluster. Fails when no upgrade is cancellable. Requires Terraform 1.14 or later.
 
 
 

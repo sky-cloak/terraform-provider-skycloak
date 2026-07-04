@@ -1,6 +1,6 @@
 # 1. Provider versioning is decoupled from the calendar-versioned API
 
-Date: 2026-07-04
+Date: 2026-07-03
 
 ## Status
 

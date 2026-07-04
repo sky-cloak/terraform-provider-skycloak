@@ -54,7 +54,7 @@ func (a *testSMTPAction) Metadata(_ context.Context, req action.MetadataRequest,
 
 func (a *testSMTPAction) Schema(_ context.Context, _ action.SchemaRequest, resp *action.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Sends a probe email through a realm's saved SMTP configuration and fails if delivery fails.",
+		MarkdownDescription: "Sends a probe email through a realm's saved SMTP configuration and fails if delivery fails. Requires Terraform 1.14 or later.",
 		Attributes: map[string]schema.Attribute{
 			"cluster_id": schema.StringAttribute{Required: true, MarkdownDescription: "Cluster ID."},
 			"realm_name": schema.StringAttribute{Required: true, MarkdownDescription: "Realm name."},
@@ -107,7 +107,7 @@ func (a *testIdentityProviderAction) Metadata(_ context.Context, req action.Meta
 
 func (a *testIdentityProviderAction) Schema(_ context.Context, _ action.SchemaRequest, resp *action.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Validates an identity provider's connection (discovery, credentials) and fails on an unreachable or misconfigured provider.",
+		MarkdownDescription: "Validates an identity provider's connection (discovery, credentials) and fails on an unreachable or misconfigured provider. Requires Terraform 1.14 or later.",
 		Attributes: map[string]schema.Attribute{
 			"cluster_id":  schema.StringAttribute{Required: true, MarkdownDescription: "Cluster ID."},
 			"realm_name":  schema.StringAttribute{Required: true, MarkdownDescription: "Realm name."},
@@ -170,7 +170,7 @@ func (a *cancelClusterUpgradeAction) Metadata(_ context.Context, req action.Meta
 
 func (a *cancelClusterUpgradeAction) Schema(_ context.Context, _ action.SchemaRequest, resp *action.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Cancels a scheduled or in-progress Keycloak upgrade on a cluster. Fails when no upgrade is cancellable.",
+		MarkdownDescription: "Cancels a scheduled or in-progress Keycloak upgrade on a cluster. Fails when no upgrade is cancellable. Requires Terraform 1.14 or later.",
 		Attributes: map[string]schema.Attribute{
 			"cluster_id": schema.StringAttribute{Required: true, MarkdownDescription: "Cluster ID."},
 		},
@@ -213,7 +213,7 @@ func (a *testSIEMDestinationAction) Metadata(_ context.Context, req action.Metad
 
 func (a *testSIEMDestinationAction) Schema(_ context.Context, _ action.SchemaRequest, resp *action.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Sends a synthetic event through a saved SIEM destination and fails if delivery fails.",
+		MarkdownDescription: "Sends a synthetic event through a saved SIEM destination and fails if delivery fails. Requires Terraform 1.14 or later.",
 		Attributes: map[string]schema.Attribute{
 			"destination_id": schema.StringAttribute{Required: true, MarkdownDescription: "SIEM destination ID."},
 		},
@@ -261,7 +261,7 @@ func (a *testWebhookSubscriptionAction) Metadata(_ context.Context, req action.M
 
 func (a *testWebhookSubscriptionAction) Schema(_ context.Context, _ action.SchemaRequest, resp *action.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Delivers a sample event to a webhook subscription's endpoint and fails on a non-2xx response.",
+		MarkdownDescription: "Delivers a sample event to a webhook subscription's endpoint and fails on a non-2xx response. Requires Terraform 1.14 or later.",
 		Attributes: map[string]schema.Attribute{
 			"webhook_id": schema.StringAttribute{Required: true, MarkdownDescription: "Webhook subscription ID."},
 			"event_type": schema.StringAttribute{Required: true, MarkdownDescription: "Event type to send a sample of."},
