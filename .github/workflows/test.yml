@@ -90,4 +90,5 @@ jobs:
           TF_ACC: "1"
           SKYCLOAK_API_KEY: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_API_KEY }}
           SKYCLOAK_ENDPOINT: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_ENDPOINT }}
+          SKYCLOAK_ACCEPTANCE_CLUSTER_ID: ${{ vars.SKYCLOAK_ACCEPTANCE_CLUSTER_ID }}
         run: go test ./internal/provider/... -v -timeout 120m -run "${{ inputs.test_run || 'TestAccSmoke' }}"
