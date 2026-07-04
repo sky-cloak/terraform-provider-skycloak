@@ -34,5 +34,5 @@ provider "skycloak" {
 ### Optional
 
 - `api_key` (String, Sensitive) Skycloak API key (`sk_sc_{env}_..._...`). Prefer the `SKYCLOAK_API_KEY` env var. Minted in the dashboard.
-- `api_version` (String) Date-based API version, e.g. `2026-03-01` (env `SKYCLOAK_API_VERSION`). Defaults to the current version.
+- `api_version` (String) Date-based API version, e.g. `2026-06-01.beta` (env `SKYCLOAK_API_VERSION`). Defaults to the version this provider release was built against.
 - `endpoint` (String) Public API base URL. Defaults to `https://api.skycloak.io` (env `SKYCLOAK_ENDPOINT`).
