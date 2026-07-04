@@ -6,6 +6,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Every API call now sends the pinned `API-Version` through the generated per-operation parameters (the API made the header a required parameter).
+- `skycloak_cluster_credentials` data source now returns the cluster automation service account (`client_id`, `client_secret`, `token_url`) instead of admin console credentials, following the API change.
+
+### Removed
+- `skycloak_cluster_builds` and `skycloak_cluster_build` data sources: the API removed the cluster build endpoints.
+
 ## [0.2.0] - 2026-05-26
 
 ### Added

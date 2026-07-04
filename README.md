@@ -85,8 +85,6 @@ honor the `Retry-After` header.
 | `skycloak_cluster_types` | Supported cluster types |
 | `skycloak_cluster_versions` | Keycloak versions for a cluster type |
 | `skycloak_cluster_features` | Available Keycloak feature flags |
-| `skycloak_cluster_builds` | Image build history for a cluster |
-| `skycloak_cluster_build` | A single image build with its logs |
 | `skycloak_cluster_upgrades` | Version-upgrade history for a cluster |
 | `skycloak_cluster_upgrade_path` | Recommended version-upgrade path |
 | `skycloak_cluster_credentials` | A cluster's Keycloak admin credentials |

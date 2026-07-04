@@ -63,15 +63,6 @@ const (
 	BrandingStatusFailed   BrandingStatus = "failed"
 )
 
-// Defines values for BuildStatus.
-const (
-	BuildStatusBuilding     BuildStatus = "building"
-	BuildStatusCompleted    BuildStatus = "completed"
-	BuildStatusDownloading  BuildStatus = "downloading"
-	BuildStatusFailed       BuildStatus = "failed"
-	BuildStatusInitializing BuildStatus = "initializing"
-)
-
 // Defines values for ClusterExtensionStatus.
 const (
 	ClusterExtensionStatusActive     ClusterExtensionStatus = "active"
@@ -241,7 +232,6 @@ const (
 // Defines values for ManagementMode.
 const (
 	Full ManagementMode = "full"
-	Semi ManagementMode = "semi"
 )
 
 // Defines values for NameIdFormat.
@@ -437,10 +427,10 @@ const (
 
 // Defines values for ThemeStatus.
 const (
-	Deployed    ThemeStatus = "deployed"
-	Deploying   ThemeStatus = "deploying"
-	Failed      ThemeStatus = "failed"
-	Undeploying ThemeStatus = "undeploying"
+	ThemeStatusDeployed    ThemeStatus = "deployed"
+	ThemeStatusDeploying   ThemeStatus = "deploying"
+	ThemeStatusFailed      ThemeStatus = "failed"
+	ThemeStatusUndeploying ThemeStatus = "undeploying"
 )
 
 // Defines values for ThemeType.
@@ -492,19 +482,26 @@ const (
 
 // Defines values for WebhookEventTypeCategory.
 const (
-	WebhookEventTypeCategoryAdmin     WebhookEventTypeCategory = "admin"
-	WebhookEventTypeCategoryAuth      WebhookEventTypeCategory = "auth"
-	WebhookEventTypeCategoryCluster   WebhookEventTypeCategory = "cluster"
-	WebhookEventTypeCategoryDomain    WebhookEventTypeCategory = "domain"
-	WebhookEventTypeCategoryEmail     WebhookEventTypeCategory = "email"
-	WebhookEventTypeCategoryExport    WebhookEventTypeCategory = "export"
-	WebhookEventTypeCategoryExtension WebhookEventTypeCategory = "extension"
-	WebhookEventTypeCategoryFederated WebhookEventTypeCategory = "federated"
-	WebhookEventTypeCategoryMfa       WebhookEventTypeCategory = "mfa"
-	WebhookEventTypeCategoryMigration WebhookEventTypeCategory = "migration"
-	WebhookEventTypeCategoryTheme     WebhookEventTypeCategory = "theme"
-	WebhookEventTypeCategoryTokens    WebhookEventTypeCategory = "tokens"
-	WebhookEventTypeCategoryUser      WebhookEventTypeCategory = "user"
+	WebhookEventTypeCategoryAdmin                 WebhookEventTypeCategory = "admin"
+	WebhookEventTypeCategoryAuth                  WebhookEventTypeCategory = "auth"
+	WebhookEventTypeCategoryClient                WebhookEventTypeCategory = "client"
+	WebhookEventTypeCategoryCluster               WebhookEventTypeCategory = "cluster"
+	WebhookEventTypeCategoryConsent               WebhookEventTypeCategory = "consent"
+	WebhookEventTypeCategoryCredential            WebhookEventTypeCategory = "credential"
+	WebhookEventTypeCategoryDomain                WebhookEventTypeCategory = "domain"
+	WebhookEventTypeCategoryEmail                 WebhookEventTypeCategory = "email"
+	WebhookEventTypeCategoryExport                WebhookEventTypeCategory = "export"
+	WebhookEventTypeCategoryExtension             WebhookEventTypeCategory = "extension"
+	WebhookEventTypeCategoryFederated             WebhookEventTypeCategory = "federated"
+	WebhookEventTypeCategoryIdentityProvider      WebhookEventTypeCategory = "identity_provider"
+	WebhookEventTypeCategoryMfa                   WebhookEventTypeCategory = "mfa"
+	WebhookEventTypeCategoryMigration             WebhookEventTypeCategory = "migration"
+	WebhookEventTypeCategoryOrganization          WebhookEventTypeCategory = "organization"
+	WebhookEventTypeCategorySecurity              WebhookEventTypeCategory = "security"
+	WebhookEventTypeCategoryTheme                 WebhookEventTypeCategory = "theme"
+	WebhookEventTypeCategoryTokens                WebhookEventTypeCategory = "tokens"
+	WebhookEventTypeCategoryUser                  WebhookEventTypeCategory = "user"
+	WebhookEventTypeCategoryVerifiableCredentials WebhookEventTypeCategory = "verifiable_credentials"
 )
 
 // Defines values for WebhookSource.
@@ -674,12 +671,6 @@ type BotManagementConfig struct {
 // BrandingStatus defines model for BrandingStatus.
 type BrandingStatus string
 
-// BuildId defines model for BuildId.
-type BuildId = openapi_types.UUID
-
-// BuildStatus defines model for BuildStatus.
-type BuildStatus string
-
 // CAPTCHAConfig defines model for CAPTCHAConfig.
 type CAPTCHAConfig struct {
 	Enabled bool `json:"enabled"`
@@ -718,7 +709,9 @@ type ClientThemeAssignment struct {
 
 // Cluster A Keycloak cluster managed by Skycloak.
 type Cluster struct {
-	CreatedAt time.Time `json:"created_at"`
+	// AutoUpgradeEnabled Whether automatic patch upgrades are enabled for this cluster.
+	AutoUpgradeEnabled *bool     `json:"auto_upgrade_enabled,omitempty"`
+	CreatedAt          time.Time `json:"created_at"`
 
 	// Features Keycloak feature flags explicitly enabled on this cluster.
 	Features []string `json:"features"`
@@ -735,7 +728,7 @@ type Cluster struct {
 	// Location Region where the cluster is hosted.
 	Location ClusterLocation `json:"location"`
 
-	// ManagementMode Whether Skycloak manages the full lifecycle of the cluster or only the underlying infrastructure.
+	// ManagementMode Skycloak manages the full lifecycle of the cluster. Every cluster is fully managed.
 	ManagementMode ManagementMode `json:"management_mode"`
 
 	// Name Human-readable cluster name.
@@ -755,50 +748,16 @@ type Cluster struct {
 	Version KeycloakVersion `json:"version"`
 }
 
-// ClusterBuild A cluster build, including its full log output.
-type ClusterBuild struct {
-	CompletedAt nullable.Nullable[time.Time] `json:"completed_at"`
-
-	// Error Present when `status` is `failed`.
-	Error nullable.Nullable[string] `json:"error"`
-	Id    openapi_types.UUID        `json:"id"`
-
-	// Logs Raw log lines emitted during the build. Empty before the build produces output.
-	Logs []string `json:"logs"`
-
-	// Phase Human-readable description of the current build phase.
-	Phase string `json:"phase"`
-
-	// Progress Percentage complete (0–100).
-	Progress  int         `json:"progress"`
-	StartedAt time.Time   `json:"started_at"`
-	Status    BuildStatus `json:"status"`
-}
-
-// ClusterBuildSummary defines model for ClusterBuildSummary.
-type ClusterBuildSummary struct {
-	CompletedAt nullable.Nullable[time.Time] `json:"completed_at"`
-
-	// Error Present when `status` is `failed`.
-	Error nullable.Nullable[string] `json:"error"`
-	Id    openapi_types.UUID        `json:"id"`
-
-	// Phase Human-readable description of the current build phase.
-	Phase string `json:"phase"`
-
-	// Progress Percentage complete (0–100).
-	Progress  int         `json:"progress"`
-	StartedAt time.Time   `json:"started_at"`
-	Status    BuildStatus `json:"status"`
-}
-
-// ClusterCredentials Admin credentials for a cluster.
+// ClusterCredentials Programmatic automation credentials for a cluster's Keycloak (OAuth2 client_credentials grant). Use these from Terraform, CI, or MCP. Separate from Admin Console SSO (human login) and from your Skycloak API key (which manages clusters).
 type ClusterCredentials struct {
-	// AdminPassword Keycloak admin console password.
-	AdminPassword string `json:"admin_password"`
+	// ClientId Client ID of the cluster's automation service account.
+	ClientId string `json:"client_id"`
 
-	// AdminUsername Keycloak admin console username.
-	AdminUsername string `json:"admin_username"`
+	// ClientSecret Client secret for the automation service account. Use with the OAuth2 client_credentials grant.
+	ClientSecret string `json:"client_secret"`
+
+	// TokenUrl Token endpoint URL (master realm). POST a client_credentials request here to obtain an access token.
+	TokenUrl string `json:"token_url"`
 }
 
 // ClusterExtension defines model for ClusterExtension.
@@ -922,7 +881,9 @@ type ClusterStatus string
 
 // ClusterSummary A summary of a Keycloak cluster, used in list responses.
 type ClusterSummary struct {
-	CreatedAt time.Time `json:"created_at"`
+	// AutoUpgradeEnabled Whether automatic patch upgrades are enabled for this cluster.
+	AutoUpgradeEnabled *bool     `json:"auto_upgrade_enabled,omitempty"`
+	CreatedAt          time.Time `json:"created_at"`
 
 	// HttpRelativePath Path prefix Keycloak is served from (e.g. `/auth`). Empty string means `/`.
 	HttpRelativePath string `json:"http_relative_path"`
@@ -933,7 +894,7 @@ type ClusterSummary struct {
 	// Location Region where the cluster is hosted.
 	Location ClusterLocation `json:"location"`
 
-	// ManagementMode Whether Skycloak manages the full lifecycle of the cluster or only the underlying infrastructure.
+	// ManagementMode Skycloak manages the full lifecycle of the cluster. Every cluster is fully managed.
 	ManagementMode ManagementMode `json:"management_mode"`
 
 	// Name Human-readable cluster name.
@@ -1040,11 +1001,8 @@ type CreateApplicationRequest struct {
 
 // CreateClusterRequest Request body for creating a new cluster. Admin console SSO integration is enabled by default.
 type CreateClusterRequest struct {
-	// AdminPassword Custom admin console password. If provided, `admin_username` must also be provided. Generated by default.
-	AdminPassword *string `json:"admin_password,omitempty"`
-
-	// AdminUsername Custom admin console username. If provided, `admin_password` must also be provided. Generated by default.
-	AdminUsername *string `json:"admin_username,omitempty"`
+	// AutoUpgradeEnabled Enable automatic patch upgrades. Requires a maintenance window; one is provisioned if not supplied.
+	AutoUpgradeEnabled *bool `json:"auto_upgrade_enabled,omitempty"`
 
 	// Features Keycloak feature flags to enable on the cluster at creation time.
 	Features *[]string `json:"features,omitempty"`
@@ -1057,6 +1015,9 @@ type CreateClusterRequest struct {
 
 	// Location Region where the cluster is hosted.
 	Location ClusterLocation `json:"location"`
+
+	// MaintenanceWindow Set the cluster's maintenance window at creation. A region default is provisioned if omitted.
+	MaintenanceWindow *MaintenanceWindow `json:"maintenance_window,omitempty"`
 
 	// ManagementMode Management mode for the cluster. Defaults to `full`.
 	ManagementMode *ManagementMode `json:"management_mode,omitempty"`
@@ -1620,6 +1581,8 @@ type HexColor = string
 
 // IPAccessControlConfig defines model for IPAccessControlConfig.
 type IPAccessControlConfig struct {
+	// Enabled Whether IP access control is enabled. When false, no path rules are enforced.
+	Enabled   *bool        `json:"enabled,omitempty"`
 	PathRules []IPPathRule `json:"path_rules"`
 }
 
@@ -1794,7 +1757,25 @@ type MachineToMachineAnalytics struct {
 	WeeklyActiveClients int64 `json:"weekly_active_clients"`
 }
 
-// ManagementMode Whether Skycloak manages the full lifecycle of the cluster or only the underlying infrastructure.
+// MaintenanceWindow A cluster maintenance window: when Skycloak applies upgrades and other disruptive changes.
+type MaintenanceWindow struct {
+	// DaysOfWeek Days of week the window applies to (0 = Sunday ... 6 = Saturday).
+	DaysOfWeek []int32 `json:"days_of_week"`
+
+	// Enabled Whether the window is active.
+	Enabled bool `json:"enabled"`
+
+	// EndLocal Local end time, `HH:MM`.
+	EndLocal string `json:"end_local"`
+
+	// StartLocal Local start time, `HH:MM`.
+	StartLocal string `json:"start_local"`
+
+	// Timezone IANA timezone, e.g. `Europe/Berlin`.
+	Timezone string `json:"timezone"`
+}
+
+// ManagementMode Skycloak manages the full lifecycle of the cluster. Every cluster is fully managed.
 type ManagementMode string
 
 // MatchedSecurityRule An OWASP CRS rule that matched an incoming request.
@@ -2574,11 +2555,8 @@ type UpdateApplicationRequest struct {
 
 // UpdateClusterRequest Partial update request. At least one field must be provided. `location` and `type` cannot be changed after creation.
 type UpdateClusterRequest struct {
-	// AdminPassword Update the admin console password.
-	AdminPassword *string `json:"admin_password,omitempty"`
-
-	// AdminUsername Update the admin console username.
-	AdminUsername *string `json:"admin_username,omitempty"`
+	// AutoUpgradeEnabled Enable or disable automatic patch upgrades.
+	AutoUpgradeEnabled *bool `json:"auto_upgrade_enabled,omitempty"`
 
 	// Features Replace the full set of enabled feature flags.
 	Features *[]string `json:"features,omitempty"`
@@ -2903,10 +2881,11 @@ type WebhookAuthorizationHeader = string
 
 // WebhookEventType defines model for WebhookEventType.
 type WebhookEventType struct {
-	Category      WebhookEventTypeCategory `json:"category"`
-	Description   string                   `json:"description" validate:"omitnil,max=500"`
-	SamplePayload map[string]interface{}   `json:"sample_payload"`
-	Type          string                   `json:"type" validate:"omitnil,max=500"`
+	Category      WebhookEventTypeCategory                  `json:"category"`
+	Deprecated    bool                                      `json:"deprecated"`
+	Description   string                                    `json:"description" validate:"omitnil,max=500"`
+	SamplePayload nullable.Nullable[map[string]interface{}] `json:"sample_payload"`
+	Type          string                                    `json:"type" validate:"omitnil,max=500"`
 }
 
 // WebhookEventTypeCategory defines model for WebhookEventTypeCategory.
@@ -3005,16 +2984,6 @@ type GetClusterParams struct {
 
 // UpdateClusterParams defines parameters for UpdateCluster.
 type UpdateClusterParams struct {
-	APIVersion CommonParameters `json:"API-Version"`
-}
-
-// ListClusterBuildsParams defines parameters for ListClusterBuilds.
-type ListClusterBuildsParams struct {
-	APIVersion CommonParameters `json:"API-Version"`
-}
-
-// GetClusterBuildParams defines parameters for GetClusterBuild.
-type GetClusterBuildParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
 }
 
@@ -3301,6 +3270,21 @@ type ListClusterLogsParams struct {
 
 	// Order Sort order by `created_at`. Defaults to `desc` (newest first).
 	Order      *SortOrder       `form:"order,omitempty" json:"order,omitempty"`
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteClusterMaintenanceWindowParams defines parameters for DeleteClusterMaintenanceWindow.
+type DeleteClusterMaintenanceWindowParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetClusterMaintenanceWindowParams defines parameters for GetClusterMaintenanceWindow.
+type GetClusterMaintenanceWindowParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// SetClusterMaintenanceWindowParams defines parameters for SetClusterMaintenanceWindow.
+type SetClusterMaintenanceWindowParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
 }
 
@@ -3841,6 +3825,9 @@ type CreateExportJSONRequestBody = CreateExportRequest
 // InstallExtensionJSONRequestBody defines body for InstallExtension for application/json ContentType.
 type InstallExtensionJSONRequestBody = InstallExtensionRequest
 
+// SetClusterMaintenanceWindowJSONRequestBody defines body for SetClusterMaintenanceWindow for application/json ContentType.
+type SetClusterMaintenanceWindowJSONRequestBody = MaintenanceWindow
+
 // CreateRealmJSONRequestBody defines body for CreateRealm for application/json ContentType.
 type CreateRealmJSONRequestBody = CreateRealmRequest
 
@@ -4047,12 +4034,6 @@ type ClientInterface interface {
 
 	UpdateCluster(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListClusterBuilds request
-	ListClusterBuilds(ctx context.Context, clusterId ClusterId, params *ListClusterBuildsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetClusterBuild request
-	GetClusterBuild(ctx context.Context, clusterId ClusterId, buildId BuildId, params *GetClusterBuildParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// GetClusterCredentials request
 	GetClusterCredentials(ctx context.Context, clusterId ClusterId, params *GetClusterCredentialsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -4143,6 +4124,17 @@ type ClientInterface interface {
 
 	// ListClusterLogs request
 	ListClusterLogs(ctx context.Context, clusterId ClusterId, params *ListClusterLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteClusterMaintenanceWindow request
+	DeleteClusterMaintenanceWindow(ctx context.Context, clusterId ClusterId, params *DeleteClusterMaintenanceWindowParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClusterMaintenanceWindow request
+	GetClusterMaintenanceWindow(ctx context.Context, clusterId ClusterId, params *GetClusterMaintenanceWindowParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetClusterMaintenanceWindowWithBody request with any body
+	SetClusterMaintenanceWindowWithBody(ctx context.Context, clusterId ClusterId, params *SetClusterMaintenanceWindowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SetClusterMaintenanceWindow(ctx context.Context, clusterId ClusterId, params *SetClusterMaintenanceWindowParams, body SetClusterMaintenanceWindowJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListRealms request
 	ListRealms(ctx context.Context, clusterId ClusterId, params *ListRealmsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -4615,30 +4607,6 @@ func (c *Client) UpdateCluster(ctx context.Context, clusterId ClusterId, params 
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListClusterBuilds(ctx context.Context, clusterId ClusterId, params *ListClusterBuildsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListClusterBuildsRequest(c.Server, clusterId, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetClusterBuild(ctx context.Context, clusterId ClusterId, buildId BuildId, params *GetClusterBuildParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetClusterBuildRequest(c.Server, clusterId, buildId, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) GetClusterCredentials(ctx context.Context, clusterId ClusterId, params *GetClusterCredentialsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetClusterCredentialsRequest(c.Server, clusterId, params)
 	if err != nil {
@@ -5013,6 +4981,54 @@ func (c *Client) GetClusterInsightsSecurity(ctx context.Context, clusterId Clust
 
 func (c *Client) ListClusterLogs(ctx context.Context, clusterId ClusterId, params *ListClusterLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListClusterLogsRequest(c.Server, clusterId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteClusterMaintenanceWindow(ctx context.Context, clusterId ClusterId, params *DeleteClusterMaintenanceWindowParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteClusterMaintenanceWindowRequest(c.Server, clusterId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClusterMaintenanceWindow(ctx context.Context, clusterId ClusterId, params *GetClusterMaintenanceWindowParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterMaintenanceWindowRequest(c.Server, clusterId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SetClusterMaintenanceWindowWithBody(ctx context.Context, clusterId ClusterId, params *SetClusterMaintenanceWindowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetClusterMaintenanceWindowRequestWithBody(c.Server, clusterId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SetClusterMaintenanceWindow(ctx context.Context, clusterId ClusterId, params *SetClusterMaintenanceWindowParams, body SetClusterMaintenanceWindowJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetClusterMaintenanceWindowRequest(c.Server, clusterId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -6896,107 +6912,6 @@ func NewUpdateClusterRequestWithBody(server string, clusterId ClusterId, params 
 	}
 
 	req.Header.Add("Content-Type", contentType)
-
-	if params != nil {
-
-		var headerParam0 string
-
-		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		req.Header.Set("API-Version", headerParam0)
-
-	}
-
-	return req, nil
-}
-
-// NewListClusterBuildsRequest generates requests for ListClusterBuilds
-func NewListClusterBuildsRequest(server string, clusterId ClusterId, params *ListClusterBuildsParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/clusters/%s/builds", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-
-		var headerParam0 string
-
-		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		req.Header.Set("API-Version", headerParam0)
-
-	}
-
-	return req, nil
-}
-
-// NewGetClusterBuildRequest generates requests for GetClusterBuild
-func NewGetClusterBuildRequest(server string, clusterId ClusterId, buildId BuildId, params *GetClusterBuildParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "build_id", runtime.ParamLocationPath, buildId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/clusters/%s/builds/%s", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
 
 	if params != nil {
 
@@ -9350,6 +9265,160 @@ func NewListClusterLogsRequest(server string, clusterId ClusterId, params *ListC
 	if err != nil {
 		return nil, err
 	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewDeleteClusterMaintenanceWindowRequest generates requests for DeleteClusterMaintenanceWindow
+func NewDeleteClusterMaintenanceWindowRequest(server string, clusterId ClusterId, params *DeleteClusterMaintenanceWindowParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/maintenance-window", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetClusterMaintenanceWindowRequest generates requests for GetClusterMaintenanceWindow
+func NewGetClusterMaintenanceWindowRequest(server string, clusterId ClusterId, params *GetClusterMaintenanceWindowParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/maintenance-window", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewSetClusterMaintenanceWindowRequest calls the generic SetClusterMaintenanceWindow builder with application/json body
+func NewSetClusterMaintenanceWindowRequest(server string, clusterId ClusterId, params *SetClusterMaintenanceWindowParams, body SetClusterMaintenanceWindowJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetClusterMaintenanceWindowRequestWithBody(server, clusterId, params, "application/json", bodyReader)
+}
+
+// NewSetClusterMaintenanceWindowRequestWithBody generates requests for SetClusterMaintenanceWindow with any type of body
+func NewSetClusterMaintenanceWindowRequestWithBody(server string, clusterId ClusterId, params *SetClusterMaintenanceWindowParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/maintenance-window", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	if params != nil {
 
@@ -15135,12 +15204,6 @@ type ClientWithResponsesInterface interface {
 
 	UpdateClusterWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error)
 
-	// ListClusterBuildsWithResponse request
-	ListClusterBuildsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterBuildsParams, reqEditors ...RequestEditorFn) (*ListClusterBuildsResponse, error)
-
-	// GetClusterBuildWithResponse request
-	GetClusterBuildWithResponse(ctx context.Context, clusterId ClusterId, buildId BuildId, params *GetClusterBuildParams, reqEditors ...RequestEditorFn) (*GetClusterBuildResponse, error)
-
 	// GetClusterCredentialsWithResponse request
 	GetClusterCredentialsWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterCredentialsParams, reqEditors ...RequestEditorFn) (*GetClusterCredentialsResponse, error)
 
@@ -15231,6 +15294,17 @@ type ClientWithResponsesInterface interface {
 
 	// ListClusterLogsWithResponse request
 	ListClusterLogsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterLogsParams, reqEditors ...RequestEditorFn) (*ListClusterLogsResponse, error)
+
+	// DeleteClusterMaintenanceWindowWithResponse request
+	DeleteClusterMaintenanceWindowWithResponse(ctx context.Context, clusterId ClusterId, params *DeleteClusterMaintenanceWindowParams, reqEditors ...RequestEditorFn) (*DeleteClusterMaintenanceWindowResponse, error)
+
+	// GetClusterMaintenanceWindowWithResponse request
+	GetClusterMaintenanceWindowWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterMaintenanceWindowParams, reqEditors ...RequestEditorFn) (*GetClusterMaintenanceWindowResponse, error)
+
+	// SetClusterMaintenanceWindowWithBodyWithResponse request with any body
+	SetClusterMaintenanceWindowWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *SetClusterMaintenanceWindowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetClusterMaintenanceWindowResponse, error)
+
+	SetClusterMaintenanceWindowWithResponse(ctx context.Context, clusterId ClusterId, params *SetClusterMaintenanceWindowParams, body SetClusterMaintenanceWindowJSONRequestBody, reqEditors ...RequestEditorFn) (*SetClusterMaintenanceWindowResponse, error)
 
 	// ListRealmsWithResponse request
 	ListRealmsWithResponse(ctx context.Context, clusterId ClusterId, params *ListRealmsParams, reqEditors ...RequestEditorFn) (*ListRealmsResponse, error)
@@ -15811,60 +15885,6 @@ func (r UpdateClusterResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateClusterResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type ListClusterBuildsResponse struct {
-	Body                      []byte
-	HTTPResponse              *http.Response
-	JSON200                   *[]ClusterBuildSummary
-	ApplicationproblemJSON401 *ErrorBody
-	ApplicationproblemJSON404 *ErrorBody
-	ApplicationproblemJSON429 *ErrorBody
-	ApplicationproblemJSON500 *ErrorBody
-	ApplicationproblemJSON501 *ErrorBody
-}
-
-// Status returns HTTPResponse.Status
-func (r ListClusterBuildsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListClusterBuildsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetClusterBuildResponse struct {
-	Body                      []byte
-	HTTPResponse              *http.Response
-	JSON200                   *ClusterBuild
-	ApplicationproblemJSON401 *ErrorBody
-	ApplicationproblemJSON404 *ErrorBody
-	ApplicationproblemJSON429 *ErrorBody
-	ApplicationproblemJSON500 *ErrorBody
-	ApplicationproblemJSON501 *ErrorBody
-}
-
-// Status returns HTTPResponse.Status
-func (r GetClusterBuildResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetClusterBuildResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -16651,6 +16671,87 @@ func (r ListClusterLogsResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ListClusterLogsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteClusterMaintenanceWindowResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteClusterMaintenanceWindowResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteClusterMaintenanceWindowResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClusterMaintenanceWindowResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *MaintenanceWindow
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterMaintenanceWindowResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterMaintenanceWindowResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SetClusterMaintenanceWindowResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *MaintenanceWindow
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r SetClusterMaintenanceWindowResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetClusterMaintenanceWindowResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -19406,24 +19507,6 @@ func (c *ClientWithResponses) UpdateClusterWithResponse(ctx context.Context, clu
 	return ParseUpdateClusterResponse(rsp)
 }
 
-// ListClusterBuildsWithResponse request returning *ListClusterBuildsResponse
-func (c *ClientWithResponses) ListClusterBuildsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterBuildsParams, reqEditors ...RequestEditorFn) (*ListClusterBuildsResponse, error) {
-	rsp, err := c.ListClusterBuilds(ctx, clusterId, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListClusterBuildsResponse(rsp)
-}
-
-// GetClusterBuildWithResponse request returning *GetClusterBuildResponse
-func (c *ClientWithResponses) GetClusterBuildWithResponse(ctx context.Context, clusterId ClusterId, buildId BuildId, params *GetClusterBuildParams, reqEditors ...RequestEditorFn) (*GetClusterBuildResponse, error) {
-	rsp, err := c.GetClusterBuild(ctx, clusterId, buildId, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetClusterBuildResponse(rsp)
-}
-
 // GetClusterCredentialsWithResponse request returning *GetClusterCredentialsResponse
 func (c *ClientWithResponses) GetClusterCredentialsWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterCredentialsParams, reqEditors ...RequestEditorFn) (*GetClusterCredentialsResponse, error) {
 	rsp, err := c.GetClusterCredentials(ctx, clusterId, params, reqEditors...)
@@ -19705,6 +19788,41 @@ func (c *ClientWithResponses) ListClusterLogsWithResponse(ctx context.Context, c
 		return nil, err
 	}
 	return ParseListClusterLogsResponse(rsp)
+}
+
+// DeleteClusterMaintenanceWindowWithResponse request returning *DeleteClusterMaintenanceWindowResponse
+func (c *ClientWithResponses) DeleteClusterMaintenanceWindowWithResponse(ctx context.Context, clusterId ClusterId, params *DeleteClusterMaintenanceWindowParams, reqEditors ...RequestEditorFn) (*DeleteClusterMaintenanceWindowResponse, error) {
+	rsp, err := c.DeleteClusterMaintenanceWindow(ctx, clusterId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteClusterMaintenanceWindowResponse(rsp)
+}
+
+// GetClusterMaintenanceWindowWithResponse request returning *GetClusterMaintenanceWindowResponse
+func (c *ClientWithResponses) GetClusterMaintenanceWindowWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterMaintenanceWindowParams, reqEditors ...RequestEditorFn) (*GetClusterMaintenanceWindowResponse, error) {
+	rsp, err := c.GetClusterMaintenanceWindow(ctx, clusterId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterMaintenanceWindowResponse(rsp)
+}
+
+// SetClusterMaintenanceWindowWithBodyWithResponse request with arbitrary body returning *SetClusterMaintenanceWindowResponse
+func (c *ClientWithResponses) SetClusterMaintenanceWindowWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *SetClusterMaintenanceWindowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetClusterMaintenanceWindowResponse, error) {
+	rsp, err := c.SetClusterMaintenanceWindowWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetClusterMaintenanceWindowResponse(rsp)
+}
+
+func (c *ClientWithResponses) SetClusterMaintenanceWindowWithResponse(ctx context.Context, clusterId ClusterId, params *SetClusterMaintenanceWindowParams, body SetClusterMaintenanceWindowJSONRequestBody, reqEditors ...RequestEditorFn) (*SetClusterMaintenanceWindowResponse, error) {
+	rsp, err := c.SetClusterMaintenanceWindow(ctx, clusterId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetClusterMaintenanceWindowResponse(rsp)
 }
 
 // ListRealmsWithResponse request returning *ListRealmsResponse
@@ -21326,128 +21444,6 @@ func ParseUpdateClusterResponse(rsp *http.Response) (*UpdateClusterResponse, err
 			return nil, err
 		}
 		response.ApplicationproblemJSON422 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
-		var dest ErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON429 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest ErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
-		var dest ErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON501 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseListClusterBuildsResponse parses an HTTP response from a ListClusterBuildsWithResponse call
-func ParseListClusterBuildsResponse(rsp *http.Response) (*ListClusterBuildsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListClusterBuildsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []ClusterBuildSummary
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest ErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest ErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
-		var dest ErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON429 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest ErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
-		var dest ErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON501 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetClusterBuildResponse parses an HTTP response from a GetClusterBuildWithResponse call
-func ParseGetClusterBuildResponse(rsp *http.Response) (*GetClusterBuildResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetClusterBuildResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ClusterBuild
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest ErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest ErrorBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
 		var dest ErrorBody
@@ -23480,6 +23476,189 @@ func ParseListClusterLogsResponse(rsp *http.Response) (*ListClusterLogsResponse,
 			return nil, err
 		}
 		response.ApplicationproblemJSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteClusterMaintenanceWindowResponse parses an HTTP response from a DeleteClusterMaintenanceWindowWithResponse call
+func ParseDeleteClusterMaintenanceWindowResponse(rsp *http.Response) (*DeleteClusterMaintenanceWindowResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteClusterMaintenanceWindowResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClusterMaintenanceWindowResponse parses an HTTP response from a GetClusterMaintenanceWindowWithResponse call
+func ParseGetClusterMaintenanceWindowResponse(rsp *http.Response) (*GetClusterMaintenanceWindowResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterMaintenanceWindowResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MaintenanceWindow
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetClusterMaintenanceWindowResponse parses an HTTP response from a SetClusterMaintenanceWindowWithResponse call
+func ParseSetClusterMaintenanceWindowResponse(rsp *http.Response) (*SetClusterMaintenanceWindowResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetClusterMaintenanceWindowResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MaintenanceWindow
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest ErrorBody

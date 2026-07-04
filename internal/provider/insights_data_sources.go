@@ -75,9 +75,10 @@ type clusterCredentialsDataSource struct{ client *skycloak.Client }
 func NewClusterCredentialsDataSource() datasource.DataSource { return &clusterCredentialsDataSource{} }
 
 type clusterCredentialsModel struct {
-	ClusterID     types.String `tfsdk:"cluster_id"`
-	AdminUsername types.String `tfsdk:"admin_username"`
-	AdminPassword types.String `tfsdk:"admin_password"`
+	ClusterID    types.String `tfsdk:"cluster_id"`
+	ClientID     types.String `tfsdk:"client_id"`
+	ClientSecret types.String `tfsdk:"client_secret"`
+	TokenURL     types.String `tfsdk:"token_url"`
 }
 
 func (d *clusterCredentialsDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -86,11 +87,12 @@ func (d *clusterCredentialsDataSource) Metadata(_ context.Context, req datasourc
 
 func (d *clusterCredentialsDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "A cluster's Keycloak admin credentials. Treat the password as sensitive.",
+		MarkdownDescription: "The cluster automation service account credentials for the OAuth2 client_credentials grant.",
 		Attributes: map[string]schema.Attribute{
-			"cluster_id":     schema.StringAttribute{Required: true, MarkdownDescription: "Cluster ID."},
-			"admin_username": schema.StringAttribute{Computed: true, MarkdownDescription: "Keycloak admin console username."},
-			"admin_password": schema.StringAttribute{Computed: true, Sensitive: true, MarkdownDescription: "Keycloak admin console password."},
+			"cluster_id":    schema.StringAttribute{Required: true, MarkdownDescription: "Cluster ID."},
+			"client_id":     schema.StringAttribute{Computed: true, MarkdownDescription: "Client ID of the cluster's automation service account."},
+			"client_secret": schema.StringAttribute{Computed: true, Sensitive: true, MarkdownDescription: "Client secret for the automation service account."},
+			"token_url":     schema.StringAttribute{Computed: true, MarkdownDescription: "Token endpoint URL (master realm) for the client_credentials grant."},
 		},
 	}
 }
@@ -110,8 +112,9 @@ func (d *clusterCredentialsDataSource) Read(ctx context.Context, req datasource.
 		resp.Diagnostics.AddError("Unable to read cluster credentials", err.Error())
 		return
 	}
-	cfg.AdminUsername = types.StringValue(creds.AdminUsername)
-	cfg.AdminPassword = types.StringValue(creds.AdminPassword)
+	cfg.ClientID = types.StringValue(creds.ClientID)
+	cfg.ClientSecret = types.StringValue(creds.ClientSecret)
+	cfg.TokenURL = types.StringValue(creds.TokenURL)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &cfg)...)
 }
 

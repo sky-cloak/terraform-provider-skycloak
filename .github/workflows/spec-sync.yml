@@ -20,8 +20,8 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.25"
 
@@ -40,7 +40,7 @@ jobs:
         id: verify
         continue-on-error: true
         run: |
-          go build ./... && go test ./...
+          go vet ./... && go build ./... && go test ./...
 
       - name: Compute API coverage report
         id: coverage
@@ -70,3 +70,11 @@ jobs:
             ```
 
             Operations listed as "not yet exposed" are candidates for new resources/tools.
+
+      # PRs opened with the default token do not trigger the test workflow, so
+      # a broken regeneration must fail THIS run loudly or it merges unnoticed.
+      - name: Fail the run when the regenerated client breaks the build
+        if: steps.verify.outcome == 'failure'
+        run: |
+          echo "::error::Spec sync broke vet/build/test; update the internal/skycloak facade before merging the sync PR."
+          exit 1

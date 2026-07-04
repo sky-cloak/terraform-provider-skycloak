@@ -37,9 +37,6 @@ func TestReadMetadataEndpoints(t *testing.T) {
 	if rs, err := c.ListDomainRoutes(context.Background(), cuid, dom); err != nil || len(rs) != 1 || !rs[0].HideRealmPath {
 		t.Fatalf("ListDomainRoutes: %+v, %v", rs, err)
 	}
-	if bs, err := c.ListClusterBuilds(context.Background(), cuid); err != nil || bs[0].Status != "completed" {
-		t.Fatalf("ListClusterBuilds: %+v, %v", bs, err)
-	}
 	if us, err := c.ListClusterUpgrades(context.Background(), cuid); err != nil || us[0].ToVersion != "26.1" {
 		t.Fatalf("ListClusterUpgrades: %+v, %v", us, err)
 	}
