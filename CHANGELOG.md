@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-07-05
+
+### Fixed
+- `skycloak_domain`: creating a domain crashed with a "Value Conversion Error" on `dns_records`. The computed `dns_records` list is now modeled as a framework `types.List` so it can carry its unknown-at-plan value.
+- `skycloak_custom_theme`: uploading a theme now waits until it finishes deploying before returning, so a same-apply `skycloak_theme_assignment` no longer races the async rollout and fails with "Theme is not deployed".
+- `skycloak_custom_theme`: deleting a theme now waits for the asynchronous undeploy to finish, so a same-apply content replace no longer hits a "theme name conflicts with existing theme" error while the old copy is still being removed.
+
 ## [0.3.1] - 2026-07-04
 
 ### Fixed
@@ -70,6 +77,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `skycloak_application`: `type` is immutable (changing it replaces the resource) and `service_account_enabled` is read-only, matching the API contract.
 - `skycloak_identity_provider`: `config` is a structured block (`oidc` / `ldap` / `saml` sub-objects plus `attribute_mappings`, `button_text`, `icon_url`, `sync_mode`, `trust_email`), matching the API contract.
 
+[0.3.2]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.1.0...v0.2.0
