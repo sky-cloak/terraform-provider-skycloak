@@ -200,8 +200,19 @@ func (r *customThemeResource) Delete(ctx context.Context, req resource.DeleteReq
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if err := r.client.DeleteTheme(ctx, state.ClusterID.ValueString(), state.ID.ValueString()); err != nil && !skycloak.IsNotFound(err) {
+	clusterID, themeID := state.ClusterID.ValueString(), state.ID.ValueString()
+	if err := r.client.DeleteTheme(ctx, clusterID, themeID); err != nil && !skycloak.IsNotFound(err) {
 		resp.Diagnostics.AddError("Unable to delete theme", err.Error())
+		return
+	}
+
+	// Deleting a deployed theme is asynchronous; wait until it actually
+	// disappears so its name is free for reuse in the same apply (e.g. a
+	// content replace immediately re-creating the same-named theme).
+	waitCtx, cancel := context.WithTimeout(ctx, themeDeployTimeout)
+	defer cancel()
+	if err := r.client.WaitForThemeDeleted(waitCtx, clusterID, themeID); err != nil && !skycloak.IsNotFound(err) {
+		resp.Diagnostics.AddError("Theme did not finish deleting", err.Error())
 	}
 }
 

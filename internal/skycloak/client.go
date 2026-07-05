@@ -1567,6 +1567,29 @@ func (c *Client) WaitForThemeDeployed(ctx context.Context, clusterID, themeID st
 	}
 }
 
+// WaitForThemeDeleted polls until a deleted theme is actually gone. Deleting a
+// currently-deployed theme is asynchronous: the API returns while Keycloak
+// undeploys it (status "undeploying"), and the theme, including its name,
+// isn't free for reuse until a follow-up GET 404s.
+func (c *Client) WaitForThemeDeleted(ctx context.Context, clusterID, themeID string) error {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+	for {
+		_, err := c.GetTheme(ctx, clusterID, themeID)
+		if err != nil {
+			if IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
+	}
+}
+
 // ThemeAssignment is the active theme per Keycloak theme type for a realm. An
 // empty field means the realm uses Keycloak's built-in default.
 type ThemeAssignment struct {
