@@ -10999,6 +10999,17 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The target cluster is temporarily unavailable because an update or maintenance operation is in progress. The request was not applied and can be retried once the cluster returns to the available state; the Retry-After header carries a suggested delay in seconds.
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
         '422':
           description: Client error
           content:
@@ -12482,6 +12493,17 @@ paths:
                 $ref: '#/components/schemas/ErrorBody'
         '404':
           description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The target cluster is temporarily unavailable because an update or maintenance operation is in progress. The request was not applied and can be retried once the cluster returns to the available state; the Retry-After header carries a suggested delay in seconds.
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
           content:
             application/problem+json:
               schema:
@@ -19155,7 +19177,7 @@ components:
             x-oapi-codegen-extra-tags:
               validate: omitnil,max=500
           minItems: 1
-          description: ISO 3166-1 alpha-2 country codes.
+          description: 'ISO 3166-1 alpha-2 country codes. Overseas territories have their own codes, distinct from their mainland: for example `GP` (Guadeloupe), `MQ` (Martinique) and `RE` (Réunion) are not covered by `FR`, so an allowlist for France and its overseas territories must list them explicitly.'
           x-oapi-codegen-extra-tags:
             validate: dive,iso3166_1_alpha2
     GeoBlockingMode:
