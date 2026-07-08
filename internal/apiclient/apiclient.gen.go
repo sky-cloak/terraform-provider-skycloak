@@ -1561,7 +1561,7 @@ type FieldError struct {
 
 // GeoBlockingConfig defines model for GeoBlockingConfig.
 type GeoBlockingConfig struct {
-	// Countries ISO 3166-1 alpha-2 country codes.
+	// Countries ISO 3166-1 alpha-2 country codes. Overseas territories have their own codes, distinct from their mainland: for example `GP` (Guadeloupe), `MQ` (Martinique) and `RE` (Réunion) are not covered by `FR`, so an allowlist for France and its overseas territories must list them explicitly.
 	Countries []string        `json:"countries" validate:"dive,iso3166_1_alpha2"`
 	Enabled   bool            `json:"enabled"`
 	Mode      GeoBlockingMode `json:"mode"`
@@ -18028,6 +18028,7 @@ type SetClientThemeAssignmentResponse struct {
 	ApplicationproblemJSON401 *ErrorBody
 	ApplicationproblemJSON403 *ErrorBody
 	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON409 *ErrorBody
 	ApplicationproblemJSON422 *ValidationErrorBody
 	ApplicationproblemJSON429 *ErrorBody
 	ApplicationproblemJSON500 *ErrorBody
@@ -18371,6 +18372,7 @@ type SetThemeAssignmentResponse struct {
 	ApplicationproblemJSON401 *ErrorBody
 	ApplicationproblemJSON403 *ErrorBody
 	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON409 *ErrorBody
 	ApplicationproblemJSON422 *ValidationErrorBody
 	ApplicationproblemJSON429 *ErrorBody
 	ApplicationproblemJSON500 *ErrorBody
@@ -26903,6 +26905,13 @@ func ParseSetClientThemeAssignmentResponse(rsp *http.Response) (*SetClientThemeA
 		}
 		response.ApplicationproblemJSON404 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest ValidationErrorBody
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -27767,6 +27776,13 @@ func ParseSetThemeAssignmentResponse(rsp *http.Response) (*SetThemeAssignmentRes
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest ValidationErrorBody
