@@ -7,8 +7,10 @@ import (
 	"time"
 )
 
-// retryTransport retries 429 and 5xx responses, honoring a numeric Retry-After
-// header, with bounded exponential backoff. It is request-context aware.
+// retryTransport retries transient responses (429, 502/503/504, and a 409 that
+// the server marks retryable with a Retry-After header), honoring a numeric
+// Retry-After header, with bounded exponential backoff. It is request-context
+// aware.
 type retryTransport struct {
 	base       http.RoundTripper
 	maxRetries int
@@ -34,7 +36,7 @@ func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		if err != nil {
 			return resp, err
 		}
-		if !retryableStatus(resp.StatusCode) || attempt >= t.maxRetries {
+		if !shouldRetry(resp) || attempt >= t.maxRetries {
 			return resp, nil
 		}
 		wait := backoffDelay(attempt, resp.Header.Get("Retry-After"))
@@ -46,6 +48,18 @@ func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		case <-time.After(wait):
 		}
 	}
+}
+
+// shouldRetry reports whether resp is a transient failure worth replaying.
+func shouldRetry(resp *http.Response) bool {
+	if retryableStatus(resp.StatusCode) {
+		return true
+	}
+	// A 409 is retried only when the server explicitly marks it retryable with a
+	// Retry-After header (e.g. "cluster is updating", which self-resolves once
+	// the update finishes). Terminal conflicts such as a name already taken carry
+	// no Retry-After and must surface to the user rather than loop.
+	return resp.StatusCode == http.StatusConflict && resp.Header.Get("Retry-After") != ""
 }
 
 func retryableStatus(code int) bool {
