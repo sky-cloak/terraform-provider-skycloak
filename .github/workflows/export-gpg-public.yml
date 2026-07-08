@@ -1,0 +1,26 @@
+name: export-gpg-public
+
+# One-off helper: exports the PUBLIC half of the release signing key so it can
+# be added to the Terraform Registry namespace. The private key never leaves
+# CI. Safe to delete after use.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+      - name: Export public key
+        run: gpg --armor --export > public.asc
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gpg-public-key
+          path: public.asc
