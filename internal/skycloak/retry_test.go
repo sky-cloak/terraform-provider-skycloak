@@ -42,27 +42,29 @@ func TestBackoffDelayHonorsRetryAfter(t *testing.T) {
 }
 
 func TestShouldRetry(t *testing.T) {
-	mk := func(code int, retryAfter string) *http.Response {
+	hdr := func(retryAfter string) http.Header {
 		h := http.Header{}
 		if retryAfter != "" {
 			h.Set("Retry-After", retryAfter)
 		}
-		return &http.Response{StatusCode: code, Header: h}
+		return h
 	}
 	cases := []struct {
-		name string
-		resp *http.Response
-		want bool
+		name       string
+		code       int
+		retryAfter string
+		want       bool
 	}{
-		{"429 retried", mk(http.StatusTooManyRequests, ""), true},
-		{"503 retried", mk(http.StatusServiceUnavailable, ""), true},
-		{"500 not retried", mk(http.StatusInternalServerError, ""), false},
-		{"409 with Retry-After retried", mk(http.StatusConflict, "0"), true},
-		{"409 without Retry-After not retried", mk(http.StatusConflict, ""), false},
-		{"200 not retried", mk(http.StatusOK, ""), false},
+		{"429 retried", http.StatusTooManyRequests, "", true},
+		{"503 retried", http.StatusServiceUnavailable, "", true},
+		{"500 not retried", http.StatusInternalServerError, "", false},
+		{"409 with Retry-After retried", http.StatusConflict, "0", true},
+		{"409 without Retry-After not retried", http.StatusConflict, "", false},
+		{"200 not retried", http.StatusOK, "", false},
 	}
 	for _, c := range cases {
-		if got := shouldRetry(c.resp); got != c.want {
+		got := shouldRetry(&http.Response{StatusCode: c.code, Header: hdr(c.retryAfter)})
+		if got != c.want {
 			t.Errorf("%s: shouldRetry=%v want %v", c.name, got, c.want)
 		}
 	}
