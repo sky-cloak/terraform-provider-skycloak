@@ -30,8 +30,22 @@ jobs:
           # Token with read access to the spec source repository.
           GH_TOKEN: ${{ secrets.OPENAPI_SOURCE_TOKEN }}
         run: |
+          # Fail fast with an actionable message when the secret is missing or
+          # empty; the run title should carry the diagnosis, not a generic
+          # gh auth hint. (This workflow failed silently for days when the
+          # token secret disappeared.)
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::OPENAPI_SOURCE_TOKEN secret is missing or empty. Create a fine-grained PAT with Contents:Read on ${{ vars.OPENAPI_SPEC_REPO }} and store it as a repository secret named OPENAPI_SOURCE_TOKEN."
+            exit 1
+          fi
           gh api "repos/${{ vars.OPENAPI_SPEC_REPO }}/contents/${{ vars.OPENAPI_SPEC_PATH }}" \
             -H "Accept: application/vnd.github.raw" > internal/apiclient/openapi.yaml
+          # Sanity check: an auth/HTML error page must never regenerate the
+          # client from garbage.
+          if ! head -1 internal/apiclient/openapi.yaml | grep -q '^openapi:'; then
+            echo "::error::Fetched file does not look like an OpenAPI document (first line is not 'openapi:'). Check the token's repository access and the OPENAPI_SPEC_REPO/OPENAPI_SPEC_PATH variables."
+            exit 1
+          fi
 
       - name: Regenerate the API client
         run: make generate
