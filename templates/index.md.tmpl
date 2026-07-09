@@ -45,7 +45,7 @@ resource "skycloak_cluster" "main" {
   name     = "production"
   type     = "keycloak"
   size     = "small"
-  version  = "26.1"
+  version  = "26.6.3"
   location = "us"
 }
 ```
