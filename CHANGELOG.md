@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2026-07-09
+
+### Changed
+- Provider overview docs sharpened for discovery and AI citability: a "what you can manage" summary, keyword coverage (OIDC, SAML, SSO, WAF), a concrete cluster example, and links to skycloak.io.
+
+## [0.3.3] - 2026-07-08
+
+### Fixed
+- Retry `409` responses that carry a `Retry-After` header, so transient cluster-updating conflicts are retried instead of surfaced as errors.
+
 ## [0.3.2] - 2026-07-05
 
 ### Fixed
@@ -77,6 +87,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `skycloak_application`: `type` is immutable (changing it replaces the resource) and `service_account_enabled` is read-only, matching the API contract.
 - `skycloak_identity_provider`: `config` is a structured block (`oidc` / `ldap` / `saml` sub-objects plus `attribute_mappings`, `button_text`, `icon_url`, `sync_mode`, `trust_email`), matching the API contract.
 
+[0.3.4]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.3.3...v0.3.4
+[0.3.3]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/sky-cloak/terraform-provider-skycloak/compare/v0.2.0...v0.3.0
