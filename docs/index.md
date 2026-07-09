@@ -1,17 +1,25 @@
 ---
-page_title: "skycloak Provider"
+page_title: "Skycloak Provider for managed Keycloak"
 description: |-
-  Official Terraform provider for Skycloak, the managed Keycloak platform. Manage clusters, edge security, custom domains, realms, applications, and identity providers as code.
+  Manage Keycloak as code with the official Skycloak Terraform provider: clusters, realms, applications, OIDC and SAML identity providers, edge security, and more.
 ---
 
-# skycloak Provider
+# Skycloak Provider
 
 The official Terraform provider for [Skycloak](https://skycloak.io), the managed
-Keycloak platform. Use it to manage clusters, edge security, custom domains,
-realms, applications, identity providers, and more as code.
+Keycloak platform. Use it to manage Keycloak with Terraform, defining your
+identity infrastructure as code instead of clicking through admin consoles.
 
-Learn more and create an account at [skycloak.io](https://skycloak.io). The
-provider source lives at
+With this provider you can manage:
+
+- Clusters and edge security (WAF, rate limiting, geo-blocking, bot management)
+- Realms, applications (OIDC and SAML clients), and identity providers for SSO
+- Users, roles, groups, and role assignments
+- Custom domains, branding, themes, and SMTP
+- SIEM forwarding, event webhooks, and maintenance windows
+
+Create a free account and read the platform docs at
+[skycloak.io](https://skycloak.io). The provider source lives at
 [sky-cloak/terraform-provider-skycloak](https://github.com/sky-cloak/terraform-provider-skycloak).
 
 ## Example Usage
@@ -30,6 +38,15 @@ provider "skycloak" {
   # api_key is read from the SKYCLOAK_API_KEY environment variable (recommended).
   # endpoint defaults to https://api.skycloak.io
   # api_version defaults to the current API version.
+}
+
+# Provision a managed Keycloak cluster as code.
+resource "skycloak_cluster" "main" {
+  name     = "production"
+  type     = "keycloak"
+  size     = "small"
+  version  = "26.1"
+  location = "us"
 }
 ```
 
