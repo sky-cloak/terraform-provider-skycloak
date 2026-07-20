@@ -33,6 +33,7 @@ tags:
   - name: Extensions
   - name: Cluster Extensions
   - name: Exports
+  - name: Imports
   - name: SIEM
   - name: Webhooks
 paths:
@@ -5475,6 +5476,290 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - realms:write
+  /clusters/{cluster_id}/realms/import:
+    post:
+      operationId: createRealmImport
+      summary: Start a realm import
+      description: |-
+        Imports a realm (configuration, users, and credentials) into the cluster via the Keycloak Admin
+        API. Preflight validates the target Keycloak version, refuses a name collision, and blocks on
+        missing password-hash providers. Poll `GET /realm-imports/{import_id}` until `status` is
+        `completed` or `failed`.
+
+        Required scope: `clusters:imports:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '202':
+          description: Returned when a realm import has been accepted for processing. Poll the resource until `status` is `completed` or `failed`.
+          headers:
+            Location:
+              required: true
+              description: URL of the resource being created or modified. Poll this endpoint to track completion.
+              schema:
+                type: string
+                format: uri
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RealmImport'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '402':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PlanLimitErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Imports
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRealmImportRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:imports:write
+  /clusters/{cluster_id}/realms/import/upload-url:
+    post:
+      operationId: presignRealmImportUpload
+      summary: Get a presigned URL to upload a realm artifact
+      description: |-
+        Returns a short-lived presigned PUT URL to upload the realm artifact to, and the object key to
+        pass to `createRealmImport` as `upload_s3_key`.
+
+        Required scope: `clusters:imports:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: Presigned URL to upload an import artifact to, plus the object key to pass back to createRealmImport.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  upload_url:
+                    type: string
+                    x-oapi-codegen-extra-tags:
+                      validate: omitnil,max=500
+                    format: uri
+                  s3_key:
+                    type: string
+                    x-oapi-codegen-extra-tags:
+                      validate: omitnil,max=500
+                required:
+                  - upload_url
+                  - s3_key
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Imports
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:imports:write
   /clusters/{cluster_id}/realms/{realm_name}:
     get:
       operationId: getRealm
@@ -11827,6 +12112,164 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - branding:write
+  /clusters/{cluster_id}/realms/{realm}/exports:
+    post:
+      operationId: createRealmExport
+      summary: Start a realm export
+      description: |-
+        Queues an encrypted export of a single realm (configuration, users, and all credentials).
+        Generated asynchronously by a server-side `kc.sh export`; poll
+        `GET /realm-exports/{export_id}` until `status` is `completed`, then download from
+        `download_url` before `expires_at`. Skycloak does not retain the artifact past `expires_at`.
+
+        Required scope: `clusters:exports:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: realm
+          in: path
+          required: true
+          schema:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '202':
+          description: Returned when a realm export has been accepted for processing. Poll the resource until `status` is `completed` or `failed`, then download from `download_url`.
+          headers:
+            Location:
+              required: true
+              description: URL of the resource being created or modified. Poll this endpoint to track completion.
+              schema:
+                type: string
+                format: uri
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RealmExport'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '402':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PlanLimitErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Exports
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRealmExportRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:exports:write
   /clusters/{cluster_id}/realms/{realm}/smtp:
     get:
       operationId: getSmtpConfig
@@ -15366,6 +15809,235 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - identity-providers:read
+  /realm-exports/{export_id}:
+    get:
+      operationId: getRealmExport
+      summary: Get a realm export
+      description: |-
+        Returns a single realm export. Poll to observe `status` and `progress` until the export is
+        `completed` or `failed`; when completed, `download_url` is a presigned link valid until
+        `expires_at` (bounded by the 24h retention window, so a link fetched late in the window is
+        valid for less time). Fetch it promptly: Skycloak deletes the artifact at `expires_at`.
+
+        Required scope: `clusters:exports:read`
+      parameters:
+        - name: export_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmExportId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RealmExport'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Exports
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:exports:read
+  /realm-imports/{import_id}:
+    get:
+      operationId: getRealmImport
+      summary: Get a realm import
+      description: |-
+        Returns a single realm import. Poll to observe `status` and `progress` until `completed` or `failed`.
+
+        Required scope: `clusters:imports:read`
+      parameters:
+        - name: import_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmImportId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RealmImport'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Imports
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:imports:read
   /siem/destinations:
     get:
       operationId: listSIEMDestinations
@@ -18115,6 +18787,26 @@ components:
           minLength: 1
           description: Template ID from `GET /identity-provider-templates`. When provided, `type` and `config` are pre-filled with recommended defaults; explicit fields in this request override template values.
       description: Request body for creating a new identity provider.
+    CreateRealmExportRequest:
+      type: object
+      required:
+        - encryption_password
+      properties:
+        scope:
+          allOf:
+            - $ref: '#/components/schemas/RealmExportScope'
+          description: Export scope. Only `full` is currently supported.
+          default: full
+        encryption_password:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: required,min=8,max=128
+          minLength: 8
+          maxLength: 128
+          description: 'Password used to encrypt the archive (AES-256-CBC, PBKDF2). Required: every realm export contains credentials. Never stored; only a hash is retained for verification.'
+      example:
+        scope: full
+        encryption_password: a-strong-passphrase
     CreateRealmGroupRequest:
       type: object
       required:
@@ -18135,6 +18827,33 @@ components:
       example:
         name: platform
         parent_id: 4f7e3a1b-2c9d-4e5f-8a6b-1c2d3e4f5a6b
+    CreateRealmImportRequest:
+      type: object
+      properties:
+        source_kind:
+          allOf:
+            - $ref: '#/components/schemas/RealmImportSourceKind'
+          description: Where the artifact comes from. `upload` (default) or `stored`.
+          default: upload
+        upload_s3_key:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: Object key of a previously-uploaded artifact (from the upload-url endpoint). Required when `source_kind` is `upload`.
+        source_export_id:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: A stored realm export id. Required when `source_kind` is `stored`.
+        password:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: Password to decrypt an encrypted artifact. Omit for a bare foreign JSON.
+      example:
+        source_kind: upload
+        upload_s3_key: realm-imports/uploads/ws/abc.zip.enc
+        password: a-strong-passphrase
     CreateRealmRequest:
       type: object
       required:
@@ -19968,6 +20687,91 @@ components:
       type: string
       minLength: 1
       maxLength: 255
+    RealmExport:
+      type: object
+      required:
+        - id
+        - cluster_id
+        - realm
+        - scope
+        - status
+        - progress
+        - created_at
+      properties:
+        id:
+          $ref: '#/components/schemas/RealmExportId'
+        cluster_id:
+          $ref: '#/components/schemas/ClusterId'
+        realm:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: The exported realm's name (Keycloak realm id).
+        scope:
+          $ref: '#/components/schemas/RealmExportScope'
+        status:
+          $ref: '#/components/schemas/ExportStatus'
+        progress:
+          type: integer
+          description: Percent complete, 0-100.
+        source_version:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          nullable: true
+          description: Keycloak version that produced the export. An import target must run this version or newer. Only set once `status` is `completed`.
+        sha256_checksum:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          nullable: true
+          description: SHA-256 checksum of the produced encrypted archive (hex). Only set once `status` is `completed`.
+        download_url:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          nullable: true
+          format: uri
+          description: Time-limited presigned URL to download the encrypted archive. Only set when `status` is `completed` and `expires_at` is in the future. Skycloak does not retain the artifact past `expires_at`.
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the archive is deleted from storage (24h after completion).
+        error_message:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          nullable: true
+          description: Failure description. Only set when `status` is `failed`.
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+      example:
+        id: 5fa3e1a0-2c9b-4d2f-9b3a-1e8c4d2f9b3a
+        cluster_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        realm: cust-brasilia
+        scope: full
+        status: completed
+        progress: 100
+        source_version: 26.6.1
+        sha256_checksum: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+        download_url: https://exports.skycloak.io/.../cust-brasilia.zip.enc?X-Amz-Signature=...
+        expires_at: '2026-07-20T14:15:00Z'
+        error_message: null
+        created_at: '2026-07-19T14:00:00Z'
+        completed_at: '2026-07-19T14:12:00Z'
+    RealmExportId:
+      type: string
+      format: uuid
+    RealmExportScope:
+      type: string
+      enum:
+        - full
     RealmGroup:
       type: object
       required:
@@ -20017,6 +20821,78 @@ components:
       format: uuid
       description: Keycloak realm ID. This is a UUID generated by Keycloak.
       example: 123e4567-e89b-12d3-a456-426614174000
+    RealmImport:
+      type: object
+      required:
+        - id
+        - cluster_id
+        - realm
+        - source_kind
+        - status
+        - progress
+        - created_at
+      properties:
+        id:
+          $ref: '#/components/schemas/RealmImportId'
+        cluster_id:
+          $ref: '#/components/schemas/ClusterId'
+        realm:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: The imported realm's name, derived from the artifact.
+        source_kind:
+          $ref: '#/components/schemas/RealmImportSourceKind'
+        status:
+          $ref: '#/components/schemas/ExportStatus'
+        progress:
+          type: integer
+          description: Percent complete, 0-100.
+        source_version:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          nullable: true
+          description: Keycloak version that produced the artifact.
+        target_version:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          nullable: true
+          description: Target cluster's Keycloak version at import time.
+        error_message:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          nullable: true
+          description: Failure description. Only set when `status` is `failed`.
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+      example:
+        id: 7b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e
+        cluster_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        realm: cust-brasilia
+        source_kind: upload
+        status: completed
+        progress: 100
+        source_version: 26.6.1
+        target_version: 26.6.2
+        error_message: null
+        created_at: '2026-07-19T15:00:00Z'
+        completed_at: '2026-07-19T15:03:00Z'
+    RealmImportId:
+      type: string
+      format: uuid
+    RealmImportSourceKind:
+      type: string
+      enum:
+        - upload
+        - stored
     RealmName:
       type: string
       minLength: 1
