@@ -102,13 +102,29 @@ jobs:
             exit 1
           fi
 
+      # The realm artifact is a binary the runner has no other way to obtain. It
+      # is stored base64-encoded across two secrets because one encoded copy
+      # exceeds GitHub's 64 KB per-secret limit. Absent secrets are not an error:
+      # TestAccRealmImportResource simply skips.
+      - name: Stage the realm import artifact
+        env:
+          B64_1: ${{ secrets.SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT_B64_1 }}
+          B64_2: ${{ secrets.SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT_B64_2 }}
+        run: |
+          if [ -z "$B64_1" ] || [ -z "$B64_2" ]; then
+            echo "::notice::Realm artifact secrets not set; TestAccRealmImportResource will skip."
+            exit 0
+          fi
+          printf '%s%s' "$B64_1" "$B64_2" | base64 -d > "$RUNNER_TEMP/realm.zip.enc"
+          echo "SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT=$RUNNER_TEMP/realm.zip.enc" >> "$GITHUB_ENV"
+
+      # No SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT here on purpose: a step-level env
+      # entry outranks $GITHUB_ENV, so declaring it would blank the staged path.
       - name: Acceptance tests
         env:
           TF_ACC: "1"
           SKYCLOAK_API_KEY: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_API_KEY }}
           SKYCLOAK_ENDPOINT: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_ENDPOINT }}
           SKYCLOAK_ACCEPTANCE_CLUSTER_ID: ${{ vars.SKYCLOAK_ACCEPTANCE_CLUSTER_ID }}
-          # Optional: when set, TestAccRealmImportResource runs instead of skipping.
-          SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT: ${{ vars.SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT }}
           SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT_PASSWORD: ${{ secrets.SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT_PASSWORD }}
         run: go test ./internal/provider/... -v -timeout 120m -run "${{ inputs.test_run || 'TestAccSmoke' }}"
