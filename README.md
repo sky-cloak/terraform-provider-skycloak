@@ -79,6 +79,8 @@ honor the `Retry-After` header.
 | `skycloak_custom_extension` | Uploads a custom extension JAR to the workspace catalog |
 | `skycloak_smtp` | Realm SMTP configuration |
 | `skycloak_export` | A database export job (waits for completion) |
+| `skycloak_realm_export` | An encrypted single-realm export (waits for completion) |
+| `skycloak_realm_import` | Imports a realm from a local artifact or a stored export |
 | `skycloak_siem_destination` | SIEM forwarding to syslog, S3, or HTTP collectors |
 | `skycloak_webhook_subscription` | Webhook deliveries for workspace and Keycloak events |
 

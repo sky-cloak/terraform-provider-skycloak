@@ -30,6 +30,11 @@ const defaultEndpoint = "https://api.skycloak.io"
 type Client struct {
 	gen        *apiclient.ClientWithResponses
 	apiVersion string
+	// httpClient is the same client the generated code uses. It carries the
+	// retry transport but NOT the API-Key request editor (that is applied by the
+	// generated client), so it is the right vehicle for presigned-URL uploads to
+	// object storage, which must never receive the Skycloak API key.
+	httpClient *http.Client
 }
 
 // ver returns the pinned API version for the generated per-operation params
@@ -86,7 +91,7 @@ func New(endpoint, apiKey, apiVersion string, opts ...Option) *Client {
 		// NewClientWithResponses only errors on an unparseable server URL.
 		panic(fmt.Sprintf("skycloak: invalid endpoint %q: %v", endpoint, err))
 	}
-	return &Client{gen: gen, apiVersion: apiVersion}
+	return &Client{gen: gen, apiVersion: apiVersion, httpClient: cfg.httpClient}
 }
 
 // Problem is the RFC 9457 application/problem+json error body.
