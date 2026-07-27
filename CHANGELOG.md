@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `skycloak_realm_export`: exports a single realm (configuration, users, and credentials) as an encrypted archive and waits for the job to finish. The archive expires 24 hours after completion.
+- `skycloak_realm_import`: imports a realm into a cluster, either by uploading a local artifact through a presigned URL (`source_kind = "upload"`) or from a stored realm export (`source_kind = "stored"`).
+
 ## [0.3.4] - 2026-07-09
 
 ### Changed

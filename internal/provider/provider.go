@@ -131,6 +131,8 @@ func (p *skycloakProvider) Resources(_ context.Context) []func() resource.Resour
 		NewCAPTCHADomainResource,
 		NewSIEMDestinationResource,
 		NewWebhookSubscriptionResource,
+		NewRealmExportResource,
+		NewRealmImportResource,
 	}
 }
 
