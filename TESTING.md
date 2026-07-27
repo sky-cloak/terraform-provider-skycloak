@@ -28,6 +28,34 @@ Every PR that adds or changes behavior MUST include, in the same PR:
 
 Acceptance tests create real clusters — run them against a **disposable dev workspace** only. They self-skip unless both `TF_ACC=1` and `SKYCLOAK_API_KEY` are set. Add sweepers before enabling them on a schedule.
 
+### Acceptance environment
+
+| Variable | Where | Required for |
+|---|---|---|
+| `SKYCLOAK_API_KEY` | secret `SKYCLOAK_ACCEPTANCE_TEST_DEV_API_KEY` | everything (tests skip without it) |
+| `SKYCLOAK_ENDPOINT` | secret `SKYCLOAK_ACCEPTANCE_TEST_DEV_ENDPOINT` | everything — **an empty value falls back to production**, where a dev key 401s |
+| `SKYCLOAK_ACCEPTANCE_CLUSTER_ID` | variable | tests that need an existing cluster, rather than provisioning one |
+| `SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT` | set by CI; a local path when running by hand | `TestAccRealmImportResource` only |
+| `SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT_B64_1` / `_B64_2` | secrets | `TestAccRealmImportResource` in CI only |
+| `SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT_PASSWORD` | secret | `TestAccRealmImportResource` only |
+
+The first two are checked by a pre-flight step, so a missing secret fails with a named cause instead of an opaque `401`.
+
+`TestAccRealmImportResource` needs an encrypted realm archive, because a realm import cannot be round-tripped from an export inside the same cluster: preflight refuses a realm-name collision with the realm that was exported. It skips when no artifact is available, and a skip is not a pass.
+
+Locally, point `SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT` at the file. In CI the runner has no such file, so the archive is stored base64-encoded across **two** secrets (one encoded copy exceeds GitHub's 64 KB per-secret limit) and a staging step reassembles it into `$RUNNER_TEMP`. To refresh it:
+
+```bash
+base64 -i realm.zip.enc | tr -d '\n' > b64
+half=$(( ($(wc -c < b64) + 1) / 2 ))
+head -c "$half" b64 | gh secret set SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT_B64_1
+tail -c +$((half + 1)) b64 | gh secret set SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT_B64_2
+```
+
+If the artifact outgrows two secrets, host it and download it in the staging step instead.
+
+The test's `CheckDestroy` deletes the realm the import created: destroying `skycloak_realm_import` intentionally leaves the realm running, so without that cleanup a second run collides with the first run's realm.
+
 ## Running locally
 
 ```bash

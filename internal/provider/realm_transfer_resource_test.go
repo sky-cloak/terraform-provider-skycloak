@@ -1,11 +1,15 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
+
+	"github.com/sky-cloak/terraform-provider-skycloak/internal/skycloak"
 )
 
 // TestAccRealmExportResource exercises create → read → import → destroy for a
@@ -54,6 +58,27 @@ resource "skycloak_realm_export" "test" {
 	})
 }
 
+// destroyImportedRealm deletes the realm the import created. Destroying
+// skycloak_realm_import only drops the job from state and deliberately leaves
+// the realm running, so without this cleanup the test passes once and then
+// collides with its own leftovers on the next run.
+func destroyImportedRealm(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "skycloak_realm_import" {
+			continue
+		}
+		realm := rs.Primary.Attributes["realm"]
+		clusterID := rs.Primary.Attributes["cluster_id"]
+		if realm == "" || clusterID == "" {
+			continue
+		}
+		if err := testAccClient().DeleteRealm(context.Background(), clusterID, realm); err != nil && !skycloak.IsNotFound(err) {
+			return fmt.Errorf("cleaning up imported realm %q: %w", realm, err)
+		}
+	}
+	return nil
+}
+
 // TestAccRealmImportResource imports a realm from a local artifact.
 //
 // It is gated on SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT (path to an encrypted realm
@@ -78,6 +103,7 @@ resource "skycloak_realm_import" "test" {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             destroyImportedRealm,
 		Steps: []resource.TestStep{
 			{
 				Config: config,

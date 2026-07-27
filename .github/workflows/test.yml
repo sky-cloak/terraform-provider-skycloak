@@ -85,10 +85,46 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
+      # The acceptance suite self-skips without an API key, and an empty endpoint
+      # silently falls back to production — where the dev key 401s on every test.
+      # That combination cost two weeks of red daily runs whose only symptom was
+      # "unexpected status 401", so fail here with the actual diagnosis instead.
+      - name: Check the acceptance credentials are present
+        env:
+          SKYCLOAK_API_KEY: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_API_KEY }}
+          SKYCLOAK_ENDPOINT: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_ENDPOINT }}
+        run: |
+          missing=""
+          [ -z "$SKYCLOAK_API_KEY" ] && missing="$missing SKYCLOAK_ACCEPTANCE_TEST_DEV_API_KEY"
+          [ -z "$SKYCLOAK_ENDPOINT" ] && missing="$missing SKYCLOAK_ACCEPTANCE_TEST_DEV_ENDPOINT"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing acceptance secret(s):$missing. Without the endpoint the provider defaults to https://api.skycloak.io and the dev key returns 401 on every test. Set them on the repository (or org) before re-running."
+            exit 1
+          fi
+
+      # The realm artifact is a binary the runner has no other way to obtain. It
+      # is stored base64-encoded across two secrets because one encoded copy
+      # exceeds GitHub's 64 KB per-secret limit. Absent secrets are not an error:
+      # TestAccRealmImportResource simply skips.
+      - name: Stage the realm import artifact
+        env:
+          B64_1: ${{ secrets.SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT_B64_1 }}
+          B64_2: ${{ secrets.SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT_B64_2 }}
+        run: |
+          if [ -z "$B64_1" ] || [ -z "$B64_2" ]; then
+            echo "::notice::Realm artifact secrets not set; TestAccRealmImportResource will skip."
+            exit 0
+          fi
+          printf '%s%s' "$B64_1" "$B64_2" | base64 -d > "$RUNNER_TEMP/realm.zip.enc"
+          echo "SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT=$RUNNER_TEMP/realm.zip.enc" >> "$GITHUB_ENV"
+
+      # No SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT here on purpose: a step-level env
+      # entry outranks $GITHUB_ENV, so declaring it would blank the staged path.
       - name: Acceptance tests
         env:
           TF_ACC: "1"
           SKYCLOAK_API_KEY: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_API_KEY }}
           SKYCLOAK_ENDPOINT: ${{ secrets.SKYCLOAK_ACCEPTANCE_TEST_DEV_ENDPOINT }}
           SKYCLOAK_ACCEPTANCE_CLUSTER_ID: ${{ vars.SKYCLOAK_ACCEPTANCE_CLUSTER_ID }}
+          SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT_PASSWORD: ${{ secrets.SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT_PASSWORD }}
         run: go test ./internal/provider/... -v -timeout 120m -run "${{ inputs.test_run || 'TestAccSmoke' }}"
