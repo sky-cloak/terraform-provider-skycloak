@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.0] - 2026-07-27
 
 ### Added
 - `skycloak_realm_export`: exports a single realm (configuration, users, and credentials) as an encrypted archive and waits for the job to finish. The archive expires 24 hours after completion.
