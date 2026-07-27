@@ -28,6 +28,20 @@ Every PR that adds or changes behavior MUST include, in the same PR:
 
 Acceptance tests create real clusters — run them against a **disposable dev workspace** only. They self-skip unless both `TF_ACC=1` and `SKYCLOAK_API_KEY` are set. Add sweepers before enabling them on a schedule.
 
+### Acceptance environment
+
+| Variable | Where | Required for |
+|---|---|---|
+| `SKYCLOAK_API_KEY` | secret `SKYCLOAK_ACCEPTANCE_TEST_DEV_API_KEY` | everything (tests skip without it) |
+| `SKYCLOAK_ENDPOINT` | secret `SKYCLOAK_ACCEPTANCE_TEST_DEV_ENDPOINT` | everything — **an empty value falls back to production**, where a dev key 401s |
+| `SKYCLOAK_ACCEPTANCE_CLUSTER_ID` | variable | tests that need an existing cluster, rather than provisioning one |
+| `SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT` | variable | `TestAccRealmImportResource` only |
+| `SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT_PASSWORD` | secret | `TestAccRealmImportResource` only |
+
+The first two are checked by a pre-flight step, so a missing secret fails with a named cause instead of an opaque `401`.
+
+`TestAccRealmImportResource` **skips unless `SKYCLOAK_ACCEPTANCE_REALM_ARTIFACT` points at an encrypted realm archive**: a realm import cannot be round-tripped from an export inside the same cluster, because preflight refuses a realm-name collision with the realm that was exported. Until that artifact is staged, realm import has no CI coverage — a skip is not a pass.
+
 ## Running locally
 
 ```bash
