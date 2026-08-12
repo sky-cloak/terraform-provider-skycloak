@@ -543,6 +543,12 @@ type AdminOperationType string
 
 // Application A Keycloak client (application) registered in a realm.
 type Application struct {
+	// AdminUrl Admin URL. Where Keycloak sends back-channel logout and admin callbacks.
+	AdminUrl *string `json:"admin_url,omitempty"`
+
+	// BaseUrl Home URL. Where Keycloak sends a user opening the application from the account console.
+	BaseUrl *string `json:"base_url,omitempty"`
+
 	// ClientId OAuth 2.0 client identifier. Stable resource identifier for this API.
 	ClientId ApplicationClientId `json:"client_id"`
 
@@ -565,11 +571,17 @@ type Application struct {
 	// PkceRequired Whether PKCE (Proof Key for Code Exchange) is required.
 	PkceRequired bool `json:"pkce_required"`
 
+	// PostLogoutRedirectUris URIs a user may be redirected to after signing out. Falls back to `redirect_uris` when empty.
+	PostLogoutRedirectUris *[]string `json:"post_logout_redirect_uris,omitempty"`
+
 	// Protocol Authentication protocol.
 	Protocol ApplicationProtocol `json:"protocol"`
 
 	// RedirectUris Allowed redirect URIs for authorization-code flows. Required for `authorization_code` grant.
 	RedirectUris []string `json:"redirect_uris"`
+
+	// RootUrl Root URL. Prefixed to any relative redirect URI.
+	RootUrl *string `json:"root_url,omitempty"`
 
 	// SamlConfig SAML-specific configuration. Present only when `protocol` is `saml`.
 	SamlConfig *SAMLConfiguration `json:"saml_config,omitempty"`
@@ -583,6 +595,9 @@ type Application struct {
 	// Type OAuth 2.0 client type.
 	Type      ApplicationType `json:"type"`
 	UpdatedAt time.Time       `json:"updated_at"`
+
+	// WebOrigins Browser origins allowed to call this application (CORS). `["*"]` allows any origin.
+	WebOrigins *[]string `json:"web_origins,omitempty"`
 }
 
 // ApplicationClientId OAuth 2.0 client identifier. Used as the stable resource identifier in this API and in Keycloak realm URLs.
@@ -2631,6 +2646,12 @@ type ThemeType string
 
 // UpdateApplicationRequest Partial update request. All fields are optional; only provided fields are updated.
 type UpdateApplicationRequest struct {
+	// AdminUrl Admin URL.
+	AdminUrl *string `json:"admin_url,omitempty"`
+
+	// BaseUrl Home URL.
+	BaseUrl *string `json:"base_url,omitempty"`
+
 	// ConsentRequired Updated consent requirement.
 	ConsentRequired *bool `json:"consent_required,omitempty"`
 
@@ -2646,14 +2667,23 @@ type UpdateApplicationRequest struct {
 	// PkceRequired Updated PKCE requirement.
 	PkceRequired *bool `json:"pkce_required,omitempty"`
 
+	// PostLogoutRedirectUris URIs a user may be redirected to after signing out.
+	PostLogoutRedirectUris *[]string `json:"post_logout_redirect_uris,omitempty"`
+
 	// RedirectUris Replace the full set of allowed redirect URIs.
 	RedirectUris *[]string `json:"redirect_uris,omitempty"`
+
+	// RootUrl Root URL. Prefixed to any relative redirect URI.
+	RootUrl *string `json:"root_url,omitempty"`
 
 	// SamlConfig Updated SAML configuration. Pass `null` to clear.
 	SamlConfig *SAMLConfiguration `json:"saml_config,omitempty"`
 
 	// Status Updated status.
 	Status *ApplicationStatus `json:"status,omitempty"`
+
+	// WebOrigins Browser origins allowed to call this application (CORS).
+	WebOrigins *[]string `json:"web_origins,omitempty"`
 }
 
 // UpdateClusterRequest Partial update request. At least one field must be provided. `location` and `type` cannot be changed after creation.
@@ -3783,8 +3813,8 @@ type UploadThemeMultipartBody struct {
 	// ThemeTypes Subset of theme types to deploy from the package. Omit to deploy all detected types.
 	ThemeTypes *[]ThemeType `json:"theme_types,omitempty" validate:"omitnil,min=1,unique,dive,oneof=account admin email login"`
 
-	// Version Semantic version string (e.g. `1.2.3`).
-	Version *string `json:"version,omitempty" validate:"omitnil,semver"`
+	// Version Version label for the theme, e.g. `v2.4` or `2026-08-12`. Free text, up to 50 characters; it is shown in the library and never interpreted.
+	Version *string `json:"version,omitempty" validate:"omitnil,max=50"`
 }
 
 // UploadThemeParams defines parameters for UploadTheme.
@@ -3804,6 +3834,25 @@ type GetThemeParams struct {
 
 // UpdateThemeParams defines parameters for UpdateTheme.
 type UpdateThemeParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DownloadThemeContentParams defines parameters for DownloadThemeContent.
+type DownloadThemeContentParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateThemeContentMultipartBody defines parameters for UpdateThemeContent.
+type UpdateThemeContentMultipartBody struct {
+	// ThemeFile Replacement Keycloak-compatible theme archive. Content type must be `application/zip` (ZIP) or `application/java-archive` (Keycloakify JAR).
+	ThemeFile openapi_types.File `json:"theme_file"`
+
+	// Version Optional new version label, e.g. `v2.4`. Free text, up to 50 characters. Omit to leave the existing version unchanged; it is recorded only once the new content is live.
+	Version *string `json:"version,omitempty" validate:"omitnil,max=50"`
+}
+
+// UpdateThemeContentParams defines parameters for UpdateThemeContent.
+type UpdateThemeContentParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
 }
 
@@ -4036,6 +4085,9 @@ type UploadThemeMultipartRequestBody UploadThemeMultipartBody
 
 // UpdateThemeJSONRequestBody defines body for UpdateTheme for application/json ContentType.
 type UpdateThemeJSONRequestBody = UpdateThemeRequest
+
+// UpdateThemeContentMultipartRequestBody defines body for UpdateThemeContent for multipart/form-data ContentType.
+type UpdateThemeContentMultipartRequestBody UpdateThemeContentMultipartBody
 
 // UploadExtensionMultipartRequestBody defines body for UploadExtension for multipart/form-data ContentType.
 type UploadExtensionMultipartRequestBody UploadExtensionMultipartBody
@@ -4534,6 +4586,12 @@ type ClientInterface interface {
 	UpdateThemeWithBody(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, body UpdateThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DownloadThemeContent request
+	DownloadThemeContent(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *DownloadThemeContentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateThemeContentWithBody request with any body
+	UpdateThemeContentWithBody(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeContentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClusterUpgradePath request
 	GetClusterUpgradePath(ctx context.Context, clusterId ClusterId, params *GetClusterUpgradePathParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -6346,6 +6404,30 @@ func (c *Client) UpdateThemeWithBody(ctx context.Context, clusterId ClusterId, t
 
 func (c *Client) UpdateTheme(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, body UpdateThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateThemeRequest(c.Server, clusterId, themeId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DownloadThemeContent(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *DownloadThemeContentParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadThemeContentRequest(c.Server, clusterId, themeId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateThemeContentWithBody(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeContentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateThemeContentRequestWithBody(c.Server, clusterId, themeId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -14396,6 +14478,116 @@ func NewUpdateThemeRequestWithBody(server string, clusterId ClusterId, themeId T
 	return req, nil
 }
 
+// NewDownloadThemeContentRequest generates requests for DownloadThemeContent
+func NewDownloadThemeContentRequest(server string, clusterId ClusterId, themeId ThemeId, params *DownloadThemeContentParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "theme_id", runtime.ParamLocationPath, themeId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/themes/%s/content", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewUpdateThemeContentRequestWithBody generates requests for UpdateThemeContent with any type of body
+func NewUpdateThemeContentRequestWithBody(server string, clusterId ClusterId, themeId ThemeId, params *UpdateThemeContentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "theme_id", runtime.ParamLocationPath, themeId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/themes/%s/content", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
 // NewGetClusterUpgradePathRequest generates requests for GetClusterUpgradePath
 func NewGetClusterUpgradePathRequest(server string, clusterId ClusterId, params *GetClusterUpgradePathParams) (*http.Request, error) {
 	var err error
@@ -16075,6 +16267,12 @@ type ClientWithResponsesInterface interface {
 	UpdateThemeWithBodyWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateThemeResponse, error)
 
 	UpdateThemeWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeParams, body UpdateThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateThemeResponse, error)
+
+	// DownloadThemeContentWithResponse request
+	DownloadThemeContentWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *DownloadThemeContentParams, reqEditors ...RequestEditorFn) (*DownloadThemeContentResponse, error)
+
+	// UpdateThemeContentWithBodyWithResponse request with any body
+	UpdateThemeContentWithBodyWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeContentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateThemeContentResponse, error)
 
 	// GetClusterUpgradePathWithResponse request
 	GetClusterUpgradePathWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterUpgradePathParams, reqEditors ...RequestEditorFn) (*GetClusterUpgradePathResponse, error)
@@ -19333,6 +19531,66 @@ func (r UpdateThemeResponse) StatusCode() int {
 	return 0
 }
 
+type DownloadThemeContentResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON409 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r DownloadThemeContentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DownloadThemeContentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateThemeContentResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *Theme
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON402 *PlanLimitErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON409 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateThemeContentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateThemeContentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetClusterUpgradePathResponse struct {
 	Body                      []byte
 	HTTPResponse              *http.Response
@@ -21346,6 +21604,24 @@ func (c *ClientWithResponses) UpdateThemeWithResponse(ctx context.Context, clust
 		return nil, err
 	}
 	return ParseUpdateThemeResponse(rsp)
+}
+
+// DownloadThemeContentWithResponse request returning *DownloadThemeContentResponse
+func (c *ClientWithResponses) DownloadThemeContentWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *DownloadThemeContentParams, reqEditors ...RequestEditorFn) (*DownloadThemeContentResponse, error) {
+	rsp, err := c.DownloadThemeContent(ctx, clusterId, themeId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDownloadThemeContentResponse(rsp)
+}
+
+// UpdateThemeContentWithBodyWithResponse request with arbitrary body returning *UpdateThemeContentResponse
+func (c *ClientWithResponses) UpdateThemeContentWithBodyWithResponse(ctx context.Context, clusterId ClusterId, themeId ThemeId, params *UpdateThemeContentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateThemeContentResponse, error) {
+	rsp, err := c.UpdateThemeContentWithBody(ctx, clusterId, themeId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateThemeContentResponse(rsp)
 }
 
 // GetClusterUpgradePathWithResponse request returning *GetClusterUpgradePathResponse
@@ -29606,6 +29882,170 @@ func ParseUpdateThemeResponse(rsp *http.Response) (*UpdateThemeResponse, error) 
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDownloadThemeContentResponse parses an HTTP response from a DownloadThemeContentWithResponse call
+func ParseDownloadThemeContentResponse(rsp *http.Response) (*DownloadThemeContentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DownloadThemeContentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateThemeContentResponse parses an HTTP response from a UpdateThemeContentWithResponse call
+func ParseUpdateThemeContentResponse(rsp *http.Response) (*UpdateThemeContentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateThemeContentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Theme
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 402:
+		var dest PlanLimitErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest ValidationErrorBody

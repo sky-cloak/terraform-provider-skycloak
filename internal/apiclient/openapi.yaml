@@ -14145,8 +14145,8 @@ paths:
                 version:
                   type: string
                   x-oapi-codegen-extra-tags:
-                    validate: omitnil,semver
-                  description: Semantic version string (e.g. `1.2.3`).
+                    validate: omitnil,max=50
+                  description: Version label for the theme, e.g. `v2.4` or `2026-08-12`. Free text, up to 50 characters; it is shown in the library and never interpreted.
                 theme_file:
                   type: string
                   format: binary
@@ -14545,6 +14545,314 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - themes:write
+  /clusters/{cluster_id}/themes/{theme_id}/content:
+    put:
+      operationId: updateThemeContent
+      summary: Replace theme content
+      description: |-
+        Replaces the theme's archive in place, keeping its identity and its realm and
+        application assignments. The new content is deployed immediately and every realm
+        and application using the theme is repointed at it, so the sign-in page is never
+        left unbranded the way delete-then-re-upload would.
+
+        The replacement archive must contain every theme type the theme currently provides
+        (`theme_types`); an archive that drops one is rejected with `400 Bad Request`.
+        Returns `409 Conflict` for themes created by a platform migration — their content
+        is pinned and cannot be replaced.
+
+        Maximum body size is 50 MB.
+
+        Required scope: `themes:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: theme_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ThemeId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Theme'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '402':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PlanLimitErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Themes
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                theme_file:
+                  type: string
+                  format: binary
+                  description: Replacement Keycloak-compatible theme archive. Content type must be `application/zip` (ZIP) or `application/java-archive` (Keycloakify JAR).
+                version:
+                  type: string
+                  x-oapi-codegen-extra-tags:
+                    validate: omitnil,max=50
+                  description: Optional new version label, e.g. `v2.4`. Free text, up to 50 characters. Omit to leave the existing version unchanged; it is recorded only once the new content is live.
+              required:
+                - theme_file
+            encoding:
+              theme_file:
+                contentType: application/zip, application/java-archive
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - themes:write
+    get:
+      operationId: downloadThemeContent
+      summary: Download theme content
+      description: |-
+        Returns the theme's original uploaded archive as `application/zip`.
+
+        Returns `409 Conflict` when the archive predates durable archive storage and can no
+        longer be produced; replacing the theme's content once makes it downloadable again.
+
+        Required scope: `themes:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: theme_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ThemeId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The theme's original uploaded archive.
+          headers:
+            Content-Disposition:
+              required: true
+              description: Suggested filename for the downloaded archive, e.g. `attachment; filename="my-theme.zip"`.
+              schema:
+                type: string
+                x-oapi-codegen-extra-tags:
+                  validate: omitnil,max=500
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Themes
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - themes:read
   /clusters/{cluster_id}/upgrade-path:
     get:
       operationId: getClusterUpgradePath
@@ -17823,6 +18131,29 @@ components:
           type: string
           format: password
           description: Client secret. Present only immediately after creation or secret rotation; store it securely as it will not be returned again.
+        web_origins:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          description: Browser origins allowed to call this application (CORS). `["*"]` allows any origin.
+        post_logout_redirect_uris:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          description: URIs a user may be redirected to after signing out. Falls back to `redirect_uris` when empty.
+        root_url:
+          type: string
+          description: Root URL. Prefixed to any relative redirect URI.
+        base_url:
+          type: string
+          description: Home URL. Where Keycloak sends a user opening the application from the account console.
+        admin_url:
+          type: string
+          description: Admin URL. Where Keycloak sends back-channel logout and admin callbacks.
         saml_config:
           allOf:
             - $ref: '#/components/schemas/SAMLConfiguration'
@@ -22166,6 +22497,29 @@ components:
           allOf:
             - $ref: '#/components/schemas/SAMLConfiguration'
           description: Updated SAML configuration. Pass `null` to clear.
+        web_origins:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          description: Browser origins allowed to call this application (CORS).
+        post_logout_redirect_uris:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          description: URIs a user may be redirected to after signing out.
+        root_url:
+          type: string
+          description: Root URL. Prefixed to any relative redirect URI.
+        base_url:
+          type: string
+          description: Home URL.
+        admin_url:
+          type: string
+          description: Admin URL.
       description: Partial update request. All fields are optional; only provided fields are updated.
     UpdateClusterRequest:
       type: object
