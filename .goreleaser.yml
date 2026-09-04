@@ -24,6 +24,11 @@ archives:
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
+  # The manifest must be checksummed alongside the archives: the Registry trusts
+  # the GPG-signed SHA256SUMS, so a manifest outside it would be unverifiable.
+  extra_files:
+    - glob: terraform-registry-manifest.json
+      name_template: "{{ .ProjectName }}_{{ .Version }}_manifest.json"
   name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
 
@@ -39,6 +44,12 @@ signs:
       - "${artifact}"
 
 release:
+  # Without this asset the Registry cannot read protocol_versions and silently
+  # records the provider as protocol 5.0, though terraform-plugin-framework
+  # serves 6.0 only.
+  extra_files:
+    - glob: terraform-registry-manifest.json
+      name_template: "{{ .ProjectName }}_{{ .Version }}_manifest.json"
   prerelease: auto
 
 changelog:
