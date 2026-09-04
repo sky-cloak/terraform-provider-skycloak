@@ -22,9 +22,17 @@ type clusterVersionsDataSource struct{ client *skycloak.Client }
 // NewClusterVersionsDataSource returns the skycloak_cluster_versions data source.
 func NewClusterVersionsDataSource() datasource.DataSource { return &clusterVersionsDataSource{} }
 
+type clusterTypeVersionModel struct {
+	Version             types.String `tfsdk:"version"`
+	Active              types.Bool   `tfsdk:"active"`
+	IsMajorChange       types.Bool   `tfsdk:"is_major_change"`
+	BreakingChangeCount types.Int64  `tfsdk:"breaking_change_count"`
+}
+
 type clusterVersionsModel struct {
-	Type     types.String `tfsdk:"type"`
-	Versions types.List   `tfsdk:"versions"`
+	Type           types.String              `tfsdk:"type"`
+	Versions       types.List                `tfsdk:"versions"`
+	VersionDetails []clusterTypeVersionModel `tfsdk:"version_details"`
 }
 
 func (d *clusterVersionsDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -37,6 +45,19 @@ func (d *clusterVersionsDataSource) Schema(_ context.Context, _ datasource.Schem
 		Attributes: map[string]schema.Attribute{
 			"type":     schema.StringAttribute{Required: true, MarkdownDescription: "Cluster type (`keycloak`, `tidecloak`)."},
 			"versions": schema.ListAttribute{Computed: true, ElementType: types.StringType, MarkdownDescription: "Supported versions, newest first."},
+			"version_details": schema.ListNestedAttribute{
+				Computed:            true,
+				MarkdownDescription: "The same versions in the same order, with the detail needed to judge an upgrade onto each.",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"version": schema.StringAttribute{Computed: true, MarkdownDescription: "The version number."},
+						"active": schema.BoolAttribute{Computed: true, MarkdownDescription: "Whether the version is still offered for new clusters and upgrades. " +
+							"`false` means it is recognised, for example by a cluster already running it, but is no longer offered."},
+						"is_major_change":       schema.BoolAttribute{Computed: true, MarkdownDescription: "Whether moving onto this version from the previous supported version crosses a major version boundary."},
+						"breaking_change_count": schema.Int64Attribute{Computed: true, MarkdownDescription: "Number of breaking changes recorded for this version."},
+					},
+				},
+			},
 		},
 	}
 }
@@ -56,7 +77,18 @@ func (d *clusterVersionsDataSource) Read(ctx context.Context, req datasource.Rea
 		resp.Diagnostics.AddError("Unable to list cluster versions", err.Error())
 		return
 	}
-	cfg.Versions = sliceToStringList(ctx, versions, &resp.Diagnostics)
+	names := make([]string, 0, len(versions))
+	cfg.VersionDetails = nil
+	for _, v := range versions {
+		names = append(names, v.Version)
+		cfg.VersionDetails = append(cfg.VersionDetails, clusterTypeVersionModel{
+			Version:             types.StringValue(v.Version),
+			Active:              types.BoolValue(v.Active),
+			IsMajorChange:       types.BoolValue(v.IsMajorChange),
+			BreakingChangeCount: types.Int64Value(v.BreakingChangeCount),
+		})
+	}
+	cfg.Versions = sliceToStringList(ctx, names, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &cfg)...)
 }
 
