@@ -56,6 +56,27 @@ func TestAccSmokeClusterFeatures(t *testing.T) {
 	})
 }
 
+// TestAccSmokeClusterVersions also guards the shape of the cluster-type
+// versions payload, which changed from bare strings to structured objects.
+func TestAccSmokeClusterVersions(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `data "skycloak_cluster_versions" "keycloak" { type = "keycloak" }`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.skycloak_cluster_versions.keycloak", "versions.#"),
+					resource.TestCheckResourceAttrSet("data.skycloak_cluster_versions.keycloak", "version_details.#"),
+					resource.TestCheckResourceAttrSet("data.skycloak_cluster_versions.keycloak", "version_details.0.version"),
+					resource.TestCheckResourceAttrSet("data.skycloak_cluster_versions.keycloak", "version_details.0.active"),
+					resource.TestCheckResourceAttrSet("data.skycloak_cluster_versions.keycloak", "version_details.0.breaking_change_count"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccSmokeWebhookEventTypes(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },

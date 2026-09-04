@@ -17,6 +17,7 @@ tags:
   - name: Realms
   - name: Realm Users
   - name: Realm Roles
+  - name: Client Roles
   - name: Realm Groups
   - name: Applications
   - name: Identity Providers
@@ -316,6 +317,136 @@ paths:
         - Cluster Types
       security:
         - ApiKeyAuth: []
+  /cluster-types/{cluster_type}/upgrade-preview:
+    get:
+      operationId: getClusterTypeUpgradePreview
+      summary: Preview the breaking changes between two versions
+      description: Returns the breaking changes recorded between `from` (exclusive) and `to` (inclusive) for the given cluster type. Both query parameters are required and must be version numbers such as `26.4.0`; a missing or malformed one returns `400`.
+      parameters:
+        - name: cluster_type
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterType'
+        - name: from
+          in: query
+          required: false
+          description: Version the upgrade starts from, exclusive. Required.
+          schema:
+            type: string
+          explode: false
+        - name: to
+          in: query
+          required: false
+          description: Version the upgrade ends at, inclusive. Required.
+          schema:
+            type: string
+          explode: false
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClusterVersionBreakingChange'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Types
+      security:
+        - ApiKeyAuth: []
   /cluster-types/{cluster_type}/versions:
     get:
       operationId: getClusterTypeVersions
@@ -336,9 +467,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: string
-                  x-oapi-codegen-extra-tags:
-                    validate: omitnil,max=500
+                  $ref: '#/components/schemas/ClusterTypeVersionInfo'
         '401':
           description: Access is unauthorized.
           content:
@@ -5366,7 +5495,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Realm'
+                $ref: '#/components/schemas/CreatedRealm'
         '401':
           description: Access is unauthorized.
           content:
@@ -7439,6 +7568,667 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - applications:read
+  /clusters/{cluster_id}/realms/{realm_name}/clients/{client_id}/roles:
+    get:
+      operationId: listClientRoles
+      summary: List client roles
+      description: |-
+        Returns the roles defined on the specified client.
+
+        Required scope: `client-roles:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: realm_name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmName'
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmClientRef'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClientRole'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Client Roles
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - client-roles:read
+    post:
+      operationId: createClientRole
+      summary: Create a client role
+      description: |-
+        Creates a new role on the specified client.
+
+        Required scope: `client-roles:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: realm_name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmName'
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmClientRef'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientRole'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Client Roles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClientRoleRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - client-roles:write
+  /clusters/{cluster_id}/realms/{realm_name}/clients/{client_id}/roles/{role_name}:
+    get:
+      operationId: getClientRole
+      summary: Get a client role
+      description: |-
+        Returns a single role defined on the specified client.
+
+        Required scope: `client-roles:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: realm_name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmName'
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmClientRef'
+        - name: role_name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmRoleName'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientRole'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Client Roles
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - client-roles:read
+    patch:
+      operationId: updateClientRole
+      summary: Update a client role
+      description: |-
+        Updates the role's name or description. The role stays on the same client, and renaming it does not affect existing assignments.
+
+        Required scope: `client-roles:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: realm_name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmName'
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmClientRef'
+        - name: role_name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmRoleName'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientRole'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Client Roles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClientRoleRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - client-roles:write
+    delete:
+      operationId: deleteClientRole
+      summary: Delete a client role
+      description: |-
+        Deletes the role from the client and removes all its user and group assignments.
+
+        Required scope: `client-roles:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: realm_name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmName'
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmClientRef'
+        - name: role_name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RealmRoleName'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '204':
+          description: There is no content to send for this request, but the headers may be useful.
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Client Roles
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - client-roles:write
   /clusters/{cluster_id}/realms/{realm_name}/groups:
     get:
       operationId: listRealmGroups
@@ -14152,20 +14942,20 @@ paths:
                   format: binary
                   description: Keycloak-compatible theme archive. Content type must be `application/zip` (ZIP) or `application/java-archive` (Keycloakify JAR).
                 theme_types:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/ThemeType'
-                  description: Subset of theme types to deploy from the package. Omit to deploy all detected types.
+                  type: string
                   x-oapi-codegen-extra-tags:
-                    validate: omitnil,min=1,unique,dive,oneof=account admin email login
+                    validate: omitnil,max=200
+                  description: |-
+                    Comma-separated subset of theme types to deploy from the package (e.g. `login,account`).
+                    Omit to deploy all detected types. Sent as a single plain-text multipart field, not JSON -
+                    oapi-codegen would otherwise infer `application/json` encoding for an array-typed part,
+                    which does not match how this field is actually written and read.
               required:
                 - name
                 - theme_file
             encoding:
               theme_file:
                 contentType: application/zip, application/java-archive
-              theme_types:
-                contentType: application/json
       security:
         - ApiKeyAuth: []
       x-scopes:
@@ -18407,6 +19197,46 @@ components:
           type: integer
           format: int64
           description: Mean time to solve a challenge, in milliseconds.
+    ClientRole:
+      type: object
+      required:
+        - name
+        - client_id
+        - client_uuid
+      properties:
+        id:
+          type: string
+          description: Keycloak identifier of the role.
+          example: 9a1f0f0e-1b2c-4d3e-8f5a-6b7c8d9e0f11
+        name:
+          allOf:
+            - $ref: '#/components/schemas/RealmRoleName'
+          example: invoices-read
+        description:
+          type: string
+          nullable: true
+          description: Human-friendly role description, when available.
+          example: Read invoices
+        composite:
+          type: boolean
+          description: Whether this role is composed from other roles.
+          example: false
+        client_id:
+          type: string
+          description: OAuth `client_id` of the client the role belongs to.
+          example: storefront
+        client_uuid:
+          type: string
+          description: Internal Keycloak UUID of the client the role belongs to.
+          example: 3f4a1c2e-5b6d-4e7f-8a9b-0c1d2e3f4a5b
+      description: Public representation of a role defined on a single client.
+      example:
+        id: 9a1f0f0e-1b2c-4d3e-8f5a-6b7c8d9e0f11
+        name: invoices-read
+        description: Read invoices
+        composite: false
+        client_id: storefront
+        client_uuid: 3f4a1c2e-5b6d-4e7f-8a9b-0c1d2e3f4a5b
     ClientStats:
       type: object
       required:
@@ -18663,7 +19493,7 @@ components:
           description: Human-readable region name.
         available:
           type: boolean
-          description: Whether this region is globally available and accessible to the workspace.
+          description: Whether the workspace can create a cluster in this region. Regions the workspace cannot use are still listed, with this field set to false.
       description: Metadata about a supported deployment region.
     ClusterLog:
       type: object
@@ -18850,6 +19680,29 @@ components:
           type: boolean
           description: Whether the workspace has access to provision clusters of this type.
       description: Metadata about a supported cluster type.
+    ClusterTypeVersionInfo:
+      type: object
+      required:
+        - version
+        - active
+        - is_major_change
+        - breaking_change_count
+      properties:
+        version:
+          allOf:
+            - $ref: '#/components/schemas/KeycloakVersion'
+          description: The version number.
+        active:
+          type: boolean
+          description: Whether the version is currently offered for new clusters and upgrades. `false` means it is still recognised, for example by a cluster already running it, but is no longer offered.
+        is_major_change:
+          type: boolean
+          description: Whether moving onto this version from the previous supported version crosses a major version boundary.
+        breaking_change_count:
+          type: integer
+          format: int32
+          description: Number of breaking changes recorded for this version.
+      description: A supported version of a cluster type, with the detail needed to judge the upgrade step onto it.
     ClusterUpgrade:
       type: object
       required:
@@ -18899,6 +19752,8 @@ components:
       required:
         - version
         - required
+        - is_major_change
+        - breaking_change_count
       properties:
         version:
           allOf:
@@ -18907,7 +19762,36 @@ components:
         required:
           type: boolean
           description: Whether this version must be visited as an intermediate step. `false` only for the cluster's current version.
+        is_major_change:
+          type: boolean
+          description: Whether this step crosses a major version boundary from the cluster's current version. Auto-upgrade never applies a major step on its own.
+        breaking_change_count:
+          type: integer
+          format: int32
+          description: Number of breaking changes recorded for this version. Auto-upgrade never applies a version with a recorded breaking change on its own.
       description: A single step in the recommended upgrade path to a target version.
+    ClusterVersionBreakingChange:
+      type: object
+      required:
+        - title
+        - summary
+        - severity
+        - action_required
+      properties:
+        title:
+          type: string
+          description: Title of the change, as published in the migration guide.
+        summary:
+          type: string
+          description: Plain-language summary of what changes.
+        severity:
+          type: string
+          description: 'How disruptive the change is: `breaking`, `config-change` or `deprecation`.'
+        action_required:
+          type: string
+          nullable: true
+          description: Concrete steps to take before upgrading, or `null` when none are recorded.
+      description: A breaking change recorded for a version of a cluster type, taken from the product's own migration guide.
     CreateApplicationRequest:
       type: object
       required:
@@ -18965,6 +19849,23 @@ components:
             - $ref: '#/components/schemas/SAMLConfiguration'
           description: SAML configuration. Required when `protocol` is `saml`.
       description: Request body for creating a new application.
+    CreateClientRoleRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          allOf:
+            - $ref: '#/components/schemas/RealmRoleName'
+          example: invoices-read
+        description:
+          type: string
+          maxLength: 255
+          example: Read invoices
+      description: Request body for creating a client role.
+      example:
+        name: invoices-read
+        description: Read invoices
     CreateClusterRequest:
       type: object
       required:
@@ -19199,6 +20100,15 @@ components:
             - $ref: '#/components/schemas/RealmDisplayName'
           description: Human-friendly name for the realm. Defaults to `name` when omitted.
           example: Customer Portal
+        apply_default_branding:
+          type: boolean
+          description: |-
+            Whether to apply Skycloak's default login branding to the new realm. Defaults to `true`
+            when omitted, so the realm serves the Skycloak look instead of the stock Keycloak login
+            page. Set to `false` to leave the realm's themes untouched. Branding can always be
+            applied or reset later from the realm's Branding page.
+          example: true
+          default: true
       description: Request body for creating a realm. If `display_name` is omitted, the realm name is used.
       example:
         name: customer-portal
@@ -19333,6 +20243,66 @@ components:
           $ref: '#/components/schemas/RealmId'
         authorization_header:
           $ref: '#/components/schemas/WebhookAuthorizationHeader'
+    CreatedRealm:
+      type: object
+      required:
+        - id
+        - name
+        - display_name
+        - enabled
+        - ssl_required
+        - registration_allowed
+        - registration_email_as_username
+        - login_with_email_allowed
+        - duplicate_emails_allowed
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/RealmId'
+          example: 123e4567-e89b-12d3-a456-426614174000
+        name:
+          allOf:
+            - $ref: '#/components/schemas/RealmName'
+          example: customer-portal
+        display_name:
+          allOf:
+            - $ref: '#/components/schemas/RealmDisplayName'
+          example: Customer Portal
+        enabled:
+          type: boolean
+          description: Whether users can sign in to this realm.
+          example: true
+        ssl_required:
+          $ref: '#/components/schemas/RealmSslRequired'
+        registration_allowed:
+          type: boolean
+          description: Whether self-registration is open to anyone.
+          example: false
+        registration_email_as_username:
+          type: boolean
+          description: Whether email addresses are used as usernames during registration.
+          example: false
+        login_with_email_allowed:
+          type: boolean
+          description: Whether users can sign in with their email address instead of username.
+          example: true
+        duplicate_emails_allowed:
+          type: boolean
+          description: Whether multiple accounts may share the same email address.
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          description: Time when the realm was created, when available.
+        default_branding_applied:
+          type: boolean
+          description: |-
+            Whether Skycloak's default login branding was applied to the realm as part of this
+            create. `false` when `apply_default_branding` was set to `false`, and also when the
+            branding step failed: the realm is created either way, and branding can be applied
+            from the realm's Branding page.
+          example: true
+      description: Realm details returned when a realm is created.
     CustomDomain:
       type: string
       minLength: 3
@@ -19639,7 +20609,10 @@ components:
           description: Keycloak user UUID. Present when `category` is `user`.
         username:
           type: string
-          description: Present when `category` is `user`.
+          description: |-
+            On a user event, the user the event is about. On an admin event, the
+            administrator who performed the action, when the audit pipeline resolved a
+            name for them.
         session_id:
           type: string
           description: OAuth2 session identifier. Present when `category` is `user`.
@@ -19674,6 +20647,20 @@ components:
           type: string
           description: Full resource path. Present when `category` is `admin`.
           example: /users/550e8400-e29b-41d4-a716-446655440000
+        auth_user_id:
+          type: string
+          format: uuid
+          description: |-
+            Keycloak UUID of the administrator who performed the action. Present when
+            `category` is `admin` and Keycloak recorded an authenticated actor.
+
+            Distinct from `user_id`, which on a user event is the subject of the event.
+            On an admin event the subject is identified by `resource_path` instead, so
+            the actor needs a field of its own.
+
+            A UUID. The actor's name, when the audit pipeline resolved one, is on
+            `username`; a federated administrator has no UUID id, so `username` may be
+            present while this is absent.
       description: 'A Keycloak event recorded for a cluster. Fields present depend on `category`: user-event fields are absent for admin events and vice versa.'
     EventCategory:
       type: string
@@ -20250,6 +21237,7 @@ components:
         - none
         - bearer
         - basic
+        - shared_key
     HexColor:
       type: string
       description: CSS hex color code.
@@ -21014,6 +22002,12 @@ components:
         registration_email_as_username: false
         login_with_email_allowed: true
         duplicate_emails_allowed: false
+    RealmClientRef:
+      type: string
+      minLength: 1
+      maxLength: 255
+      description: 'Reference to a client in the realm: either its OAuth `client_id` or its internal Keycloak UUID. Both forms resolve to the same client.'
+      example: storefront
     RealmDisplayName:
       type: string
       minLength: 1
@@ -21658,6 +22652,18 @@ components:
             validate: omitnil,max=500
           format: password
           description: Required when `auth_type` is `basic`. Write-only.
+        workspace_id:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 255
+          description: Azure Log Analytics workspace ID. Required when `auth_type` is `shared_key`.
+        shared_key:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          format: password
+          description: Base64-encoded Azure Log Analytics primary or secondary key. Required when `auth_type` is `shared_key`. Write-only.
     SIEMHTTPDestinationConfig:
       type: object
       required:
@@ -21680,6 +22686,11 @@ components:
               validate: omitnil,max=500
         has_auth_credentials:
           type: boolean
+        workspace_id:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: Azure Log Analytics workspace ID. Present when `auth_type` is `shared_key`.
     SIEMHealthStatus:
       type: string
       enum:
@@ -22521,6 +23532,20 @@ components:
           type: string
           description: Admin URL.
       description: Partial update request. All fields are optional; only provided fields are updated.
+    UpdateClientRoleRequest:
+      type: object
+      properties:
+        name:
+          allOf:
+            - $ref: '#/components/schemas/RealmRoleName'
+          example: invoices-reader
+        description:
+          type: string
+          maxLength: 255
+          example: Read and export invoices
+      description: Patch request for updating a client role. At least one field should be provided.
+      example:
+        description: Read and export invoices
     UpdateClusterRequest:
       type: object
       properties:

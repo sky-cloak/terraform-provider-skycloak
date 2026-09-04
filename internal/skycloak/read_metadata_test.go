@@ -12,7 +12,9 @@ func TestReadMetadataEndpoints(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/cluster-types/keycloak/versions":
-			writeJSON(w, 200, `["26.1","26.0","25.0"]`)
+			writeJSON(w, 200, `[{"version":"26.1","active":true,"is_major_change":false,"breaking_change_count":0},`+
+				`{"version":"26.0","active":true,"is_major_change":false,"breaking_change_count":2},`+
+				`{"version":"25.0","active":false,"is_major_change":true,"breaking_change_count":5}]`)
 		case "/identity-provider-templates":
 			writeJSON(w, 200, `[{"id":"google","name":"Google","description":"Google SSO","type":"oidc"}]`)
 		case "/clusters/" + cuid + "/domains/" + dom + "/routes":
@@ -28,7 +30,9 @@ func TestReadMetadataEndpoints(t *testing.T) {
 	defer srv.Close()
 
 	c := newTestClient(srv.URL)
-	if vs, err := c.ClusterTypeVersions(context.Background(), "keycloak"); err != nil || len(vs) != 3 {
+	if vs, err := c.ClusterTypeVersions(context.Background(), "keycloak"); err != nil || len(vs) != 3 ||
+		vs[0].Version != "26.1" || !vs[0].Active ||
+		vs[2].Active || !vs[2].IsMajorChange || vs[2].BreakingChangeCount != 5 {
 		t.Fatalf("ClusterTypeVersions: %+v, %v", vs, err)
 	}
 	if ts, err := c.ListIdentityProviderTemplates(context.Background()); err != nil || ts[0].Type != "oidc" {

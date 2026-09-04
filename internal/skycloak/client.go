@@ -2776,8 +2776,20 @@ func (c *Client) ListApplicationSessions(ctx context.Context, clusterID, realm, 
 
 // ---- Read-only metadata (versions, templates, builds, upgrades, routes) ----
 
-// ClusterTypeVersions returns the Keycloak versions available for a cluster type.
-func (c *Client) ClusterTypeVersions(ctx context.Context, clusterType string) ([]string, error) {
+// ClusterTypeVersion is a version recognised for a cluster type, with the
+// detail needed to judge the upgrade step onto it.
+type ClusterTypeVersion struct {
+	Version             string
+	Active              bool
+	IsMajorChange       bool
+	BreakingChangeCount int64
+}
+
+// ClusterTypeVersions returns the Keycloak versions recognised for a cluster
+// type. A version with Active false is still recognised, for example by a
+// cluster already running it, but is no longer offered for new clusters or
+// upgrades.
+func (c *Client) ClusterTypeVersions(ctx context.Context, clusterType string) ([]ClusterTypeVersion, error) {
 	resp, err := c.gen.GetClusterTypeVersionsWithResponse(ctx, apiclient.ClusterType(clusterType), &apiclient.GetClusterTypeVersionsParams{APIVersion: c.ver()})
 	if err != nil {
 		return nil, err
@@ -2785,7 +2797,16 @@ func (c *Client) ClusterTypeVersions(ctx context.Context, clusterType string) ([
 	if resp.JSON200 == nil {
 		return nil, statusError(resp.HTTPResponse, resp.Body)
 	}
-	return *resp.JSON200, nil
+	out := make([]ClusterTypeVersion, 0, len(*resp.JSON200))
+	for _, v := range *resp.JSON200 {
+		out = append(out, ClusterTypeVersion{
+			Version:             string(v.Version),
+			Active:              v.Active,
+			IsMajorChange:       v.IsMajorChange,
+			BreakingChangeCount: int64(v.BreakingChangeCount),
+		})
+	}
+	return out, nil
 }
 
 // ProviderTemplate is a pre-configured identity-provider template.

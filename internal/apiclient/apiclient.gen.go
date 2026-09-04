@@ -192,9 +192,10 @@ const (
 
 // Defines values for HTTPAuthType.
 const (
-	HTTPAuthTypeBasic  HTTPAuthType = "basic"
-	HTTPAuthTypeBearer HTTPAuthType = "bearer"
-	HTTPAuthTypeNone   HTTPAuthType = "none"
+	HTTPAuthTypeBasic     HTTPAuthType = "basic"
+	HTTPAuthTypeBearer    HTTPAuthType = "bearer"
+	HTTPAuthTypeNone      HTTPAuthType = "none"
+	HTTPAuthTypeSharedKey HTTPAuthType = "shared_key"
 )
 
 // Defines values for LanguageSelectionMode.
@@ -719,6 +720,25 @@ type CAPTCHADomainsInfo struct {
 	MaxAllowed int `json:"max_allowed"`
 }
 
+// ClientRole Public representation of a role defined on a single client.
+type ClientRole struct {
+	// ClientId OAuth `client_id` of the client the role belongs to.
+	ClientId string `json:"client_id"`
+
+	// ClientUuid Internal Keycloak UUID of the client the role belongs to.
+	ClientUuid string `json:"client_uuid"`
+
+	// Composite Whether this role is composed from other roles.
+	Composite *bool `json:"composite,omitempty"`
+
+	// Description Human-friendly role description, when available.
+	Description nullable.Nullable[string] `json:"description,omitempty"`
+
+	// Id Keycloak identifier of the role.
+	Id   *string       `json:"id,omitempty"`
+	Name RealmRoleName `json:"name"`
+}
+
 // ClientStats Activity summary for a single service-account client.
 type ClientStats struct {
 	ClientId   string `json:"client_id"`
@@ -841,7 +861,7 @@ type ClusterLocation string
 
 // ClusterLocationInfo Metadata about a supported deployment region.
 type ClusterLocationInfo struct {
-	// Available Whether this region is globally available and accessible to the workspace.
+	// Available Whether the workspace can create a cluster in this region. Regions the workspace cannot use are still listed, with this field set to false.
 	Available bool `json:"available"`
 
 	// Location Region where the cluster is hosted.
@@ -953,6 +973,21 @@ type ClusterTypeInfo struct {
 	Type ClusterType `json:"type"`
 }
 
+// ClusterTypeVersionInfo A supported version of a cluster type, with the detail needed to judge the upgrade step onto it.
+type ClusterTypeVersionInfo struct {
+	// Active Whether the version is currently offered for new clusters and upgrades. `false` means it is still recognised, for example by a cluster already running it, but is no longer offered.
+	Active bool `json:"active"`
+
+	// BreakingChangeCount Number of breaking changes recorded for this version.
+	BreakingChangeCount int32 `json:"breaking_change_count"`
+
+	// IsMajorChange Whether moving onto this version from the previous supported version crosses a major version boundary.
+	IsMajorChange bool `json:"is_major_change"`
+
+	// Version The version number.
+	Version KeycloakVersion `json:"version"`
+}
+
 // ClusterUpgrade A historical or in-progress cluster upgrade event.
 type ClusterUpgrade struct {
 	// CompletedAt When the upgrade completed or was cancelled. Absent if the upgrade is still in progress.
@@ -982,11 +1017,32 @@ type ClusterUpgradeCancellation struct {
 
 // ClusterUpgradePathItem A single step in the recommended upgrade path to a target version.
 type ClusterUpgradePathItem struct {
+	// BreakingChangeCount Number of breaking changes recorded for this version. Auto-upgrade never applies a version with a recorded breaking change on its own.
+	BreakingChangeCount int32 `json:"breaking_change_count"`
+
+	// IsMajorChange Whether this step crosses a major version boundary from the cluster's current version. Auto-upgrade never applies a major step on its own.
+	IsMajorChange bool `json:"is_major_change"`
+
 	// Required Whether this version must be visited as an intermediate step. `false` only for the cluster's current version.
 	Required bool `json:"required"`
 
 	// Version Version at this step in the upgrade path.
 	Version KeycloakVersion `json:"version"`
+}
+
+// ClusterVersionBreakingChange A breaking change recorded for a version of a cluster type, taken from the product's own migration guide.
+type ClusterVersionBreakingChange struct {
+	// ActionRequired Concrete steps to take before upgrading, or `null` when none are recorded.
+	ActionRequired nullable.Nullable[string] `json:"action_required"`
+
+	// Severity How disruptive the change is: `breaking`, `config-change` or `deprecation`.
+	Severity string `json:"severity"`
+
+	// Summary Plain-language summary of what changes.
+	Summary string `json:"summary"`
+
+	// Title Title of the change, as published in the migration guide.
+	Title string `json:"title"`
 }
 
 // CreateApplicationRequest Request body for creating a new application.
@@ -1023,6 +1079,12 @@ type CreateApplicationRequest struct {
 
 	// Type OAuth 2.0 client type. Defaults to `confidential`.
 	Type *ApplicationType `json:"type,omitempty"`
+}
+
+// CreateClientRoleRequest Request body for creating a client role.
+type CreateClientRoleRequest struct {
+	Description *string       `json:"description,omitempty"`
+	Name        RealmRoleName `json:"name"`
 }
 
 // CreateClusterRequest Request body for creating a new cluster. Admin console SSO integration is enabled by default.
@@ -1146,6 +1208,12 @@ type CreateRealmImportRequest struct {
 
 // CreateRealmRequest Request body for creating a realm. If `display_name` is omitted, the realm name is used.
 type CreateRealmRequest struct {
+	// ApplyDefaultBranding Whether to apply Skycloak's default login branding to the new realm. Defaults to `true`
+	// when omitted, so the realm serves the Skycloak look instead of the stock Keycloak login
+	// page. Set to `false` to leave the realm's themes untouched. Branding can always be
+	// applied or reset later from the realm's Branding page.
+	ApplyDefaultBranding *bool `json:"apply_default_branding,omitempty"`
+
 	// DisplayName Human-friendly name for the realm. Defaults to `name` when omitted.
 	DisplayName *RealmDisplayName `json:"display_name,omitempty"`
 	Name        RealmName         `json:"name"`
@@ -1205,6 +1273,39 @@ type CreateWebhookSubscriptionRequest struct {
 	SigningSecret WebhookSigningSecret `json:"signing_secret"`
 	Source        WebhookSource        `json:"source"`
 	Url           WebhookUrl           `json:"url" validate:"url"`
+}
+
+// CreatedRealm Realm details returned when a realm is created.
+type CreatedRealm struct {
+	// CreatedAt Time when the realm was created, when available.
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+
+	// DefaultBrandingApplied Whether Skycloak's default login branding was applied to the realm as part of this
+	// create. `false` when `apply_default_branding` was set to `false`, and also when the
+	// branding step failed: the realm is created either way, and branding can be applied
+	// from the realm's Branding page.
+	DefaultBrandingApplied *bool            `json:"default_branding_applied,omitempty"`
+	DisplayName            RealmDisplayName `json:"display_name"`
+
+	// DuplicateEmailsAllowed Whether multiple accounts may share the same email address.
+	DuplicateEmailsAllowed bool `json:"duplicate_emails_allowed"`
+
+	// Enabled Whether users can sign in to this realm.
+	Enabled bool    `json:"enabled"`
+	Id      RealmId `json:"id"`
+
+	// LoginWithEmailAllowed Whether users can sign in with their email address instead of username.
+	LoginWithEmailAllowed bool      `json:"login_with_email_allowed"`
+	Name                  RealmName `json:"name"`
+
+	// RegistrationAllowed Whether self-registration is open to anyone.
+	RegistrationAllowed bool `json:"registration_allowed"`
+
+	// RegistrationEmailAsUsername Whether email addresses are used as usernames during registration.
+	RegistrationEmailAsUsername bool `json:"registration_email_as_username"`
+
+	// SslRequired Keycloak SSL requirement. Maps directly to Keycloak's `sslRequired` realm setting.
+	SslRequired RealmSslRequired `json:"ssl_required"`
 }
 
 // CustomDomain A fully-qualified domain name.
@@ -1355,6 +1456,18 @@ type Event struct {
 	// AuthMethod Authentication method. Present when `category` is `user`.
 	AuthMethod *string `json:"auth_method,omitempty"`
 
+	// AuthUserId Keycloak UUID of the administrator who performed the action. Present when
+	// `category` is `admin` and Keycloak recorded an authenticated actor.
+	//
+	// Distinct from `user_id`, which on a user event is the subject of the event.
+	// On an admin event the subject is identified by `resource_path` instead, so
+	// the actor needs a field of its own.
+	//
+	// A UUID. The actor's name, when the audit pipeline resolved one, is on
+	// `username`; a federated administrator has no UUID id, so `username` may be
+	// present while this is absent.
+	AuthUserId *openapi_types.UUID `json:"auth_user_id,omitempty"`
+
 	// Category Keycloak event category.
 	Category EventCategory `json:"category"`
 
@@ -1401,7 +1514,9 @@ type Event struct {
 	// UserId Keycloak user UUID. Present when `category` is `user`.
 	UserId *openapi_types.UUID `json:"user_id,omitempty"`
 
-	// Username Present when `category` is `user`.
+	// Username On a user event, the user the event is about. On an admin event, the
+	// administrator who performed the action, when the audit pipeline resolved a
+	// name for them.
 	Username *string `json:"username,omitempty"`
 }
 
@@ -2010,6 +2125,9 @@ type Realm struct {
 	SslRequired RealmSslRequired `json:"ssl_required"`
 }
 
+// RealmClientRef Reference to a client in the realm: either its OAuth `client_id` or its internal Keycloak UUID. Both forms resolve to the same client.
+type RealmClientRef = string
+
 // RealmDisplayName defines model for RealmDisplayName.
 type RealmDisplayName = string
 
@@ -2316,10 +2434,16 @@ type SIEMHTTPConfig struct {
 
 	// Password Required when `auth_type` is `basic`. Write-only.
 	Password *string `json:"password,omitempty" validate:"omitnil,max=500"`
-	Url      string  `json:"url" validate:"url"`
+
+	// SharedKey Base64-encoded Azure Log Analytics primary or secondary key. Required when `auth_type` is `shared_key`. Write-only.
+	SharedKey *string `json:"shared_key,omitempty" validate:"omitnil,max=500"`
+	Url       string  `json:"url" validate:"url"`
 
 	// Username Required when `auth_type` is `basic`. Write-only.
 	Username *string `json:"username,omitempty" validate:"omitnil,max=500"`
+
+	// WorkspaceId Azure Log Analytics workspace ID. Required when `auth_type` is `shared_key`.
+	WorkspaceId *string `json:"workspace_id,omitempty" validate:"omitnil,max=500"`
 }
 
 // SIEMHTTPDestinationConfig defines model for SIEMHTTPDestinationConfig.
@@ -2328,6 +2452,9 @@ type SIEMHTTPDestinationConfig struct {
 	HasAuthCredentials bool         `json:"has_auth_credentials"`
 	HeaderNames        []string     `json:"header_names"`
 	Url                string       `json:"url" validate:"omitnil,max=500"`
+
+	// WorkspaceId Azure Log Analytics workspace ID. Present when `auth_type` is `shared_key`.
+	WorkspaceId *string `json:"workspace_id,omitempty" validate:"omitnil,max=500"`
 }
 
 // SIEMHealthStatus defines model for SIEMHealthStatus.
@@ -2684,6 +2811,12 @@ type UpdateApplicationRequest struct {
 
 	// WebOrigins Browser origins allowed to call this application (CORS).
 	WebOrigins *[]string `json:"web_origins,omitempty"`
+}
+
+// UpdateClientRoleRequest Patch request for updating a client role. At least one field should be provided.
+type UpdateClientRoleRequest struct {
+	Description *string        `json:"description,omitempty"`
+	Name        *RealmRoleName `json:"name,omitempty"`
 }
 
 // UpdateClusterRequest Partial update request. At least one field must be provided. `location` and `type` cannot be changed after creation.
@@ -3087,6 +3220,16 @@ type ListClusterLocationsParams struct {
 
 // ListClusterTypesParams defines parameters for ListClusterTypes.
 type ListClusterTypesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetClusterTypeUpgradePreviewParams defines parameters for GetClusterTypeUpgradePreview.
+type GetClusterTypeUpgradePreviewParams struct {
+	// From Version the upgrade starts from, exclusive. Required.
+	From *string `form:"from,omitempty" json:"from,omitempty"`
+
+	// To Version the upgrade ends at, inclusive. Required.
+	To         *string          `form:"to,omitempty" json:"to,omitempty"`
 	APIVersion CommonParameters `json:"API-Version"`
 }
 
@@ -3514,6 +3657,31 @@ type ListApplicationSessionsParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
 }
 
+// ListClientRolesParams defines parameters for ListClientRoles.
+type ListClientRolesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// CreateClientRoleParams defines parameters for CreateClientRole.
+type CreateClientRoleParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// DeleteClientRoleParams defines parameters for DeleteClientRole.
+type DeleteClientRoleParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetClientRoleParams defines parameters for GetClientRole.
+type GetClientRoleParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateClientRoleParams defines parameters for UpdateClientRole.
+type UpdateClientRoleParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
 // ListRealmGroupsParams defines parameters for ListRealmGroups.
 type ListRealmGroupsParams struct {
 	// IncludeSubgroups When true, each group includes its direct child groups in `subgroups`.
@@ -3810,8 +3978,11 @@ type UploadThemeMultipartBody struct {
 	// ThemeFile Keycloak-compatible theme archive. Content type must be `application/zip` (ZIP) or `application/java-archive` (Keycloakify JAR).
 	ThemeFile openapi_types.File `json:"theme_file"`
 
-	// ThemeTypes Subset of theme types to deploy from the package. Omit to deploy all detected types.
-	ThemeTypes *[]ThemeType `json:"theme_types,omitempty" validate:"omitnil,min=1,unique,dive,oneof=account admin email login"`
+	// ThemeTypes Comma-separated subset of theme types to deploy from the package (e.g. `login,account`).
+	// Omit to deploy all detected types. Sent as a single plain-text multipart field, not JSON -
+	// oapi-codegen would otherwise infer `application/json` encoding for an array-typed part,
+	// which does not match how this field is actually written and read.
+	ThemeTypes *string `json:"theme_types,omitempty" validate:"omitnil,max=200"`
 
 	// Version Version label for the theme, e.g. `v2.4` or `2026-08-12`. Free text, up to 50 characters; it is shown in the library and never interpreted.
 	Version *string `json:"version,omitempty" validate:"omitnil,max=50"`
@@ -4023,6 +4194,12 @@ type UpdateApplicationJSONRequestBody = UpdateApplicationRequest
 // AssignApplicationRoleJSONRequestBody defines body for AssignApplicationRole for application/json ContentType.
 type AssignApplicationRoleJSONRequestBody = AssignRoleRequest
 
+// CreateClientRoleJSONRequestBody defines body for CreateClientRole for application/json ContentType.
+type CreateClientRoleJSONRequestBody = CreateClientRoleRequest
+
+// UpdateClientRoleJSONRequestBody defines body for UpdateClientRole for application/json ContentType.
+type UpdateClientRoleJSONRequestBody = UpdateClientRoleRequest
+
 // CreateRealmGroupJSONRequestBody defines body for CreateRealmGroup for application/json ContentType.
 type CreateRealmGroupJSONRequestBody = CreateRealmGroupRequest
 
@@ -4197,6 +4374,9 @@ type ClientInterface interface {
 
 	// ListClusterTypes request
 	ListClusterTypes(ctx context.Context, params *ListClusterTypesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClusterTypeUpgradePreview request
+	GetClusterTypeUpgradePreview(ctx context.Context, clusterType ClusterType, params *GetClusterTypeUpgradePreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClusterTypeVersions request
 	GetClusterTypeVersions(ctx context.Context, clusterType ClusterType, params *GetClusterTypeVersionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -4384,6 +4564,25 @@ type ClientInterface interface {
 
 	// ListApplicationSessions request
 	ListApplicationSessions(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *ListApplicationSessionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListClientRoles request
+	ListClientRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *ListClientRolesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateClientRoleWithBody request with any body
+	CreateClientRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *CreateClientRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateClientRole(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *CreateClientRoleParams, body CreateClientRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteClientRole request
+	DeleteClientRole(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *DeleteClientRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClientRole request
+	GetClientRole(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *GetClientRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateClientRoleWithBody request with any body
+	UpdateClientRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *UpdateClientRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateClientRole(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *UpdateClientRoleParams, body UpdateClientRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListRealmGroups request
 	ListRealmGroups(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListRealmGroupsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -4712,6 +4911,18 @@ func (c *Client) ListClusterLocations(ctx context.Context, params *ListClusterLo
 
 func (c *Client) ListClusterTypes(ctx context.Context, params *ListClusterTypesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListClusterTypesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClusterTypeUpgradePreview(ctx context.Context, clusterType ClusterType, params *GetClusterTypeUpgradePreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterTypeUpgradePreviewRequest(c.Server, clusterType, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5516,6 +5727,90 @@ func (c *Client) RotateApplicationSecret(ctx context.Context, clusterId ClusterI
 
 func (c *Client) ListApplicationSessions(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *ListApplicationSessionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListApplicationSessionsRequest(c.Server, clusterId, realmName, clientId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListClientRoles(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *ListClientRolesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListClientRolesRequest(c.Server, clusterId, realmName, clientId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateClientRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *CreateClientRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateClientRoleRequestWithBody(c.Server, clusterId, realmName, clientId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateClientRole(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *CreateClientRoleParams, body CreateClientRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateClientRoleRequest(c.Server, clusterId, realmName, clientId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteClientRole(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *DeleteClientRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteClientRoleRequest(c.Server, clusterId, realmName, clientId, roleName, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClientRole(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *GetClientRoleParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClientRoleRequest(c.Server, clusterId, realmName, clientId, roleName, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClientRoleWithBody(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *UpdateClientRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClientRoleRequestWithBody(c.Server, clusterId, realmName, clientId, roleName, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClientRole(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *UpdateClientRoleParams, body UpdateClientRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClientRoleRequest(c.Server, clusterId, realmName, clientId, roleName, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -6931,6 +7226,91 @@ func NewListClusterTypesRequest(server string, params *ListClusterTypesParams) (
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetClusterTypeUpgradePreviewRequest generates requests for GetClusterTypeUpgradePreview
+func NewGetClusterTypeUpgradePreviewRequest(server string, clusterType ClusterType, params *GetClusterTypeUpgradePreviewParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_type", runtime.ParamLocationPath, clusterType)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/cluster-types/%s/upgrade-preview", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.From != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "from", runtime.ParamLocationQuery, *params.From); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.To != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "to", runtime.ParamLocationQuery, *params.To); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -10845,6 +11225,358 @@ func NewListApplicationSessionsRequest(server string, clusterId ClusterId, realm
 	if err != nil {
 		return nil, err
 	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewListClientRolesRequest generates requests for ListClientRoles
+func NewListClientRolesRequest(server string, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *ListClientRolesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "realm_name", runtime.ParamLocationPath, realmName)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "client_id", runtime.ParamLocationPath, clientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/realms/%s/clients/%s/roles", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewCreateClientRoleRequest calls the generic CreateClientRole builder with application/json body
+func NewCreateClientRoleRequest(server string, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *CreateClientRoleParams, body CreateClientRoleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateClientRoleRequestWithBody(server, clusterId, realmName, clientId, params, "application/json", bodyReader)
+}
+
+// NewCreateClientRoleRequestWithBody generates requests for CreateClientRole with any type of body
+func NewCreateClientRoleRequestWithBody(server string, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *CreateClientRoleParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "realm_name", runtime.ParamLocationPath, realmName)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "client_id", runtime.ParamLocationPath, clientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/realms/%s/clients/%s/roles", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewDeleteClientRoleRequest generates requests for DeleteClientRole
+func NewDeleteClientRoleRequest(server string, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *DeleteClientRoleParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "realm_name", runtime.ParamLocationPath, realmName)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "client_id", runtime.ParamLocationPath, clientId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithLocation("simple", false, "role_name", runtime.ParamLocationPath, roleName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/realms/%s/clients/%s/roles/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetClientRoleRequest generates requests for GetClientRole
+func NewGetClientRoleRequest(server string, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *GetClientRoleParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "realm_name", runtime.ParamLocationPath, realmName)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "client_id", runtime.ParamLocationPath, clientId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithLocation("simple", false, "role_name", runtime.ParamLocationPath, roleName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/realms/%s/clients/%s/roles/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewUpdateClientRoleRequest calls the generic UpdateClientRole builder with application/json body
+func NewUpdateClientRoleRequest(server string, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *UpdateClientRoleParams, body UpdateClientRoleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateClientRoleRequestWithBody(server, clusterId, realmName, clientId, roleName, params, "application/json", bodyReader)
+}
+
+// NewUpdateClientRoleRequestWithBody generates requests for UpdateClientRole with any type of body
+func NewUpdateClientRoleRequestWithBody(server string, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *UpdateClientRoleParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "realm_name", runtime.ParamLocationPath, realmName)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "client_id", runtime.ParamLocationPath, clientId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithLocation("simple", false, "role_name", runtime.ParamLocationPath, roleName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/realms/%s/clients/%s/roles/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	if params != nil {
 
@@ -15879,6 +16611,9 @@ type ClientWithResponsesInterface interface {
 	// ListClusterTypesWithResponse request
 	ListClusterTypesWithResponse(ctx context.Context, params *ListClusterTypesParams, reqEditors ...RequestEditorFn) (*ListClusterTypesResponse, error)
 
+	// GetClusterTypeUpgradePreviewWithResponse request
+	GetClusterTypeUpgradePreviewWithResponse(ctx context.Context, clusterType ClusterType, params *GetClusterTypeUpgradePreviewParams, reqEditors ...RequestEditorFn) (*GetClusterTypeUpgradePreviewResponse, error)
+
 	// GetClusterTypeVersionsWithResponse request
 	GetClusterTypeVersionsWithResponse(ctx context.Context, clusterType ClusterType, params *GetClusterTypeVersionsParams, reqEditors ...RequestEditorFn) (*GetClusterTypeVersionsResponse, error)
 
@@ -16065,6 +16800,25 @@ type ClientWithResponsesInterface interface {
 
 	// ListApplicationSessionsWithResponse request
 	ListApplicationSessionsWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId ApplicationClientId, params *ListApplicationSessionsParams, reqEditors ...RequestEditorFn) (*ListApplicationSessionsResponse, error)
+
+	// ListClientRolesWithResponse request
+	ListClientRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *ListClientRolesParams, reqEditors ...RequestEditorFn) (*ListClientRolesResponse, error)
+
+	// CreateClientRoleWithBodyWithResponse request with any body
+	CreateClientRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *CreateClientRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClientRoleResponse, error)
+
+	CreateClientRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *CreateClientRoleParams, body CreateClientRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClientRoleResponse, error)
+
+	// DeleteClientRoleWithResponse request
+	DeleteClientRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *DeleteClientRoleParams, reqEditors ...RequestEditorFn) (*DeleteClientRoleResponse, error)
+
+	// GetClientRoleWithResponse request
+	GetClientRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *GetClientRoleParams, reqEditors ...RequestEditorFn) (*GetClientRoleResponse, error)
+
+	// UpdateClientRoleWithBodyWithResponse request with any body
+	UpdateClientRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *UpdateClientRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClientRoleResponse, error)
+
+	UpdateClientRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *UpdateClientRoleParams, body UpdateClientRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClientRoleResponse, error)
 
 	// ListRealmGroupsWithResponse request
 	ListRealmGroupsWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, params *ListRealmGroupsParams, reqEditors ...RequestEditorFn) (*ListRealmGroupsResponse, error)
@@ -16445,10 +17199,39 @@ func (r ListClusterTypesResponse) StatusCode() int {
 	return 0
 }
 
+type GetClusterTypeUpgradePreviewResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *[]ClusterVersionBreakingChange
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterTypeUpgradePreviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterTypeUpgradePreviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetClusterTypeVersionsResponse struct {
 	Body                      []byte
 	HTTPResponse              *http.Response
-	JSON200                   *[]string
+	JSON200                   *[]ClusterTypeVersionInfo
 	ApplicationproblemJSON401 *ErrorBody
 	ApplicationproblemJSON404 *ErrorBody
 	ApplicationproblemJSON422 *ValidationErrorBody
@@ -17511,7 +18294,7 @@ func (r ListRealmsResponse) StatusCode() int {
 type CreateRealmResponse struct {
 	Body                      []byte
 	HTTPResponse              *http.Response
-	JSON201                   *Realm
+	JSON201                   *CreatedRealm
 	ApplicationproblemJSON401 *ErrorBody
 	ApplicationproblemJSON403 *ErrorBody
 	ApplicationproblemJSON404 *ErrorBody
@@ -17968,6 +18751,149 @@ func (r ListApplicationSessionsResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ListApplicationSessionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListClientRolesResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *[]ClientRole
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r ListClientRolesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListClientRolesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateClientRoleResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON201                   *ClientRole
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON409 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateClientRoleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateClientRoleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteClientRoleResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteClientRoleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteClientRoleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClientRoleResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *ClientRole
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClientRoleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClientRoleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateClientRoleResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *ClientRole
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON409 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateClientRoleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateClientRoleResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -20371,6 +21297,15 @@ func (c *ClientWithResponses) ListClusterTypesWithResponse(ctx context.Context, 
 	return ParseListClusterTypesResponse(rsp)
 }
 
+// GetClusterTypeUpgradePreviewWithResponse request returning *GetClusterTypeUpgradePreviewResponse
+func (c *ClientWithResponses) GetClusterTypeUpgradePreviewWithResponse(ctx context.Context, clusterType ClusterType, params *GetClusterTypeUpgradePreviewParams, reqEditors ...RequestEditorFn) (*GetClusterTypeUpgradePreviewResponse, error) {
+	rsp, err := c.GetClusterTypeUpgradePreview(ctx, clusterType, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterTypeUpgradePreviewResponse(rsp)
+}
+
 // GetClusterTypeVersionsWithResponse request returning *GetClusterTypeVersionsResponse
 func (c *ClientWithResponses) GetClusterTypeVersionsWithResponse(ctx context.Context, clusterType ClusterType, params *GetClusterTypeVersionsParams, reqEditors ...RequestEditorFn) (*GetClusterTypeVersionsResponse, error) {
 	rsp, err := c.GetClusterTypeVersions(ctx, clusterType, params, reqEditors...)
@@ -20958,6 +21893,67 @@ func (c *ClientWithResponses) ListApplicationSessionsWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseListApplicationSessionsResponse(rsp)
+}
+
+// ListClientRolesWithResponse request returning *ListClientRolesResponse
+func (c *ClientWithResponses) ListClientRolesWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *ListClientRolesParams, reqEditors ...RequestEditorFn) (*ListClientRolesResponse, error) {
+	rsp, err := c.ListClientRoles(ctx, clusterId, realmName, clientId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListClientRolesResponse(rsp)
+}
+
+// CreateClientRoleWithBodyWithResponse request with arbitrary body returning *CreateClientRoleResponse
+func (c *ClientWithResponses) CreateClientRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *CreateClientRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClientRoleResponse, error) {
+	rsp, err := c.CreateClientRoleWithBody(ctx, clusterId, realmName, clientId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateClientRoleResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateClientRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, params *CreateClientRoleParams, body CreateClientRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClientRoleResponse, error) {
+	rsp, err := c.CreateClientRole(ctx, clusterId, realmName, clientId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateClientRoleResponse(rsp)
+}
+
+// DeleteClientRoleWithResponse request returning *DeleteClientRoleResponse
+func (c *ClientWithResponses) DeleteClientRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *DeleteClientRoleParams, reqEditors ...RequestEditorFn) (*DeleteClientRoleResponse, error) {
+	rsp, err := c.DeleteClientRole(ctx, clusterId, realmName, clientId, roleName, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteClientRoleResponse(rsp)
+}
+
+// GetClientRoleWithResponse request returning *GetClientRoleResponse
+func (c *ClientWithResponses) GetClientRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *GetClientRoleParams, reqEditors ...RequestEditorFn) (*GetClientRoleResponse, error) {
+	rsp, err := c.GetClientRole(ctx, clusterId, realmName, clientId, roleName, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClientRoleResponse(rsp)
+}
+
+// UpdateClientRoleWithBodyWithResponse request with arbitrary body returning *UpdateClientRoleResponse
+func (c *ClientWithResponses) UpdateClientRoleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *UpdateClientRoleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClientRoleResponse, error) {
+	rsp, err := c.UpdateClientRoleWithBody(ctx, clusterId, realmName, clientId, roleName, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClientRoleResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateClientRoleWithResponse(ctx context.Context, clusterId ClusterId, realmName RealmName, clientId RealmClientRef, roleName RealmRoleName, params *UpdateClientRoleParams, body UpdateClientRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClientRoleResponse, error) {
+	rsp, err := c.UpdateClientRole(ctx, clusterId, realmName, clientId, roleName, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClientRoleResponse(rsp)
 }
 
 // ListRealmGroupsWithResponse request returning *ListRealmGroupsResponse
@@ -22076,6 +23072,81 @@ func ParseListClusterTypesResponse(rsp *http.Response) (*ListClusterTypesRespons
 	return response, nil
 }
 
+// ParseGetClusterTypeUpgradePreviewResponse parses an HTTP response from a GetClusterTypeUpgradePreviewWithResponse call
+func ParseGetClusterTypeUpgradePreviewResponse(rsp *http.Response) (*GetClusterTypeUpgradePreviewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterTypeUpgradePreviewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ClusterVersionBreakingChange
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetClusterTypeVersionsResponse parses an HTTP response from a GetClusterTypeVersionsWithResponse call
 func ParseGetClusterTypeVersionsResponse(rsp *http.Response) (*GetClusterTypeVersionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -22091,7 +23162,7 @@ func ParseGetClusterTypeVersionsResponse(rsp *http.Response) (*GetClusterTypeVer
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []string
+		var dest []ClusterTypeVersionInfo
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -24796,7 +25867,7 @@ func ParseCreateRealmResponse(rsp *http.Response) (*CreateRealmResponse, error) 
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest Realm
+		var dest CreatedRealm
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -25932,6 +27003,367 @@ func ParseListApplicationSessionsResponse(rsp *http.Response) (*ListApplicationS
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListClientRolesResponse parses an HTTP response from a ListClientRolesWithResponse call
+func ParseListClientRolesResponse(rsp *http.Response) (*ListClientRolesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListClientRolesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ClientRole
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateClientRoleResponse parses an HTTP response from a CreateClientRoleWithResponse call
+func ParseCreateClientRoleResponse(rsp *http.Response) (*CreateClientRoleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateClientRoleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ClientRole
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteClientRoleResponse parses an HTTP response from a DeleteClientRoleWithResponse call
+func ParseDeleteClientRoleResponse(rsp *http.Response) (*DeleteClientRoleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteClientRoleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClientRoleResponse parses an HTTP response from a GetClientRoleWithResponse call
+func ParseGetClientRoleResponse(rsp *http.Response) (*GetClientRoleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClientRoleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClientRole
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateClientRoleResponse parses an HTTP response from a UpdateClientRoleWithResponse call
+func ParseUpdateClientRoleResponse(rsp *http.Response) (*UpdateClientRoleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateClientRoleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClientRole
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
 		var dest ErrorBody

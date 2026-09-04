@@ -31,4 +31,15 @@ output "latest_keycloak_version" {
 
 ### Read-Only
 
+- `version_details` (Attributes List) The same versions in the same order, with the detail needed to judge an upgrade onto each. (see [below for nested schema](#nestedatt--version_details))
 - `versions` (List of String) Supported versions, newest first.
+
+<a id="nestedatt--version_details"></a>
+### Nested Schema for `version_details`
+
+Read-Only:
+
+- `active` (Boolean) Whether the version is still offered for new clusters and upgrades. `false` means it is recognised, for example by a cluster already running it, but is no longer offered.
+- `breaking_change_count` (Number) Number of breaking changes recorded for this version.
+- `is_major_change` (Boolean) Whether moving onto this version from the previous supported version crosses a major version boundary.
+- `version` (String) The version number.
