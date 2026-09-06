@@ -18151,6 +18151,8 @@ paths:
       description: |-
         Creates a webhook subscription. Secrets are write-only and are never returned.
 
+        `cluster_id` must name a cluster in your workspace, and `realm_id` a realm on that cluster; either one unknown returns 404. A `realm_id` sent without a `cluster_id` must be a realm on one of your workspace's clusters. Omit both to subscribe to every cluster in the workspace.
+
         Required scope: `webhooks:write`
       parameters: []
       responses:
