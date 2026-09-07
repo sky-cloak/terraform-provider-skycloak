@@ -58,7 +58,7 @@ func (r *customThemeResource) Metadata(_ context.Context, req resource.MetadataR
 func (r *customThemeResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	rrStr := []planmodifier.String{stringplanmodifier.RequiresReplace()}
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Uploads a custom Keycloak theme (ZIP or Keycloakify JAR) to a cluster. Replacing the file contents or `theme_types` recreates the theme; `name`, `description`, and `version` update in place.",
+		MarkdownDescription: "Uploads a custom Keycloak theme (ZIP or Keycloakify JAR) to a cluster. New file contents are deployed in place: the theme keeps its ID and name, and the realms and application clients using it stay assigned to it. Only a change to `theme_types` (or `cluster_id`) recreates the theme.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -69,8 +69,7 @@ func (r *customThemeResource) Schema(_ context.Context, _ resource.SchemaRequest
 			"source":     schema.StringAttribute{Required: true, MarkdownDescription: "Path to the theme archive (`.zip` or `.jar`)."},
 			"content_sha256": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "SHA-256 of the uploaded file. Recomputed each plan; a change recreates the theme.",
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+				MarkdownDescription: "SHA-256 of the uploaded file. Recomputed each plan; a change replaces the theme's archive in place.",
 			},
 			"name":        schema.StringAttribute{Required: true, MarkdownDescription: "Theme name."},
 			"description": schema.StringAttribute{Optional: true, MarkdownDescription: "Theme description."},
@@ -178,18 +177,80 @@ func (r *customThemeResource) Read(ctx context.Context, req resource.ReadRequest
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
+// Update applies metadata and content changes in place. New archive bytes go
+// to the theme's content endpoint, which keeps the theme's ID, name, and every
+// realm and application assignment pointing at it; the theme is never deleted
+// and re-uploaded, so the sign-in page is not left unbranded mid-apply.
 func (r *customThemeResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan customThemeResourceModel
+	var plan, state customThemeResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	theme, err := r.client.UpdateThemeMetadata(ctx, plan.ClusterID.ValueString(), plan.ID.ValueString(),
-		plan.Name.ValueString(), plan.Description.ValueString(), plan.Version.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError("Unable to update theme", err.Error())
-		return
+	clusterID, themeID := plan.ClusterID.ValueString(), plan.ID.ValueString()
+
+	contentChanged := !plan.ContentSHA256.Equal(state.ContentSHA256)
+	// A version change rides along with the content when there is one: the API
+	// records the new label only once the new content is live.
+	metadataChanged := !plan.Name.Equal(state.Name) || !plan.Description.Equal(state.Description) ||
+		(!contentChanged && !plan.Version.Equal(state.Version))
+
+	var theme *skycloak.Theme
+	if metadataChanged {
+		updated, err := r.client.UpdateThemeMetadata(ctx, clusterID, themeID,
+			plan.Name.ValueString(), plan.Description.ValueString(), plan.Version.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Unable to update theme", err.Error())
+			return
+		}
+		theme = updated
 	}
+
+	if contentChanged {
+		content, err := readFile(plan.Source.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Unable to read theme file", err.Error())
+			return
+		}
+		replaced, err := r.client.UpdateThemeContent(ctx, clusterID, themeID, skycloak.UpdateThemeContentRequest{
+			Version:  plan.Version.ValueString(),
+			FileName: filepath.Base(plan.Source.ValueString()),
+			Content:  content,
+		})
+		if err != nil {
+			resp.Diagnostics.AddError("Unable to replace theme content", err.Error())
+			return
+		}
+
+		// Like an upload, the replacement returns while Keycloak is still
+		// deploying the package.
+		waitCtx, cancel := context.WithTimeout(ctx, themeDeployTimeout)
+		defer cancel()
+		deployed, err := r.client.WaitForThemeDeployed(waitCtx, clusterID, themeID)
+		if err != nil {
+			// The archive upstream is already the new one, so record it rather
+			// than leaving state claiming the old contents.
+			applyThemeToModel(replaced, &plan)
+			resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+			resp.Diagnostics.AddError("Theme did not finish deploying", err.Error())
+			return
+		}
+		theme = deployed
+	}
+
+	if theme == nil {
+		// Nothing the API owns changed (for example only the local source path
+		// moved, with identical bytes); refresh from the API so computed
+		// attributes stay accurate.
+		current, err := r.client.GetTheme(ctx, clusterID, themeID)
+		if err != nil {
+			resp.Diagnostics.AddError("Unable to read theme", err.Error())
+			return
+		}
+		theme = current
+	}
+
 	applyThemeToModel(theme, &plan)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
