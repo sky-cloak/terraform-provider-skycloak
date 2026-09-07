@@ -1,8 +1,12 @@
 resource "skycloak_custom_theme" "corporate" {
   cluster_id = skycloak_cluster.production.id
-  source     = "${path.module}/themes/corporate.zip" # .zip or Keycloakify .jar
-  name       = "corporate"
-  version    = "1.2.0"
+
+  # Rebuilding the archive updates the theme in place: the theme keeps its ID
+  # and name, and the realms and clients below stay assigned to it. No rename
+  # or create_before_destroy dance is needed.
+  source  = "${path.module}/themes/corporate.zip" # .zip or Keycloakify .jar
+  name    = "corporate"
+  version = "1.2.0"
 
   # Optional: deploy only specific theme types (omit to deploy all detected).
   theme_types = ["login", "email"]
