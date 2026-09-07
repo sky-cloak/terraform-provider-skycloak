@@ -2096,6 +2096,41 @@ func (c *Client) UploadTheme(ctx context.Context, clusterID string, req UploadTh
 	return &t, nil
 }
 
+// UpdateThemeContentRequest is the body for replacing a theme's archive.
+// Version is optional and is recorded once the new content is live; an empty
+// value leaves the theme's version label as it is.
+type UpdateThemeContentRequest struct {
+	Version  string
+	FileName string
+	Content  []byte
+}
+
+// UpdateThemeContent replaces a theme's archive in place. The theme keeps its
+// ID, name, and every realm and application assignment pointing at it, so a
+// content change never has to be modelled as a delete-then-re-upload.
+func (c *Client) UpdateThemeContent(ctx context.Context, clusterID, themeID string, req UpdateThemeContentRequest) (*Theme, error) {
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	if req.Version != "" {
+		_ = mw.WriteField("version", req.Version)
+	}
+	if err := filePart(mw, "theme_file", req.FileName, themeFileContentType(req.FileName), req.Content); err != nil {
+		return nil, err
+	}
+	if err := mw.Close(); err != nil {
+		return nil, err
+	}
+	resp, err := c.gen.UpdateThemeContentWithBodyWithResponse(ctx, cid(clusterID), uid(themeID), &apiclient.UpdateThemeContentParams{APIVersion: c.ver()}, mw.FormDataContentType(), &buf)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, statusError(resp.HTTPResponse, resp.Body)
+	}
+	t := themeFromAPI(resp.JSON200)
+	return &t, nil
+}
+
 // UpdateThemeMetadata updates a theme's name/description/version (no re-upload).
 func (c *Client) UpdateThemeMetadata(ctx context.Context, clusterID, themeID, name, description, version string) (*Theme, error) {
 	body := apiclient.UpdateThemeJSONRequestBody{}
