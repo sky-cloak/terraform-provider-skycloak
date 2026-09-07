@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -93,17 +94,27 @@ type themeAPIRecorder struct {
 	metadata   int
 	version    string
 	fileBody   string
+	// metaVersion is the version field of the last metadata request, nil when
+	// the request left it out entirely.
+	metaVersion *string
+
+	// name and storedVersion are the theme as the fake currently holds it, so a
+	// label the metadata endpoint clears stays cleared on the later reads.
+	name          string
+	storedVersion string
 }
 
 func (rec *themeAPIRecorder) server(t *testing.T, clusterID, themeID string) *httptest.Server {
 	t.Helper()
 	base := "/clusters/" + clusterID + "/themes"
-	theme := func(status, name, version string) string {
+	// The fake starts out holding the theme testThemeModel describes.
+	rec.name, rec.storedVersion = "corp", "1.0.0"
+	theme := func(status string) string {
 		v := "null"
-		if version != "" {
-			v = `"` + version + `"`
+		if rec.storedVersion != "" {
+			v = `"` + rec.storedVersion + `"`
 		}
-		return `{"id":"` + themeID + `","cluster_id":"` + clusterID + `","name":"` + name + `","version":` + v +
+		return `{"id":"` + themeID + `","cluster_id":"` + clusterID + `","name":"` + rec.name + `","version":` + v +
 			`,"status":"` + status + `","theme_types":["login"],"file_size":7,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-02T00:00:00Z"}`
 	}
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -114,19 +125,33 @@ func (rec *themeAPIRecorder) server(t *testing.T, clusterID, themeID string) *ht
 			fields, _ := parseThemeMultipart(t, r)
 			rec.version = strings.Join(fields["version"], "")
 			rec.fileBody = strings.Join(fields["theme_file"], "")
+			// An omitted version keeps the stored label, per the API contract.
+			if rec.version != "" {
+				rec.storedVersion = rec.version
+			}
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(theme("deploying", "corp", rec.version)))
+			_, _ = w.Write([]byte(theme("deploying")))
 		case r.Method == http.MethodPatch && r.URL.Path == base+"/"+themeID:
 			rec.metadata++
+			var body struct {
+				Name    *string `json:"name"`
+				Version *string `json:"version"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Errorf("decode metadata body: %v", err)
+			}
+			rec.metaVersion = body.Version
+			if body.Name != nil {
+				rec.name = *body.Name
+			}
+			if body.Version != nil {
+				rec.storedVersion = *body.Version
+			}
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(theme("deployed", "corp-renamed", "1.0.0")))
+			_, _ = w.Write([]byte(theme("deployed")))
 		case r.Method == http.MethodGet && r.URL.Path == base+"/"+themeID:
 			w.Header().Set("Content-Type", "application/json")
-			name := "corp"
-			if rec.metadata > 0 {
-				name = "corp-renamed"
-			}
-			_, _ = w.Write([]byte(theme("deployed", name, "1.1.0")))
+			_, _ = w.Write([]byte(theme("deployed")))
 		default:
 			http.NotFound(w, r)
 		}
@@ -330,6 +355,64 @@ func TestCustomThemeUpdateContentAndMetadata(t *testing.T) {
 	}
 	if got.Name.ValueString() != "corp-renamed" {
 		t.Errorf("name = %q, want corp-renamed", got.Name.ValueString())
+	}
+}
+
+// TestCustomThemeUpdateRemovesVersionWithContent covers dropping `version` from
+// the configuration in the same apply that changes the archive. The content
+// request cannot carry the removal (an empty version means "keep the current
+// label"), so the metadata endpoint has to clear it, otherwise the old label
+// comes back into state and the apply reports an inconsistent result.
+func TestCustomThemeUpdateRemovesVersionWithContent(t *testing.T) {
+	rec := &themeAPIRecorder{}
+	srv := rec.server(t, testThemeClusterID, testThemeID)
+	defer srv.Close()
+
+	oldPath, oldSHA := themeArchive(t, "corp.zip", "old-bytes")
+	newPath, newSHA := themeArchive(t, "corp.zip", "new-bytes")
+	state := testThemeModel(oldPath, oldSHA)
+	plan := testThemeModel(newPath, newSHA)
+	plan.Version = types.StringNull()
+
+	got, diags := runThemeUpdate(t, srv.URL, state, plan)
+	if diags.HasError() {
+		t.Fatalf("update diagnostics: %v", diags)
+	}
+	if rec.metadata != 1 {
+		t.Errorf("metadata endpoint called %d times, want 1 to clear the version (calls: %v)", rec.metadata, rec.calls)
+	}
+	if rec.metaVersion == nil || *rec.metaVersion != "" {
+		t.Errorf("metadata version field = %v, want an explicit empty string", rec.metaVersion)
+	}
+	if rec.contentPut != 1 {
+		t.Errorf("content endpoint called %d times, want 1", rec.contentPut)
+	}
+	if !got.Version.IsNull() {
+		t.Errorf("version = %q, want the configured removal to hold", got.Version.ValueString())
+	}
+}
+
+// TestCustomThemeUpdateRemovesVersionOnly is the same removal without a content
+// change: the metadata endpoint still has to clear the label.
+func TestCustomThemeUpdateRemovesVersionOnly(t *testing.T) {
+	rec := &themeAPIRecorder{}
+	srv := rec.server(t, testThemeClusterID, testThemeID)
+	defer srv.Close()
+
+	sourcePath, sha := themeArchive(t, "corp.zip", "same-bytes")
+	state := testThemeModel(sourcePath, sha)
+	plan := testThemeModel(sourcePath, sha)
+	plan.Version = types.StringNull()
+
+	got, diags := runThemeUpdate(t, srv.URL, state, plan)
+	if diags.HasError() {
+		t.Fatalf("update diagnostics: %v", diags)
+	}
+	if rec.metadata != 1 || rec.contentPut != 0 {
+		t.Errorf("calls = %v, want one metadata update and no content update", rec.calls)
+	}
+	if !got.Version.IsNull() {
+		t.Errorf("version = %q, want the configured removal to hold", got.Version.ValueString())
 	}
 }
 

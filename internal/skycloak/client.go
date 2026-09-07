@@ -2132,13 +2132,16 @@ func (c *Client) UpdateThemeContent(ctx context.Context, clusterID, themeID stri
 }
 
 // UpdateThemeMetadata updates a theme's name/description/version (no re-upload).
+// The version is always sent, empty value included, so that a caller dropping
+// the version label clears it: an omitted field leaves the stored label as it
+// is, which would make a removal impossible to express.
 func (c *Client) UpdateThemeMetadata(ctx context.Context, clusterID, themeID, name, description, version string) (*Theme, error) {
 	body := apiclient.UpdateThemeJSONRequestBody{}
 	if name != "" {
 		body.Name = &name
 	}
 	body.Description = strPtr(description)
-	body.Version = strPtr(version)
+	body.Version = &version
 	resp, err := c.gen.UpdateThemeWithResponse(ctx, cid(clusterID), uid(themeID), &apiclient.UpdateThemeParams{APIVersion: c.ver()}, body)
 	if err != nil {
 		return nil, err

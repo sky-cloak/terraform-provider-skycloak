@@ -34,9 +34,12 @@ Content is an updatable attribute, not an identity attribute.
 - `Update` sends the new archive to the content endpoint and then waits for the
   theme to report `deployed`, the same wait the create path performs, so a
   same-apply assignment never races the rollout.
-- Name and description changes still go to `PATCH /themes/{theme_id}`. A version
-  change rides along with the content when both change in one apply, because the
-  API records the new version label only once the new content is live.
+- Name and description changes still go to `PATCH /themes/{theme_id}`. A new
+  version label rides along with the content when both change in one apply,
+  because the API records the label only once the new content is live. Removing
+  the version is the exception: the content request omits an empty version and
+  the API reads that as "keep the current label", so a removal goes through
+  `PATCH` (sent as an explicit empty string) before the content request.
 - `theme_types` and `cluster_id` keep `RequiresReplace`. The content endpoint
   carries neither, and it rejects an archive that drops a theme type the theme
   currently provides, so those two remain identity for Terraform's purposes.

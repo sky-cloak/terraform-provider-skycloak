@@ -87,9 +87,12 @@ func TestUploadThemeJARContentType(t *testing.T) {
 
 func TestThemeMetadataUpdateAndDelete(t *testing.T) {
 	base := "/clusters/" + cuid + "/themes/" + themeUID
+	var sawBody string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPatch, http.MethodPut:
+			b, _ := io.ReadAll(r.Body)
+			sawBody = string(b)
 			writeJSON(w, 200, `{"id":"`+themeUID+`","cluster_id":"`+cuid+`","name":"renamed","status":"deployed","theme_types":[],"file_size":1,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}`)
 		case http.MethodDelete:
 			w.WriteHeader(http.StatusAccepted)
@@ -104,6 +107,11 @@ func TestThemeMetadataUpdateAndDelete(t *testing.T) {
 	got, err := c.UpdateThemeMetadata(context.Background(), cuid, themeUID, "renamed", "", "")
 	if err != nil || got.Name != "renamed" {
 		t.Fatalf("UpdateThemeMetadata: %+v, %v", got, err)
+	}
+	// An empty version must reach the API as an explicit empty string: omitting
+	// it would keep the stored label, so a removal could never be expressed.
+	if !strings.Contains(sawBody, `"version":""`) {
+		t.Errorf("metadata body = %s, want an explicit empty version", sawBody)
 	}
 	if err := c.DeleteTheme(context.Background(), cuid, themeUID); err != nil {
 		t.Fatalf("DeleteTheme: %v", err)

@@ -191,10 +191,15 @@ func (r *customThemeResource) Update(ctx context.Context, req resource.UpdateReq
 	clusterID, themeID := plan.ClusterID.ValueString(), plan.ID.ValueString()
 
 	contentChanged := !plan.ContentSHA256.Equal(state.ContentSHA256)
-	// A version change rides along with the content when there is one: the API
-	// records the new label only once the new content is live.
+	// A new version label rides along with the content when there is one: the
+	// API records the label only once the new content is live. Removing the
+	// version is the exception, because the content request omits an empty
+	// version and the API reads that as "keep the current label", so a removal
+	// has to go through the metadata endpoint (which runs first, before the
+	// content request reports the theme back).
+	versionRidesWithContent := contentChanged && plan.Version.ValueString() != ""
 	metadataChanged := !plan.Name.Equal(state.Name) || !plan.Description.Equal(state.Description) ||
-		(!contentChanged && !plan.Version.Equal(state.Version))
+		(!plan.Version.Equal(state.Version) && !versionRidesWithContent)
 
 	var theme *skycloak.Theme
 	if metadataChanged {
