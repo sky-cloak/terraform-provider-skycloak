@@ -72,7 +72,7 @@ honor the `Retry-After` header.
 | `skycloak_identity_provider` | An SSO connection (OIDC/LDAP/SAML) |
 | `skycloak_login_branding` | Login-page branding for a realm |
 | `skycloak_email_branding` | Email-template branding for a realm |
-| `skycloak_custom_theme` | Uploads a custom theme archive to a cluster |
+| `skycloak_custom_theme` | Uploads a custom theme archive to a cluster (a new archive is deployed in place) |
 | `skycloak_theme_assignment` | Realm-level custom theme per Keycloak theme type |
 | `skycloak_client_theme_assignment` | Per-client login-theme override |
 | `skycloak_cluster_extension` | A marketplace extension installed on a cluster |

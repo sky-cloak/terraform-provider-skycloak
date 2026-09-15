@@ -3,21 +3,25 @@
 page_title: "skycloak_custom_theme Resource - skycloak"
 subcategory: ""
 description: |-
-  Uploads a custom Keycloak theme (ZIP or Keycloakify JAR) to a cluster. Replacing the file contents or theme_types recreates the theme; name, description, and version update in place.
+  Uploads a custom Keycloak theme (ZIP or Keycloakify JAR) to a cluster. New file contents are deployed in place: the theme keeps its ID and name, and the realms and application clients using it stay assigned to it. Only a change to theme_types (or cluster_id) recreates the theme.
 ---
 
 # skycloak_custom_theme (Resource)
 
-Uploads a custom Keycloak theme (ZIP or Keycloakify JAR) to a cluster. Replacing the file contents or `theme_types` recreates the theme; `name`, `description`, and `version` update in place.
+Uploads a custom Keycloak theme (ZIP or Keycloakify JAR) to a cluster. New file contents are deployed in place: the theme keeps its ID and name, and the realms and application clients using it stay assigned to it. Only a change to `theme_types` (or `cluster_id`) recreates the theme.
 
 ## Example Usage
 
 ```terraform
 resource "skycloak_custom_theme" "corporate" {
   cluster_id = skycloak_cluster.production.id
-  source     = "${path.module}/themes/corporate.zip" # .zip or Keycloakify .jar
-  name       = "corporate"
-  version    = "1.2.0"
+
+  # Rebuilding the archive updates the theme in place: the theme keeps its ID
+  # and name, and the realms and clients below stay assigned to it. No rename
+  # or create_before_destroy dance is needed.
+  source  = "${path.module}/themes/corporate.zip" # .zip or Keycloakify .jar
+  name    = "corporate"
+  version = "1.2.0"
 
   # Optional: deploy only specific theme types (omit to deploy all detected).
   theme_types = ["login", "email"]
@@ -48,7 +52,7 @@ resource "skycloak_theme_assignment" "app" {
 
 ### Read-Only
 
-- `content_sha256` (String) SHA-256 of the uploaded file. Recomputed each plan; a change recreates the theme.
+- `content_sha256` (String) SHA-256 of the uploaded file. Recomputed each plan; a change replaces the theme's archive in place.
 - `deployed_at` (String) Last successful deployment timestamp (RFC 3339).
 - `file_size` (Number) Size of the uploaded archive in bytes.
 - `id` (String) Theme ID.

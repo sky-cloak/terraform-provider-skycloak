@@ -87,9 +87,12 @@ func TestUploadThemeJARContentType(t *testing.T) {
 
 func TestThemeMetadataUpdateAndDelete(t *testing.T) {
 	base := "/clusters/" + cuid + "/themes/" + themeUID
+	var sawBody string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPatch, http.MethodPut:
+			b, _ := io.ReadAll(r.Body)
+			sawBody = string(b)
 			writeJSON(w, 200, `{"id":"`+themeUID+`","cluster_id":"`+cuid+`","name":"renamed","status":"deployed","theme_types":[],"file_size":1,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}`)
 		case http.MethodDelete:
 			w.WriteHeader(http.StatusAccepted)
@@ -105,8 +108,106 @@ func TestThemeMetadataUpdateAndDelete(t *testing.T) {
 	if err != nil || got.Name != "renamed" {
 		t.Fatalf("UpdateThemeMetadata: %+v, %v", got, err)
 	}
+	// An empty version must reach the API as an explicit empty string: omitting
+	// it would keep the stored label, so a removal could never be expressed.
+	if !strings.Contains(sawBody, `"version":""`) {
+		t.Errorf("metadata body = %s, want an explicit empty version", sawBody)
+	}
 	if err := c.DeleteTheme(context.Background(), cuid, themeUID); err != nil {
 		t.Fatalf("DeleteTheme: %v", err)
+	}
+}
+
+// TestUpdateThemeContentMultipart covers replacing a theme's archive in place:
+// the request must be a PUT to the theme's /content sub-resource carrying only
+// the new archive (and an optional version), and the theme it returns keeps its
+// identity.
+func TestUpdateThemeContentMultipart(t *testing.T) {
+	var (
+		sawMethod, sawPath, sawFileCT, sawVersion, sawBody string
+		sawFields                                          []string
+	)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sawMethod, sawPath = r.Method, r.URL.Path
+		fields, fileCT := parseMultipart(t, r)
+		sawFileCT = fileCT["theme_file"]
+		sawVersion = strings.Join(fields["version"], "")
+		sawBody = strings.Join(fields["theme_file"], "")
+		for name := range fields {
+			sawFields = append(sawFields, name)
+		}
+		writeJSON(w, 200, `{"id":"`+themeUID+`","cluster_id":"`+cuid+`","name":"corp","version":"1.1.0","status":"deploying","theme_types":["login"],"file_size":9,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-02T00:00:00Z"}`)
+	}))
+	defer srv.Close()
+
+	theme, err := newTestClient(srv.URL).UpdateThemeContent(context.Background(), cuid, themeUID, UpdateThemeContentRequest{
+		Version: "1.1.0", FileName: "corp-v2.zip", Content: []byte("PK\x03\x04new"),
+	})
+	if err != nil {
+		t.Fatalf("UpdateThemeContent: %v", err)
+	}
+	if theme.ID != themeUID || theme.Name != "corp" || theme.Status != "deploying" {
+		t.Fatalf("theme = %+v, want the same id and name back", theme)
+	}
+	if sawMethod != http.MethodPut {
+		t.Errorf("method = %q, want PUT", sawMethod)
+	}
+	if want := "/clusters/" + cuid + "/themes/" + themeUID + "/content"; sawPath != want {
+		t.Errorf("path = %q, want %q", sawPath, want)
+	}
+	if sawFileCT != "application/zip" {
+		t.Errorf("theme_file content-type = %q, want application/zip", sawFileCT)
+	}
+	if sawBody != "PK\x03\x04new" {
+		t.Errorf("theme_file body = %q, want the new archive bytes", sawBody)
+	}
+	if sawVersion != "1.1.0" {
+		t.Errorf("version field = %q, want 1.1.0", sawVersion)
+	}
+	// name and theme_types are not part of the content body: the endpoint keeps
+	// the theme's identity and its deployed types.
+	for _, f := range sawFields {
+		if f != "theme_file" && f != "version" {
+			t.Errorf("unexpected form field %q in the content update", f)
+		}
+	}
+}
+
+// TestUpdateThemeContentJARAndConflict covers the JAR content type and the
+// documented 409 (a migration-created theme whose content is pinned), which
+// must surface as an API error rather than a nil theme.
+func TestUpdateThemeContentJARAndConflict(t *testing.T) {
+	var sawCT string
+	conflict := false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if conflict {
+			w.Header().Set("Content-Type", "application/problem+json")
+			w.WriteHeader(http.StatusConflict)
+			_, _ = w.Write([]byte(`{"title":"Conflict","detail":"theme content is pinned"}`))
+			return
+		}
+		_, fileCT := parseMultipart(t, r)
+		sawCT = fileCT["theme_file"]
+		writeJSON(w, 200, `{"id":"`+themeUID+`","cluster_id":"`+cuid+`","name":"k","status":"deploying","theme_types":[],"file_size":8,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-02T00:00:00Z"}`)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(srv.URL)
+	if _, err := c.UpdateThemeContent(context.Background(), cuid, themeUID, UpdateThemeContentRequest{FileName: "theme.jar", Content: []byte("CAFEBABE")}); err != nil {
+		t.Fatalf("UpdateThemeContent jar: %v", err)
+	}
+	if sawCT != "application/java-archive" {
+		t.Errorf("jar content-type = %q", sawCT)
+	}
+
+	conflict = true
+	theme, err := c.UpdateThemeContent(context.Background(), cuid, themeUID, UpdateThemeContentRequest{FileName: "theme.zip", Content: []byte("PK")})
+	if err == nil || theme != nil {
+		t.Fatalf("UpdateThemeContent on 409 = %+v, %v; want an error", theme, err)
+	}
+	apiErr, ok := AsAPIError(err)
+	if !ok || apiErr.StatusCode != http.StatusConflict {
+		t.Fatalf("error = %v, want an APIError with status 409", err)
 	}
 }
 

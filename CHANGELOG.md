@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- `skycloak_custom_theme`: a new theme archive is now applied as an in-place update through the theme content endpoint instead of forcing a destroy/create. The theme keeps its ID and name, and the realms and application clients assigned to it stay assigned, so the sign-in page is no longer left unbranded mid-apply. Configurations using the rename plus `create_before_destroy` workaround keep working and can drop it; no state migration is required. `theme_types` and `cluster_id` still force replacement.
+
 ## [0.5.1] - 2026-09-04
 
 ### Fixed
