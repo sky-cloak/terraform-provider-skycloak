@@ -45,8 +45,8 @@ const (
 
 // Defines values for ApplicationType.
 const (
-	Confidential ApplicationType = "confidential"
-	Public       ApplicationType = "public"
+	ApplicationTypeConfidential ApplicationType = "confidential"
+	ApplicationTypePublic       ApplicationType = "public"
 )
 
 // Defines values for BotChallengeMode.
@@ -164,15 +164,22 @@ const (
 
 // Defines values for ExtensionScanStatus.
 const (
-	Ready    ExtensionScanStatus = "ready"
-	Rejected ExtensionScanStatus = "rejected"
-	Scanning ExtensionScanStatus = "scanning"
+	ExtensionScanStatusFailed   ExtensionScanStatus = "failed"
+	ExtensionScanStatusReady    ExtensionScanStatus = "ready"
+	ExtensionScanStatusRejected ExtensionScanStatus = "rejected"
+	ExtensionScanStatusScanning ExtensionScanStatus = "scanning"
 )
 
 // Defines values for ExtensionSource.
 const (
 	ExtensionSourceCustom   ExtensionSource = "custom"
 	ExtensionSourcePlatform ExtensionSource = "platform"
+)
+
+// Defines values for ExtensionVisibility.
+const (
+	ExtensionVisibilityPrivate ExtensionVisibility = "private"
+	ExtensionVisibilityPublic  ExtensionVisibility = "public"
 )
 
 // Defines values for GeoBlockingMode.
@@ -439,10 +446,10 @@ const (
 
 // Defines values for ThemeStatus.
 const (
-	ThemeStatusDeployed    ThemeStatus = "deployed"
-	ThemeStatusDeploying   ThemeStatus = "deploying"
-	ThemeStatusFailed      ThemeStatus = "failed"
-	ThemeStatusUndeploying ThemeStatus = "undeploying"
+	Deployed    ThemeStatus = "deployed"
+	Deploying   ThemeStatus = "deploying"
+	Failed      ThemeStatus = "failed"
+	Undeploying ThemeStatus = "undeploying"
 )
 
 // Defines values for ThemeType.
@@ -1272,7 +1279,9 @@ type CreateWebhookSubscriptionRequest struct {
 	RealmId       *RealmId             `json:"realm_id,omitempty"`
 	SigningSecret WebhookSigningSecret `json:"signing_secret"`
 	Source        WebhookSource        `json:"source"`
-	Url           WebhookUrl           `json:"url" validate:"url"`
+
+	// Url Delivery endpoint. Must be an `http` or `https` URL that includes an endpoint path, for example `https://api.example.com/webhooks/events`. A bare origin with no path (or a path of just `/`) is rejected.
+	Url WebhookUrl `json:"url" validate:"url"`
 }
 
 // CreatedRealm Realm details returned when a realm is created.
@@ -1645,7 +1654,7 @@ type Extension struct {
 	QuickStartSteps  nullable.Nullable[string] `json:"quick_start_steps" validate:"omitnil,max=500"`
 	RepositoryUrl    nullable.Nullable[string] `json:"repository_url" validate:"omitnil,max=500"`
 
-	// ScanMessage Human-readable scan result. Only present when `scan_status` is `rejected`.
+	// ScanMessage Human-readable scan result. Present when `scan_status` is `rejected` (names the detected signature) or `failed` (says the scan could not complete).
 	ScanMessage nullable.Nullable[string] `json:"scan_message" validate:"omitnil,max=500"`
 
 	// ScanStatus Malware scan result. Only set for `custom` extensions.
@@ -1659,6 +1668,9 @@ type Extension struct {
 
 	// Version Active version of the extension.
 	Version string `json:"version" validate:"omitnil,max=500"`
+
+	// Visibility Set for `platform` extensions only: `private` marks an early-access extension your workspace has been granted. Absent for `custom` extensions.
+	Visibility *ExtensionVisibility `json:"visibility,omitempty"`
 }
 
 // ExtensionId defines model for ExtensionId.
@@ -1715,6 +1727,9 @@ type ExtensionVersionInfo struct {
 	CreatedAt time.Time `json:"created_at"`
 	Version   string    `json:"version" validate:"omitnil,max=500"`
 }
+
+// ExtensionVisibility defines model for ExtensionVisibility.
+type ExtensionVisibility string
 
 // FieldError defines model for FieldError.
 type FieldError struct {
@@ -2426,10 +2441,10 @@ type SIEMDestinationType string
 type SIEMHTTPConfig struct {
 	AuthType HTTPAuthType `json:"auth_type"`
 
-	// BearerToken Required when `auth_type` is `bearer`. Write-only.
-	BearerToken *string `json:"bearer_token,omitempty" validate:"omitnil,max=500"`
+	// BearerToken Required when `auth_type` is `bearer`. Write-only. The token is sent verbatim as an `Authorization: Bearer` header value, so it is limited to RFC 6750 token68 characters (letters, digits and `-._~+/=`) and 4096 characters. A token outside that set is rejected with a 422 validation error.
+	BearerToken *string `json:"bearer_token,omitempty" validate:"omitnil"`
 
-	// Headers Optional HTTP headers to include in the request. Values are write-only and are never returned.
+	// Headers Optional HTTP headers to include in the request. Values are write-only and are never returned. An `Authorization` header (matched case-insensitively) is rejected with a validation error when `auth_type` is `bearer`, because Skycloak sets that header itself.
 	Headers *map[string]string `json:"headers,omitempty"`
 
 	// Password Required when `auth_type` is `basic`. Write-only.
@@ -2437,7 +2452,9 @@ type SIEMHTTPConfig struct {
 
 	// SharedKey Base64-encoded Azure Log Analytics primary or secondary key. Required when `auth_type` is `shared_key`. Write-only.
 	SharedKey *string `json:"shared_key,omitempty" validate:"omitnil,max=500"`
-	Url       string  `json:"url" validate:"url"`
+
+	// Url Webhook endpoint that receives the exported events. Must be a complete `https://` URL with a host; plain `http://` endpoints and characters that are illegal in a URI (`<`, `>`, `"`, spaces) are rejected on create and update.
+	Url string `json:"url" validate:"url"`
 
 	// Username Required when `auth_type` is `basic`. Write-only.
 	Username *string `json:"username,omitempty" validate:"omitnil,max=500"`
@@ -2732,14 +2749,20 @@ type Theme struct {
 	DeployedAt  *time.Time `json:"deployed_at,omitempty"`
 	Description *string    `json:"description,omitempty"`
 
+	// Directory Directory name Keycloak serves this theme from. Use this exact value when setting a realm or application theme outside Skycloak. Valid once `status` is `deployed`. It changes when the theme content is replaced: realm theme settings that name the previous directory are moved automatically, but application themes set outside Skycloak are not and must be updated after a replace.
+	Directory *string `json:"directory,omitempty"`
+
 	// ErrorMessage Error detail from the last failed deployment.
 	ErrorMessage *string `json:"error_message,omitempty"`
 
 	// FileSize Size of the uploaded theme archive in bytes.
-	FileSize int64       `json:"file_size"`
-	Id       ThemeId     `json:"id"`
-	Name     string      `json:"name"`
-	Status   ThemeStatus `json:"status"`
+	FileSize int64   `json:"file_size"`
+	Id       ThemeId `json:"id"`
+	Name     string  `json:"name"`
+
+	// RestartRequired True when the theme's content was replaced under its exact name and Keycloak has not restarted since, so the previous content may still be served. Only workspaces that keep exact theme names replace content in place; for every other theme this is false.
+	RestartRequired *bool       `json:"restart_required,omitempty"`
+	Status          ThemeStatus `json:"status"`
 
 	// ThemeTypes Keycloak theme types detected in the uploaded ZIP package.
 	ThemeTypes []ThemeType `json:"theme_types"`
@@ -2957,7 +2980,9 @@ type UpdateWebhookSubscriptionRequest struct {
 	RealmId             nullable.Nullable[RealmId]                    `json:"realm_id,omitempty"`
 	SigningSecret       *WebhookSigningSecret                         `json:"signing_secret,omitempty"`
 	Source              *WebhookSource                                `json:"source,omitempty"`
-	Url                 *WebhookUrl                                   `json:"url,omitempty" validate:"url"`
+
+	// Url Delivery endpoint. Must be an `http` or `https` URL that includes an endpoint path, for example `https://api.example.com/webhooks/events`. A bare origin with no path (or a path of just `/`) is rejected.
+	Url *WebhookUrl `json:"url,omitempty" validate:"url"`
 }
 
 // UploadExtensionMetadata Extension metadata submitted as the `metadata` part of a `multipart/form-data` upload.
@@ -3196,7 +3221,7 @@ type WebhookTestResult struct {
 	Success      bool      `json:"success"`
 }
 
-// WebhookUrl defines model for WebhookUrl.
+// WebhookUrl Delivery endpoint. Must be an `http` or `https` URL that includes an endpoint path, for example `https://api.example.com/webhooks/events`. A bare origin with no path (or a path of just `/`) is rejected.
 type WebhookUrl = string
 
 // CommonParameters defines model for CommonParameters.
