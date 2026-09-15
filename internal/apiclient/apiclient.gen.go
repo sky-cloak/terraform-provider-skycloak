@@ -815,14 +815,14 @@ type ClusterCredentials struct {
 
 // ClusterExtension defines model for ClusterExtension.
 type ClusterExtension struct {
-	// AvailableVersion Latest available version. Equals `installed_version` when the extension is up to date.
+	// AvailableVersion Version the cluster would get by upgrading now. For `platform` extensions it is the build published for the cluster's Keycloak version (`unknown` when that build states no version), and `null` when no build supports the cluster's Keycloak version. For `custom` extensions it is the latest uploaded version.
 	AvailableVersion nullable.Nullable[string] `json:"available_version" validate:"omitnil,max=500"`
 	ExtensionId      ExtensionId               `json:"extension_id"`
 	ExtensionName    string                    `json:"extension_name" validate:"omitnil,max=500"`
 	ExtensionSource  ExtensionSource           `json:"extension_source"`
 	InstalledAt      time.Time                 `json:"installed_at"`
 
-	// InstalledVersion Version currently running on the cluster.
+	// InstalledVersion Version currently running on the cluster. For `platform` extensions this is the upstream release string of the installed build (not necessarily semver, for example `1.4.1-SNAPSHOT`), or `unknown` when it cannot be determined. For `custom` extensions it is the uploader-supplied version.
 	InstalledVersion string `json:"installed_version" validate:"omitnil,max=500"`
 
 	// LastStatusChangeAt When the installation status last changed.
@@ -832,7 +832,7 @@ type ClusterExtension struct {
 	Parameters map[string]*string     `json:"parameters"`
 	Status     ClusterExtensionStatus `json:"status"`
 
-	// UpgradeAvailable Whether a newer version is available to upgrade to.
+	// UpgradeAvailable Whether upgrading would install a different build. For `platform` extensions it compares the installed build with the one published for the cluster's Keycloak version, so republishing an unchanged catalog never sets it. For `custom` extensions it is set when a version was published after the install. Always `false` when the install is not `active` or is pinned by Skycloak support.
 	UpgradeAvailable bool `json:"upgrade_available"`
 }
 
@@ -914,6 +914,18 @@ type ClusterOverview struct {
 	SessionCacheEntries *int64 `json:"session_cache_entries,omitempty"`
 	TotalLoginAttempts  int64  `json:"total_login_attempts"`
 	TotalUsers          int64  `json:"total_users"`
+}
+
+// ClusterRestartOutcome Outcome of a requested Keycloak instance restart.
+type ClusterRestartOutcome struct {
+	// Deferred True when the restart is deferred to the cluster's maintenance window instead of applying immediately.
+	Deferred bool `json:"deferred"`
+
+	// Impact Customer-facing description of how disruptive the restart is for this cluster's size.
+	Impact string `json:"impact"`
+
+	// NextWindow When the deferred restart's maintenance window next opens. Absent when `deferred` is false, or when the next window could not be resolved.
+	NextWindow *time.Time `json:"next_window,omitempty"`
 }
 
 // ClusterSecurityConfig Security policy configuration for this cluster.
@@ -1631,8 +1643,11 @@ type ExportSummary struct {
 
 // Extension defines model for Extension.
 type Extension struct {
-	CreatedAt        time.Time                 `json:"created_at"`
-	Description      nullable.Nullable[string] `json:"description" validate:"omitnil,max=500"`
+	CreatedAt   time.Time                 `json:"created_at"`
+	Description nullable.Nullable[string] `json:"description" validate:"omitnil,max=500"`
+
+	// DisplayName Friendly name shown in place of `name` when set. `name` never changes once an extension is catalogued; `display_name` lets the shown label change independently. Absent or null when the extension has none, in which case clients should fall back to `name`.
+	DisplayName      nullable.Nullable[string] `json:"display_name,omitempty" validate:"omitnil,max=500"`
 	DocumentationUrl nullable.Nullable[string] `json:"documentation_url" validate:"omitnil,max=500"`
 
 	// FileSizeBytes JAR file size in bytes. Only set for `custom` extensions.
@@ -2041,7 +2056,14 @@ type PerformanceMetrics struct {
 
 // PlanLimitErrorBody Returned when a workspace plan quota would be exceeded. `required_plan` indicates the minimum plan needed to complete the request.
 type PlanLimitErrorBody struct {
-	// CurrentLimit Maximum allowed by the current plan.
+	// Code Machine-readable identifier of the quota that was hit, so a client can tell
+	// quotas apart without parsing `detail`. Known values include `cluster_limit`
+	// (the workspace's total cluster allowance), `cluster_size_quota` (the
+	// allowance for the requested cluster size) and `cluster_size` (the requested
+	// size is not offered on the plan at all). New values may be added.
+	Code *string `json:"code,omitempty"`
+
+	// CurrentLimit Maximum allowed by the current plan. `0` means the plan does not include the resource at all.
 	CurrentLimit *int   `json:"current_limit,omitempty"`
 	CurrentPlan  string `json:"current_plan"`
 
@@ -2444,7 +2466,7 @@ type SIEMHTTPConfig struct {
 	// BearerToken Required when `auth_type` is `bearer`. Write-only. The token is sent verbatim as an `Authorization: Bearer` header value, so it is limited to RFC 6750 token68 characters (letters, digits and `-._~+/=`) and 4096 characters. A token outside that set is rejected with a 422 validation error.
 	BearerToken *string `json:"bearer_token,omitempty" validate:"omitnil"`
 
-	// Headers Optional HTTP headers to include in the request. Values are write-only and are never returned. An `Authorization` header (matched case-insensitively) is rejected with a validation error when `auth_type` is `bearer`, because Skycloak sets that header itself.
+	// Headers Optional HTTP headers to include in the request. Every value must be a string, a non-string value (boolean, number, object or array) is rejected. Values are write-only and are never returned.
 	Headers *map[string]string `json:"headers,omitempty"`
 
 	// Password Required when `auth_type` is `basic`. Write-only.
@@ -2787,6 +2809,12 @@ type ThemeAssignment struct {
 
 // ThemeId defines model for ThemeId.
 type ThemeId = openapi_types.UUID
+
+// ThemeSettings The workspace's theme naming policy.
+type ThemeSettings struct {
+	// ExactThemeNames When true, every theme in the workspace is served from a folder named exactly like the theme, and that name never changes across content replaces. When false (the default), the served folder changes on each replace, unless the theme was created by a platform migration.
+	ExactThemeNames bool `json:"exact_theme_names"`
+}
 
 // ThemeStatus defines model for ThemeStatus.
 type ThemeStatus string
@@ -3931,6 +3959,11 @@ type SetThemeAssignmentParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
 }
 
+// RestartClusterInstancesParams defines parameters for RestartClusterInstances.
+type RestartClusterInstancesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
 // GetClusterSecurityParams defines parameters for GetClusterSecurity.
 type GetClusterSecurityParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
@@ -4165,6 +4198,16 @@ type TestSIEMDestinationParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
 }
 
+// GetThemeSettingsParams defines parameters for GetThemeSettings.
+type GetThemeSettingsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateThemeSettingsParams defines parameters for UpdateThemeSettings.
+type UpdateThemeSettingsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
 // ListWebhookEventTypesParams defines parameters for ListWebhookEventTypes.
 type ListWebhookEventTypesParams struct {
 	Source *WebhookSource `form:"source,omitempty" json:"source,omitempty"`
@@ -4308,6 +4351,9 @@ type CreateSIEMDestinationJSONRequestBody = CreateSIEMDestinationRequest
 
 // UpdateSIEMDestinationJSONRequestBody defines body for UpdateSIEMDestination for application/json ContentType.
 type UpdateSIEMDestinationJSONRequestBody = UpdateSIEMDestinationRequest
+
+// UpdateThemeSettingsJSONRequestBody defines body for UpdateThemeSettings for application/json ContentType.
+type UpdateThemeSettingsJSONRequestBody = ThemeSettings
 
 // CreateWebhookSubscriptionJSONRequestBody defines body for CreateWebhookSubscription for application/json ContentType.
 type CreateWebhookSubscriptionJSONRequestBody = CreateWebhookSubscriptionRequest
@@ -4772,6 +4818,9 @@ type ClientInterface interface {
 
 	SetThemeAssignment(ctx context.Context, clusterId ClusterId, realm RealmName, params *SetThemeAssignmentParams, body SetThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// RestartClusterInstances request
+	RestartClusterInstances(ctx context.Context, clusterId ClusterId, params *RestartClusterInstancesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetClusterSecurity request
 	GetClusterSecurity(ctx context.Context, clusterId ClusterId, params *GetClusterSecurityParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -4881,6 +4930,14 @@ type ClientInterface interface {
 
 	// TestSIEMDestination request
 	TestSIEMDestination(ctx context.Context, destinationId SIEMDestinationId, params *TestSIEMDestinationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetThemeSettings request
+	GetThemeSettings(ctx context.Context, params *GetThemeSettingsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateThemeSettingsWithBody request with any body
+	UpdateThemeSettingsWithBody(ctx context.Context, params *UpdateThemeSettingsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateThemeSettings(ctx context.Context, params *UpdateThemeSettingsParams, body UpdateThemeSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWebhookEventTypes request
 	ListWebhookEventTypes(ctx context.Context, params *ListWebhookEventTypesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -6566,6 +6623,18 @@ func (c *Client) SetThemeAssignment(ctx context.Context, clusterId ClusterId, re
 	return c.Client.Do(req)
 }
 
+func (c *Client) RestartClusterInstances(ctx context.Context, clusterId ClusterId, params *RestartClusterInstancesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRestartClusterInstancesRequest(c.Server, clusterId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetClusterSecurity(ctx context.Context, clusterId ClusterId, params *GetClusterSecurityParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetClusterSecurityRequest(c.Server, clusterId, params)
 	if err != nil {
@@ -7024,6 +7093,42 @@ func (c *Client) UpdateSIEMDestination(ctx context.Context, destinationId SIEMDe
 
 func (c *Client) TestSIEMDestination(ctx context.Context, destinationId SIEMDestinationId, params *TestSIEMDestinationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewTestSIEMDestinationRequest(c.Server, destinationId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetThemeSettings(ctx context.Context, params *GetThemeSettingsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetThemeSettingsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateThemeSettingsWithBody(ctx context.Context, params *UpdateThemeSettingsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateThemeSettingsRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateThemeSettings(ctx context.Context, params *UpdateThemeSettingsParams, body UpdateThemeSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateThemeSettingsRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -14483,6 +14588,53 @@ func NewSetThemeAssignmentRequestWithBody(server string, clusterId ClusterId, re
 	return req, nil
 }
 
+// NewRestartClusterInstancesRequest generates requests for RestartClusterInstances
+func NewRestartClusterInstancesRequest(server string, clusterId ClusterId, params *RestartClusterInstancesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/restart-instances", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
 // NewGetClusterSecurityRequest generates requests for GetClusterSecurity
 func NewGetClusterSecurityRequest(server string, clusterId ClusterId, params *GetClusterSecurityParams) (*http.Request, error) {
 	var err error
@@ -16252,6 +16404,99 @@ func NewTestSIEMDestinationRequest(server string, destinationId SIEMDestinationI
 	return req, nil
 }
 
+// NewGetThemeSettingsRequest generates requests for GetThemeSettings
+func NewGetThemeSettingsRequest(server string, params *GetThemeSettingsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/theme-settings")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewUpdateThemeSettingsRequest calls the generic UpdateThemeSettings builder with application/json body
+func NewUpdateThemeSettingsRequest(server string, params *UpdateThemeSettingsParams, body UpdateThemeSettingsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateThemeSettingsRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewUpdateThemeSettingsRequestWithBody generates requests for UpdateThemeSettings with any type of body
+func NewUpdateThemeSettingsRequestWithBody(server string, params *UpdateThemeSettingsParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/theme-settings")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
 // NewListWebhookEventTypesRequest generates requests for ListWebhookEventTypes
 func NewListWebhookEventTypesRequest(server string, params *ListWebhookEventTypesParams) (*http.Request, error) {
 	var err error
@@ -17008,6 +17253,9 @@ type ClientWithResponsesInterface interface {
 
 	SetThemeAssignmentWithResponse(ctx context.Context, clusterId ClusterId, realm RealmName, params *SetThemeAssignmentParams, body SetThemeAssignmentJSONRequestBody, reqEditors ...RequestEditorFn) (*SetThemeAssignmentResponse, error)
 
+	// RestartClusterInstancesWithResponse request
+	RestartClusterInstancesWithResponse(ctx context.Context, clusterId ClusterId, params *RestartClusterInstancesParams, reqEditors ...RequestEditorFn) (*RestartClusterInstancesResponse, error)
+
 	// GetClusterSecurityWithResponse request
 	GetClusterSecurityWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterSecurityParams, reqEditors ...RequestEditorFn) (*GetClusterSecurityResponse, error)
 
@@ -17117,6 +17365,14 @@ type ClientWithResponsesInterface interface {
 
 	// TestSIEMDestinationWithResponse request
 	TestSIEMDestinationWithResponse(ctx context.Context, destinationId SIEMDestinationId, params *TestSIEMDestinationParams, reqEditors ...RequestEditorFn) (*TestSIEMDestinationResponse, error)
+
+	// GetThemeSettingsWithResponse request
+	GetThemeSettingsWithResponse(ctx context.Context, params *GetThemeSettingsParams, reqEditors ...RequestEditorFn) (*GetThemeSettingsResponse, error)
+
+	// UpdateThemeSettingsWithBodyWithResponse request with any body
+	UpdateThemeSettingsWithBodyWithResponse(ctx context.Context, params *UpdateThemeSettingsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateThemeSettingsResponse, error)
+
+	UpdateThemeSettingsWithResponse(ctx context.Context, params *UpdateThemeSettingsParams, body UpdateThemeSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateThemeSettingsResponse, error)
 
 	// ListWebhookEventTypesWithResponse request
 	ListWebhookEventTypesWithResponse(ctx context.Context, params *ListWebhookEventTypesParams, reqEditors ...RequestEditorFn) (*ListWebhookEventTypesResponse, error)
@@ -20162,6 +20418,35 @@ func (r SetThemeAssignmentResponse) StatusCode() int {
 	return 0
 }
 
+type RestartClusterInstancesResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON202                   *ClusterRestartOutcome
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON409 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r RestartClusterInstancesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RestartClusterInstancesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetClusterSecurityResponse struct {
 	Body                      []byte
 	HTTPResponse              *http.Response
@@ -21076,6 +21361,60 @@ func (r TestSIEMDestinationResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r TestSIEMDestinationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetThemeSettingsResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *ThemeSettings
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r GetThemeSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetThemeSettingsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateThemeSettingsResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *ThemeSettings
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateThemeSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateThemeSettingsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -22504,6 +22843,15 @@ func (c *ClientWithResponses) SetThemeAssignmentWithResponse(ctx context.Context
 	return ParseSetThemeAssignmentResponse(rsp)
 }
 
+// RestartClusterInstancesWithResponse request returning *RestartClusterInstancesResponse
+func (c *ClientWithResponses) RestartClusterInstancesWithResponse(ctx context.Context, clusterId ClusterId, params *RestartClusterInstancesParams, reqEditors ...RequestEditorFn) (*RestartClusterInstancesResponse, error) {
+	rsp, err := c.RestartClusterInstances(ctx, clusterId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRestartClusterInstancesResponse(rsp)
+}
+
 // GetClusterSecurityWithResponse request returning *GetClusterSecurityResponse
 func (c *ClientWithResponses) GetClusterSecurityWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterSecurityParams, reqEditors ...RequestEditorFn) (*GetClusterSecurityResponse, error) {
 	rsp, err := c.GetClusterSecurity(ctx, clusterId, params, reqEditors...)
@@ -22846,6 +23194,32 @@ func (c *ClientWithResponses) TestSIEMDestinationWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseTestSIEMDestinationResponse(rsp)
+}
+
+// GetThemeSettingsWithResponse request returning *GetThemeSettingsResponse
+func (c *ClientWithResponses) GetThemeSettingsWithResponse(ctx context.Context, params *GetThemeSettingsParams, reqEditors ...RequestEditorFn) (*GetThemeSettingsResponse, error) {
+	rsp, err := c.GetThemeSettings(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetThemeSettingsResponse(rsp)
+}
+
+// UpdateThemeSettingsWithBodyWithResponse request with arbitrary body returning *UpdateThemeSettingsResponse
+func (c *ClientWithResponses) UpdateThemeSettingsWithBodyWithResponse(ctx context.Context, params *UpdateThemeSettingsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateThemeSettingsResponse, error) {
+	rsp, err := c.UpdateThemeSettingsWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateThemeSettingsResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateThemeSettingsWithResponse(ctx context.Context, params *UpdateThemeSettingsParams, body UpdateThemeSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateThemeSettingsResponse, error) {
+	rsp, err := c.UpdateThemeSettings(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateThemeSettingsResponse(rsp)
 }
 
 // ListWebhookEventTypesWithResponse request returning *ListWebhookEventTypesResponse
@@ -30541,6 +30915,81 @@ func ParseSetThemeAssignmentResponse(rsp *http.Response) (*SetThemeAssignmentRes
 	return response, nil
 }
 
+// ParseRestartClusterInstancesResponse parses an HTTP response from a RestartClusterInstancesWithResponse call
+func ParseRestartClusterInstancesResponse(rsp *http.Response) (*RestartClusterInstancesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RestartClusterInstancesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest ClusterRestartOutcome
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetClusterSecurityResponse parses an HTTP response from a GetClusterSecurityWithResponse call
 func ParseGetClusterSecurityResponse(rsp *http.Response) (*GetClusterSecurityResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -32851,6 +33300,128 @@ func ParseTestSIEMDestinationResponse(rsp *http.Response) (*TestSIEMDestinationR
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetThemeSettingsResponse parses an HTTP response from a GetThemeSettingsWithResponse call
+func ParseGetThemeSettingsResponse(rsp *http.Response) (*GetThemeSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetThemeSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ThemeSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateThemeSettingsResponse parses an HTTP response from a UpdateThemeSettingsWithResponse call
+func ParseUpdateThemeSettingsResponse(rsp *http.Response) (*UpdateThemeSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateThemeSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ThemeSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest ValidationErrorBody

@@ -13826,6 +13826,133 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - themes:write
+  /clusters/{cluster_id}/restart-instances:
+    post:
+      operationId: restartClusterInstances
+      summary: Restart the cluster's Keycloak instances
+      description: |-
+        Rolls the cluster's Keycloak instances, for example so theme content replaced under an exact theme name
+        (see `PUT /theme-settings`) starts rendering. Applies immediately unless the workspace's disruptive changes
+        are latched to the maintenance window, in which case the response reports `deferred: true` and, when known,
+        `next_window`.
+
+        Returns `409 Conflict` when the cluster is not in the `available` status, with a `code` field identifying
+        why: `cluster_busy` (a restart or other update is already in progress), `cluster_not_available` (the cluster
+        is failed, deleting, stopped, provisioning, degraded, or under maintenance), or `env_var_limit` (no
+        environment variable slot left to fall back to on an older operator).
+
+        Required scope: `clusters:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '202':
+          description: The request has been accepted for processing, but processing has not yet completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterRestartOutcome'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Operations
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:write
   /clusters/{cluster_id}/security:
     get:
       operationId: getClusterSecurity
@@ -17252,8 +17379,6 @@ paths:
       description: |-
         Creates a SIEM destination for the workspace. Credentials are write-only and are never returned.
 
-        An `http.headers` entry named `Authorization` is rejected with `422` when `http.auth_type` is `bearer`.
-
         Required scope: `siem:write`
       parameters:
         - $ref: '#/components/parameters/CommonParameters'
@@ -17494,8 +17619,6 @@ paths:
       summary: Update a SIEM destination
       description: |-
         Partially updates a saved destination. Omitted credentials retain their stored values.
-
-        An `http.headers` entry named `Authorization` is rejected with `422` when the destination ends up on `bearer` authentication, including when the stored headers are kept and only `http.auth_type` changes.
 
         Required scope: `siem:write`
       parameters:
@@ -17881,6 +18004,224 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - siem:write
+  /theme-settings:
+    get:
+      operationId: getThemeSettings
+      summary: Get the workspace's theme settings
+      description: |-
+        Returns the workspace's theme naming policy.
+
+        Required scope: `themes:read`
+      parameters:
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThemeSettings'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Themes
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - themes:read
+    put:
+      operationId: updateThemeSettings
+      summary: Update the workspace's theme settings
+      description: |-
+        Changes the workspace's theme naming policy. This changes what every realm on every cluster in the workspace
+        serves, so it additionally requires the API key to have been minted for a workspace owner or admin; a key
+        minted for any other role, including a cluster admin, gets `403` even with the `themes:write` scope.
+
+        Turning `exact_theme_names` on moves the workspace's existing themes to their exact names in the background;
+        this does not block the response. A theme that cannot be moved right away (for example because its cluster is
+        busy updating) completes the move on its next content replace instead.
+
+        Turning it off changes nothing immediately: each theme keeps its current served folder until its next content
+        replace, from which point the folder changes on every replace again.
+
+        Required scope: `themes:write`
+      parameters:
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThemeSettings'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Themes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThemeSettings'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - themes:write
   /webhook-event-types:
     get:
       operationId: listWebhookEventTypes
@@ -19398,16 +19739,16 @@ components:
           type: string
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
-          description: Version currently running on the cluster.
+          description: Version currently running on the cluster. For `platform` extensions this is the upstream release string of the installed build (not necessarily semver, for example `1.4.1-SNAPSHOT`), or `unknown` when it cannot be determined. For `custom` extensions it is the uploader-supplied version.
         available_version:
           type: string
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
           nullable: true
-          description: Latest available version. Equals `installed_version` when the extension is up to date.
+          description: Version the cluster would get by upgrading now. For `platform` extensions it is the build published for the cluster's Keycloak version (`unknown` when that build states no version), and `null` when no build supports the cluster's Keycloak version. For `custom` extensions it is the latest uploaded version.
         upgrade_available:
           type: boolean
-          description: Whether a newer version is available to upgrade to.
+          description: Whether upgrading would install a different build. For `platform` extensions it compares the installed build with the one published for the cluster's Keycloak version, so republishing an unchanged catalog never sets it. For `custom` extensions it is set when a version was published after the install. Always `false` when the install is not `active` or is pinned by Skycloak support.
         parameters:
           type: object
           additionalProperties:
@@ -19578,6 +19919,23 @@ components:
           format: int64
           description: Largest per-pod in-memory session-cache occupancy across the cluster's pods. Compare against the configured max-count to gauge eviction pressure / OOM risk.
       description: High-level summary of cluster activity over the requested time window.
+    ClusterRestartOutcome:
+      type: object
+      required:
+        - deferred
+        - impact
+      properties:
+        deferred:
+          type: boolean
+          description: True when the restart is deferred to the cluster's maintenance window instead of applying immediately.
+        next_window:
+          type: string
+          format: date-time
+          description: When the deferred restart's maintenance window next opens. Absent when `deferred` is false, or when the next window could not be resolved.
+        impact:
+          type: string
+          description: Customer-facing description of how disruptive the restart is for this cluster's size.
+      description: Outcome of a requested Keycloak instance restart.
     ClusterSecurityConfig:
       type: object
       properties:
@@ -20949,6 +21307,13 @@ components:
             validate: omitnil,max=500
           minLength: 1
           maxLength: 200
+        display_name:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          nullable: true
+          maxLength: 200
+          description: Friendly name shown in place of `name` when set. `name` never changes once an extension is catalogued; `display_name` lets the shown label change independently. Absent or null when the extension has none, in which case clients should fall back to `name`.
         description:
           type: string
           x-oapi-codegen-extra-tags:
@@ -21843,12 +22208,20 @@ components:
           type: string
         required_plan:
           type: string
+        code:
+          type: string
+          description: |-
+            Machine-readable identifier of the quota that was hit, so a client can tell
+            quotas apart without parsing `detail`. Known values include `cluster_limit`
+            (the workspace's total cluster allowance), `cluster_size_quota` (the
+            allowance for the requested cluster size) and `cluster_size` (the requested
+            size is not offered on the plan at all). New values may be added.
         current_usage:
           type: integer
           description: How many of the resource the workspace currently has.
         current_limit:
           type: integer
-          description: Maximum allowed by the current plan.
+          description: Maximum allowed by the current plan. `0` means the plan does not include the resource at all.
       description: Returned when a workspace plan quota would be exceeded. `required_plan` indicates the minimum plan needed to complete the request.
     ProtocolStat:
       type: object
@@ -22654,7 +23027,7 @@ components:
             type: string
             x-oapi-codegen-extra-tags:
               validate: omitnil,max=500
-          description: Optional HTTP headers to include in the request. Values are write-only and are never returned. An `Authorization` header (matched case-insensitively) is rejected with a validation error when `auth_type` is `bearer`, because Skycloak sets that header itself.
+          description: Optional HTTP headers to include in the request. Every value must be a string, a non-string value (boolean, number, object or array) is rejected. Values are write-only and are never returned.
         auth_type:
           $ref: '#/components/schemas/HTTPAuthType'
         bearer_token:
@@ -23414,6 +23787,15 @@ components:
     ThemeId:
       type: string
       format: uuid
+    ThemeSettings:
+      type: object
+      required:
+        - exact_theme_names
+      properties:
+        exact_theme_names:
+          type: boolean
+          description: When true, every theme in the workspace is served from a folder named exactly like the theme, and that name never changes across content replaces. When false (the default), the served folder changes on each replace, unless the theme was created by a platform migration.
+      description: The workspace's theme naming policy.
     ThemeStatus:
       type: string
       enum:
