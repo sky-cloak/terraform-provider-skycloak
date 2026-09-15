@@ -49,7 +49,7 @@ jobs:
           # A release tag off main (pushed from a branch) would otherwise make every
           # run below exit quietly as "already released", forever.
           if ! git merge-base --is-ancestor "$last" origin/main; then
-            echo "::error::$last is the newest release tag but is not on main; remove it or release from main"
+            echo "::error::$last is the newest release tag but is not on main, and it has already been published; cut a higher release from main (deleting it would re-mint the same version)"
             exit 1
           fi
           if ! git merge-base --is-ancestor "$last" HEAD; then
