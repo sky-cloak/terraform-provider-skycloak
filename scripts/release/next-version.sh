@@ -14,13 +14,18 @@ while IFS= read -r -d '' msg; do
   msg=${msg#$'\n'}
   [[ -z "$msg" ]] && continue
   seen=1
-  if [[ "$msg" =~ ^[a-z]+(\([^\)]*\))?!: || "$msg" == *$'\n'"BREAKING CHANGE:"* ]]; then
-    echo "breaking change needs a human release: ${msg%%$'\n'*}" >&2
-    exit 3
-  fi
-  if [[ "$msg" =~ ^feat(\([^\)]*\))?: ]]; then
-    bump="minor"
-  fi
+  # Every line, not just the subject: a squash merge lists the PR's own commits
+  # in its body as "* type: ...", and a breaking footer sits on its own line.
+  while IFS= read -r line; do
+    line=${line#\* }
+    if [[ "$line" =~ ^[a-z]+(\([^\)]*\))?!: || "$line" =~ ^BREAKING[\ -]CHANGE: ]]; then
+      echo "breaking change needs a human release: ${msg%%$'\n'*}" >&2
+      exit 3
+    fi
+    if [[ "$line" =~ ^feat(\([^\)]*\))?: ]]; then
+      bump="minor"
+    fi
+  done <<< "$msg"
 done
 
 if [[ $seen -eq 0 ]]; then

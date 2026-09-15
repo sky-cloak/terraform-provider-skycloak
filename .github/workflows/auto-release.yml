@@ -43,11 +43,11 @@ jobs:
         id: next
         run: |
           set -euo pipefail
-          if tag=$(git describe --tags --exact-match --match 'v[0-9]*.[0-9]*.[0-9]*' HEAD 2>/dev/null); then
+          if tag=$(git describe --tags --exact-match --match 'v[0-9]*.[0-9]*.[0-9]*' --exclude '*-*' --exclude 'v*.*.*.*' HEAD 2>/dev/null); then
             echo "HEAD is already released as $tag."
             exit 0
           fi
-          last=$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*')
+          last=$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' --exclude '*-*' --exclude 'v*.*.*.*')
           set +e
           next=$(git log --format='%B%x00' "$last..HEAD" | scripts/release/next-version.sh "$last")
           code=$?

@@ -1,13 +1,17 @@
 name: spec-sync
 
-# Regenerates the API client from a released app spec and opens a PR. A sync
-# that builds and tests cleanly merges itself once its checks pass, and
-# auto-release.yml tags it. Runs when app releases a changed spec
-# (repository_dispatch: openapi-updated, carrying the tag), weekly, or by hand.
+# Regenerates the API client from the app release prod serves and opens a PR. A
+# sync that builds and tests cleanly merges itself once its checks pass, and
+# auto-release.yml tags it. Runs when app releases or rolls back
+# (repository_dispatch: openapi-updated, carrying the tag), or by hand with a
+# tag. No schedule: guessing the latest release would sync past a rollback.
 on:
-  schedule:
-    - cron: "0 7 * * 1"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'App release tag prod serves, e.g. v3.5.17'
+        required: true
+        type: string
   repository_dispatch:
     types: [openapi-updated]
 
@@ -34,22 +38,13 @@ jobs:
       - name: Pick the app release to sync from
         id: ref
         env:
-          # Token with read access to the spec source repository.
-          GH_TOKEN: ${{ secrets.OPENAPI_SOURCE_TOKEN }}
-          DISPATCHED: ${{ github.event.client_payload.ref }}
+          REF: ${{ github.event.client_payload.ref || inputs.ref }}
         run: |
           set -euo pipefail
-          # Fail fast with an actionable message when the secret is missing or
-          # empty. (This workflow failed silently for days when it disappeared.)
-          if [ -z "$GH_TOKEN" ]; then
-            echo "::error::OPENAPI_SOURCE_TOKEN secret is missing or empty. Create a fine-grained PAT with Contents:Read on ${{ vars.OPENAPI_SPEC_REPO }} and store it as a repository secret named OPENAPI_SOURCE_TOKEN."
-            exit 1
-          fi
-          latest=""
-          if [ -z "$DISPATCHED" ]; then
-            latest=$(gh api "repos/${{ vars.OPENAPI_SPEC_REPO }}/releases/latest" --jq .tag_name)
-          fi
-          echo "ref=$(scripts/release/resolve-spec-ref.sh "$DISPATCHED" "$latest")" >> "$GITHUB_OUTPUT"
+          # An assignment, not echo "$(...)": inside echo a refusal would be
+          # swallowed and the fetch below would silently read the default branch.
+          ref=$(scripts/release/resolve-spec-ref.sh "$REF")
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
 
       - name: Fetch the OpenAPI spec at that release
         env:
@@ -57,6 +52,11 @@ jobs:
           REF: ${{ steps.ref.outputs.ref }}
         run: |
           set -euo pipefail
+          : "${REF:?no release tag resolved}"
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::OPENAPI_SOURCE_TOKEN secret is missing or empty. Create a fine-grained PAT with Contents:Read on ${{ vars.OPENAPI_SPEC_REPO }} and store it as a repository secret named OPENAPI_SOURCE_TOKEN."
+            exit 1
+          fi
           gh api "repos/${{ vars.OPENAPI_SPEC_REPO }}/contents/${{ vars.OPENAPI_SPEC_PATH }}?ref=$REF" \
             -H "Accept: application/vnd.github.raw" > internal/apiclient/openapi.yaml
           # An auth/HTML error page must never regenerate the client from garbage.
@@ -116,8 +116,9 @@ jobs:
 
       # Merges only when regeneration built and tested, and only once the PR's
       # required checks pass; an earlier auto-merge is withdrawn if this update broke.
+      # Gated on the PR existing, not on this run pushing, so a re-run re-arms it.
       - name: Merge automatically once checks pass
-        if: (steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated') && steps.verify.outcome == 'success'
+        if: steps.pr.outputs.pull-request-number != '' && steps.verify.outcome == 'success'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           APPROVER_TOKEN: ${{ github.token }}
@@ -128,7 +129,7 @@ jobs:
           gh pr merge "$PR" --auto --squash
 
       - name: Withdraw auto-merge when the regenerated client is broken
-        if: (steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated') && steps.verify.outcome == 'failure'
+        if: steps.pr.outputs.pull-request-number != '' && steps.verify.outcome == 'failure'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           PR: ${{ steps.pr.outputs.pull-request-number }}
@@ -137,5 +138,5 @@ jobs:
       - name: Fail the run when the regenerated client breaks the build
         if: steps.verify.outcome == 'failure'
         run: |
-          echo "::error::Spec sync broke vet/build/test; update the internal/skycloak facade before merging the sync PR."
+          echo "::error::Spec sync broke build/test; fix the generated-code consumers on the sync PR, then squash-merge it by hand."
           exit 1
