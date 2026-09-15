@@ -46,6 +46,12 @@ jobs:
             echo "::error::no vX.Y.Z tag to version from"
             exit 1
           fi
+          # A release tag off main (pushed from a branch) would otherwise make every
+          # run below exit quietly as "already released", forever.
+          if ! git merge-base --is-ancestor "$last" origin/main; then
+            echo "::error::$last is the newest release tag but is not on main; remove it or release from main"
+            exit 1
+          fi
           if ! git merge-base --is-ancestor "$last" HEAD; then
             echo "$last is not in this commit's history; a newer commit was already released."
             exit 0
