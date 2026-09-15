@@ -17252,6 +17252,8 @@ paths:
       description: |-
         Creates a SIEM destination for the workspace. Credentials are write-only and are never returned.
 
+        An `http.headers` entry named `Authorization` is rejected with `422` when `http.auth_type` is `bearer`.
+
         Required scope: `siem:write`
       parameters:
         - $ref: '#/components/parameters/CommonParameters'
@@ -17492,6 +17494,8 @@ paths:
       summary: Update a SIEM destination
       description: |-
         Partially updates a saved destination. Omitted credentials retain their stored values.
+
+        An `http.headers` entry named `Authorization` is rejected with `422` when the destination ends up on `bearer` authentication, including when the stored headers are kept and only `http.auth_type` changes.
 
         Required scope: `siem:write`
       parameters:
@@ -18151,6 +18155,10 @@ paths:
       description: |-
         Creates a webhook subscription. Secrets are write-only and are never returned.
 
+        `url` must include an endpoint path (`https://api.example.com/webhooks/events`); a bare origin is rejected with 422 because no route on your server would receive the delivery.
+
+        `cluster_id` must name a cluster in your workspace, and `realm_id` a realm on that cluster; either one unknown returns 404. A `realm_id` sent without a `cluster_id` must be a realm on one of your workspace's clusters. Omit both to subscribe to every cluster in the workspace.
+
         Required scope: `webhooks:write`
       parameters: []
       responses:
@@ -18401,6 +18409,8 @@ paths:
       summary: Update a webhook subscription
       description: |-
         Partially updates a subscription. Omitted secrets retain their stored values.
+
+        A supplied `url` must include an endpoint path; the rule applies to the URL being saved, so a subscription stored with a bare URL keeps working until its URL is changed.
 
         Required scope: `webhooks:write`
       parameters:
@@ -20939,6 +20949,13 @@ components:
             validate: omitnil,max=500
           minLength: 1
           maxLength: 200
+        display_name:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          nullable: true
+          maxLength: 200
+          description: Friendly name shown in place of `name` when set. `name` never changes once an extension is catalogued; `display_name` lets the shown label change independently. Absent or null when the extension has none, in which case clients should fall back to `name`.
         description:
           type: string
           x-oapi-codegen-extra-tags:
@@ -20946,6 +20963,10 @@ components:
           nullable: true
         source:
           $ref: '#/components/schemas/ExtensionSource'
+        visibility:
+          allOf:
+            - $ref: '#/components/schemas/ExtensionVisibility'
+          description: 'Set for `platform` extensions only: `private` marks an early-access extension your workspace has been granted. Absent for `custom` extensions.'
         version:
           type: string
           x-oapi-codegen-extra-tags:
@@ -21007,7 +21028,7 @@ components:
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
           nullable: true
-          description: Human-readable scan result. Only present when `scan_status` is `rejected`.
+          description: Human-readable scan result. Present when `scan_status` is `rejected` (names the detected signature) or `failed` (says the scan could not complete).
         original_jar_name:
           type: string
           x-oapi-codegen-extra-tags:
@@ -21165,6 +21186,7 @@ components:
         - scanning
         - ready
         - rejected
+        - failed
     ExtensionSource:
       type: string
       enum:
@@ -21183,6 +21205,11 @@ components:
         created_at:
           type: string
           format: date-time
+    ExtensionVisibility:
+      type: string
+      enum:
+        - public
+        - private
     FieldError:
       type: object
       required:
@@ -22625,22 +22652,26 @@ components:
           type: string
           x-oapi-codegen-extra-tags:
             validate: url
+          maxLength: 1000
           format: uri
+          description: Webhook endpoint that receives the exported events. Must be a complete `https://` URL with a host; plain `http://` endpoints and characters that are illegal in a URI (`<`, `>`, `"`, spaces) are rejected on create and update.
         headers:
           type: object
           additionalProperties:
             type: string
             x-oapi-codegen-extra-tags:
               validate: omitnil,max=500
-          description: Optional HTTP headers to include in the request. Values are write-only and are never returned.
+          description: Optional HTTP headers to include in the request. Values are write-only and are never returned. An `Authorization` header (matched case-insensitively) is rejected with a validation error when `auth_type` is `bearer`, because Skycloak sets that header itself.
         auth_type:
           $ref: '#/components/schemas/HTTPAuthType'
         bearer_token:
           type: string
           x-oapi-codegen-extra-tags:
-            validate: omitnil,max=500
+            validate: omitnil
+          maxLength: 4096
+          pattern: ^[A-Za-z0-9\-._~+/=]+$
           format: password
-          description: Required when `auth_type` is `bearer`. Write-only.
+          description: 'Required when `auth_type` is `bearer`. Write-only. The token is sent verbatim as an `Authorization: Bearer` header value, so it is limited to RFC 6750 token68 characters (letters, digits and `-._~+/=`) and 4096 characters. A token outside that set is rejected with a 422 validation error.'
         username:
           type: string
           x-oapi-codegen-extra-tags:
@@ -23341,6 +23372,12 @@ components:
         error_message:
           type: string
           description: Error detail from the last failed deployment.
+        directory:
+          type: string
+          description: 'Directory name Keycloak serves this theme from. Use this exact value when setting a realm or application theme outside Skycloak. Valid once `status` is `deployed`. It changes when the theme content is replaced: realm theme settings that name the previous directory are moved automatically, but application themes set outside Skycloak are not and must be updated after a replace.'
+        restart_required:
+          type: boolean
+          description: True when the theme's content was replaced under its exact name and Keycloak has not restarted since, so the previous content may still be served. Only workspaces that keep exact theme names replace content in place; for every other theme this is false.
         created_at:
           type: string
           format: date-time
@@ -24342,6 +24379,7 @@ components:
       type: string
       maxLength: 1000
       format: uri
+      description: Delivery endpoint. Must be an `http` or `https` URL that includes an endpoint path, for example `https://api.example.com/webhooks/events`. A bare origin with no path (or a path of just `/`) is rejected.
       x-oapi-codegen-extra-tags:
         validate: url
   securitySchemes:
