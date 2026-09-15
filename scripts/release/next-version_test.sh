@@ -51,6 +51,10 @@ check "a !: line in body prose is not a breaking change" v0.12.2 0 v0.12.1 \
   $'fix(api): tidy up\n\nfix!: this was considered and rejected'
 check "a feature: subject is not a feat" v0.12.2 0 v0.12.1 "feature: something"
 
+check "a merge commit's PR title line carries the type" v0.13.0 0 v0.12.1 \
+  $'Merge pull request #9 from sky-cloak/feat/tools\n\nfeat(tools): new tool'
+check "a breaking PR title in a merge commit refuses to release" "" 3 v0.12.1 \
+  $'Merge pull request #9 from sky-cloak/api\n\nfix(api)!: drop the field'
 # No commits since the tag: tagging again would republish identical code.
 got=$(: | "$here/next-version.sh" v0.12.1 2>/dev/null); code=$?
 expect "nothing since the last tag refuses to release" "" 4 "$got" "$code"

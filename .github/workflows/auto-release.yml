@@ -38,7 +38,18 @@ jobs:
             echo "HEAD is already released as $tag."
             exit 0
           fi
-          last=$(git describe --tags --abbrev=0 "${match[@]}")
+          # The newest release overall, not the nearest one to this commit: a run
+          # for an older main commit that finishes late must not release behind it.
+          tags=$(git tag -l 'v*')
+          last=$( { grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' <<< "$tags" || true; } | sort -V | tail -n 1)
+          if [ -z "$last" ]; then
+            echo "::error::no vX.Y.Z tag to version from"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$last" HEAD; then
+            echo "$last is not in this commit's history; a newer commit was already released."
+            exit 0
+          fi
           # Look for the sync commit itself rather than the head message, so a sync
           # merged by rebase or merge commit still releases. Captured first: under
           # pipefail, grep -q exiting early can fail the git log it reads from.
