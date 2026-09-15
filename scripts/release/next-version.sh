@@ -14,11 +14,23 @@ while IFS= read -r -d '' msg; do
   msg=${msg#$'\n'}
   [[ -z "$msg" ]] && continue
   seen=1
-  # Every line, not just the subject: a squash merge lists the PR's own commits
-  # in its body as "* type: ...", and a breaking footer sits on its own line.
+  # A type counts on the subject and on "* type: ..." lines, which is how a squash
+  # merge lists the PR's own commits; other body lines are prose. A breaking
+  # footer counts on any line.
+  first=1
   while IFS= read -r line; do
-    line=${line#\* }
-    if [[ "$line" =~ ^[a-z]+(\([^\)]*\))?!: || "$line" =~ ^BREAKING[\ -]CHANGE: ]]; then
+    if [[ "$line" =~ ^BREAKING[\ -]CHANGE: ]]; then
+      echo "breaking change needs a human release: ${msg%%$'\n'*}" >&2
+      exit 3
+    fi
+    if [[ $first -eq 1 ]]; then
+      first=0
+    elif [[ "$line" == "* "* ]]; then
+      line=${line#\* }
+    else
+      continue
+    fi
+    if [[ "$line" =~ ^[a-z]+(\([^\)]*\))?!: ]]; then
       echo "breaking change needs a human release: ${msg%%$'\n'*}" >&2
       exit 3
     fi

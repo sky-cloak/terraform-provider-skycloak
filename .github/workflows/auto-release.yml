@@ -1,8 +1,8 @@
 name: auto-release
 
-# Tags a release after a spec sync lands on main and main's tests pass. The
-# version comes from the commit types since the last tag; a breaking change
-# stops here for a human.
+# Tags a release once main's tests pass and an unreleased spec sync is on main,
+# however it was merged. The version comes from the commit types since the last
+# tag; a breaking change stops here for a human.
 on:
   workflow_run:
     workflows: [test]
@@ -18,36 +18,35 @@ concurrency:
 
 jobs:
   tag:
-    if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      startsWith(github.event.workflow_run.head_commit.message, 'chore: sync OpenAPI spec')
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Mint the releaser app token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.RELEASER_APP_ID }}
-          private-key: ${{ secrets.RELEASER_PRIVATE_KEY }}
-
-      # Checked out with the app token so the tag push triggers release.yml; a tag
-      # pushed with GITHUB_TOKEN would not.
+      # No persisted credentials: the tag is pushed with the app token, because a
+      # tag pushed with GITHUB_TOKEN would not trigger release.yml.
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
 
       - name: Work out the next version
         id: next
         run: |
           set -euo pipefail
-          if tag=$(git describe --tags --exact-match --match 'v[0-9]*.[0-9]*.[0-9]*' --exclude '*-*' --exclude 'v*.*.*.*' HEAD 2>/dev/null); then
+          match=(--match 'v[0-9]*.[0-9]*.[0-9]*' --exclude '*-*' --exclude 'v*.*.*.*')
+          if tag=$(git describe --tags --exact-match "${match[@]}" HEAD 2>/dev/null); then
             echo "HEAD is already released as $tag."
             exit 0
           fi
-          last=$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' --exclude '*-*' --exclude 'v*.*.*.*')
+          last=$(git describe --tags --abbrev=0 "${match[@]}")
+          # Look for the sync commit itself rather than the head message, so a sync
+          # merged by rebase or merge commit still releases. Captured first: under
+          # pipefail, grep -q exiting early can fail the git log it reads from.
+          subjects=$(git log --format=%s "$last..HEAD")
+          if ! grep -q '^chore: sync OpenAPI spec' <<< "$subjects"; then
+            echo "No unreleased spec sync since $last."
+            exit 0
+          fi
           set +e
           next=$(git log --format='%B%x00' "$last..HEAD" | scripts/release/next-version.sh "$last")
           code=$?
@@ -59,13 +58,22 @@ jobs:
             *) exit "$code" ;;
           esac
 
+      - name: Mint the releaser app token
+        if: steps.next.outputs.version != ''
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.RELEASER_APP_ID }}
+          private-key: ${{ secrets.RELEASER_PRIVATE_KEY }}
+
       - name: Tag the release
         if: steps.next.outputs.version != ''
         env:
           VERSION: ${{ steps.next.outputs.version }}
+          TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -euo pipefail
           git config user.name "skycloak-releaser-bot[bot]"
           git config user.email "skycloak-releaser-bot[bot]@users.noreply.github.com"
           git tag -a "$VERSION" -m "$VERSION"
-          git push origin "$VERSION"
+          git push "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "refs/tags/$VERSION"

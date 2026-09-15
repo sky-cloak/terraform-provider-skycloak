@@ -24,5 +24,8 @@ check "no ref is refused, so a run can never guess a release" "" 2 ""
 check "a branch name is refused, so a sync can never pull main" "" 2 main
 check "a suffixed tag is refused, since app never releases pre-releases" "" 2 v3.5.6-rc1
 check "a tag buried in other text is refused" "" 2 refs/tags/v3.5.6
+check "the parts must be separated by dots" "" 2 v3x5x6
+check "every part needs at least one digit" "" 2 v3..6
+check "a missing major is refused" "" 2 v.5.6
 
 exit $fail

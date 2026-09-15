@@ -1,0 +1,51 @@
+name: sync-watch
+
+# A sync PR can build and test yet fail another required check, which leaves
+# auto-merge armed and the PR stuck with no human told. When `test` fails on the
+# bot's sync PR, assign a maintainer and say what failed, once.
+on:
+  workflow_run:
+    workflows: [test]
+    types: [completed]
+    branches: [chore/openapi-sync]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  assign:
+    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign a maintainer to the stuck sync PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          BOT: skycloak-releaser-bot[bot]
+          ASSIGNEE: gmolaire
+        run: |
+          set -euo pipefail
+          pulls=$(gh api "repos/$REPO/commits/$SHA/pulls")
+          # Only the bot's own open sync PR from this repo: a fork or a human can
+          # name a branch chore/openapi-sync too.
+          pr=$(jq -r --arg repo "$REPO" --arg bot "$BOT" '[.[] | select(.state == "open" and .head.ref == "chore/openapi-sync" and .head.repo.full_name == $repo and .user.login == $bot)][0].number // empty' <<< "$pulls")
+          if [ -z "$pr" ]; then
+            echo "No open bot sync PR for $SHA."
+            exit 0
+          fi
+          issue=$(gh api "repos/$REPO/issues/$pr")
+          if jq -e --arg who "$ASSIGNEE" 'any(.assignees[]; .login == $who)' <<< "$issue" >/dev/null; then
+            echo "#$pr is already assigned to $ASSIGNEE."
+            exit 0
+          fi
+          jobs=$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs")
+          failed=$(jq -r '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")' <<< "$jobs")
+          gh api -X POST "repos/$REPO/issues/$pr/assignees" -f "assignees[]=$ASSIGNEE" >/dev/null
+          gh api -X POST "repos/$REPO/issues/$pr/comments" \
+            -f "body=Spec sync is stuck: ${failed:-a check} failed, so auto-merge is waiting. Fix it on this PR and it merges itself. $RUN_URL" >/dev/null
+          echo "Assigned #$pr to $ASSIGNEE (failed: ${failed:-unknown})."

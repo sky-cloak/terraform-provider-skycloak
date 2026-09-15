@@ -32,6 +32,7 @@ check "a BREAKING CHANGE footer refuses to release" "" 3 v0.12.1 \
 
 check "a last tag that is not vX.Y.Z is refused" "" 2 "v1.2" "fix: a"
 check "no last tag at all is refused" "" 2 "" "fix: a"
+check "a last tag without dots is refused" "" 2 v1x2x3 "fix: a"
 
 check "multi-digit versions bump every part correctly" v10.17.124 0 v10.17.123 "fix: a"
 check "multi-digit minor bump resets a multi-digit patch" v10.18.0 0 v10.17.123 "feat: a"
@@ -43,6 +44,12 @@ check "a breaking commit listed in a squash body refuses to release" "" 3 v0.12.
   $'chore: sync OpenAPI spec from app v3.5.17 (#80)\n\n* chore: sync OpenAPI spec\n\n* fix(skycloak)!: drop the renamed field'
 check "a feat listed in a squash body bumps the minor" v0.13.0 0 v0.12.1 \
   $'chore: sync OpenAPI spec from app v3.5.17 (#80)\n\n* chore: sync OpenAPI spec\n\n* feat(tools): expose the new operation'
+
+check "a feat: line in body prose does not bump the minor" v0.12.2 0 v0.12.1 \
+  $'fix(api): tidy up\n\nfeat: was not needed after all'
+check "a !: line in body prose is not a breaking change" v0.12.2 0 v0.12.1 \
+  $'fix(api): tidy up\n\nfix!: this was considered and rejected'
+check "a feature: subject is not a feat" v0.12.2 0 v0.12.1 "feature: something"
 
 # No commits since the tag: tagging again would republish identical code.
 got=$(: | "$here/next-version.sh" v0.12.1 2>/dev/null); code=$?

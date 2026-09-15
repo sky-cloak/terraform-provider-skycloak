@@ -138,5 +138,5 @@ jobs:
       - name: Fail the run when the regenerated client breaks the build
         if: steps.verify.outcome == 'failure'
         run: |
-          echo "::error::Spec sync broke build/test; fix the generated-code consumers on the sync PR, then squash-merge it by hand."
+          echo "::error::Spec sync broke build/test; fix the generated-code consumers on the sync PR, then merge it by hand; it releases once merged."
           exit 1
