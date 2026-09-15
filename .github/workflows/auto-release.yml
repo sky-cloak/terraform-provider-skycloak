@@ -1,0 +1,96 @@
+name: auto-release
+
+# Tags a release once main's tests pass and an unreleased spec sync is on main,
+# however it was merged. The version comes from the commit types since the last
+# tag; a breaking change stops here for a human.
+on:
+  workflow_run:
+    workflows: [test]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auto-release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      # No persisted credentials: the tag is pushed with the app token, because a
+      # tag pushed with GITHUB_TOKEN would not trigger release.yml.
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Work out the next version
+        id: next
+        run: |
+          set -euo pipefail
+          match=(--match 'v[0-9]*.[0-9]*.[0-9]*' --exclude '*-*' --exclude 'v*.*.*.*')
+          if tag=$(git describe --tags --exact-match "${match[@]}" HEAD 2>/dev/null); then
+            echo "HEAD is already released as $tag."
+            exit 0
+          fi
+          # The newest release overall, not the nearest one to this commit: a run
+          # for an older main commit that finishes late must not release behind it.
+          tags=$(git tag -l 'v*')
+          last=$( { grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' <<< "$tags" || true; } | sort -V | tail -n 1)
+          if [ -z "$last" ]; then
+            echo "::error::no vX.Y.Z tag to version from"
+            exit 1
+          fi
+          # A release tag off main (pushed from a branch) would otherwise make every
+          # run below exit quietly as "already released", forever.
+          if ! git merge-base --is-ancestor "$last" origin/main; then
+            echo "::error::$last is the newest release tag but is not on main, and it has already been published; cut a higher release from main (deleting it would re-mint the same version)"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$last" HEAD; then
+            echo "$last is not in this commit's history; a newer commit was already released."
+            exit 0
+          fi
+          # Look for the sync commit itself rather than the head message, so a sync
+          # merged by rebase or merge commit still releases. Captured first: under
+          # pipefail, grep -q exiting early can fail the git log it reads from.
+          subjects=$(git log --format=%s "$last..HEAD")
+          if ! grep -q '^chore: sync OpenAPI spec' <<< "$subjects"; then
+            echo "No unreleased spec sync since $last."
+            exit 0
+          fi
+          set +e
+          next=$(git log --format='%B%x00' "$last..HEAD" | scripts/release/next-version.sh "$last")
+          code=$?
+          set -e
+          case $code in
+            0) echo "version=$next" >> "$GITHUB_OUTPUT" ;;
+            4) echo "Nothing new since $last." ;;
+            # 3 is a breaking change: fail so a human cuts that release.
+            *) exit "$code" ;;
+          esac
+
+      - name: Mint the releaser app token
+        if: steps.next.outputs.version != ''
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.RELEASER_APP_ID }}
+          private-key: ${{ secrets.RELEASER_PRIVATE_KEY }}
+
+      - name: Tag the release
+        if: steps.next.outputs.version != ''
+        env:
+          VERSION: ${{ steps.next.outputs.version }}
+          TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "skycloak-releaser-bot[bot]"
+          git config user.email "skycloak-releaser-bot[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "$VERSION"
+          git push "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "refs/tags/$VERSION"

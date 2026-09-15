@@ -15,6 +15,16 @@ permissions:
   contents: read
 
 jobs:
+  release-scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Test the release scripts
+        run: |
+          bash scripts/release/next-version_test.sh
+          bash scripts/release/resolve-spec-ref_test.sh
+      - name: Shellcheck the release scripts
+        run: shellcheck scripts/release/*.sh
   build:
     runs-on: ubuntu-latest
     steps:

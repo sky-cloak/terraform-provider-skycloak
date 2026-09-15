@@ -1,0 +1,66 @@
+name: sync-watch
+
+# A sync PR can fail a required check and sit unseen: with auto-merge armed it
+# waits forever, and with it withdrawn nothing merges. When `test` fails on the
+# bot's sync PR, assign a maintainer once and say what failed.
+on:
+  workflow_run:
+    workflows: [test]
+    types: [completed]
+    branches: [chore/openapi-sync]
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: sync-watch
+  cancel-in-progress: false
+
+jobs:
+  assign:
+    # Runs from this repo only: a fork PR can name its branch chore/openapi-sync
+    # and even point at the bot PR's commit.
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign a maintainer to the stuck sync PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          BOT: skycloak-releaser-bot[bot]
+          ASSIGNEE: gmolaire
+        run: |
+          set -euo pipefail
+          pulls=$(gh api "repos/$REPO/commits/$SHA/pulls")
+          pr=$(jq -r --arg bot "$BOT" '[.[] | select(.state == "open" and .head.ref == "chore/openapi-sync" and .user.login == $bot)][0].number // empty' <<< "$pulls")
+          if [ -z "$pr" ]; then
+            echo "No open bot sync PR for $SHA."
+            exit 0
+          fi
+          issue=$(gh api "repos/$REPO/issues/$pr")
+          if jq -e --arg who "$ASSIGNEE" 'any(.assignees[]; .login == $who)' <<< "$issue" >/dev/null; then
+            echo "#$pr is already assigned to $ASSIGNEE."
+            exit 0
+          fi
+          # Assign before anything optional, so a person is told even if the rest fails.
+          gh api -X POST "repos/$REPO/issues/$pr/assignees" -f "assignees[]=$ASSIGNEE" >/dev/null
+          jobs=$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs") || jobs='{"jobs":[]}'
+          failed=$(jq -r '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")' <<< "$jobs")
+          armed=$(jq -r --argjson n "$pr" '[.[] | select(.number == $n)][0].auto_merge != null' <<< "$pulls")
+          if [ "$armed" = true ]; then
+            next="Auto-merge is armed: push the fix to this branch, and approve it again if the branch needs a review (a push dismisses the earlier approval); it then merges itself. A new sync overwrites this branch."
+          else
+            next="Auto-merge is off: push the fix to this branch, then merge it by hand; it releases once merged. A new sync overwrites this branch."
+          fi
+          gh api -X POST "repos/$REPO/issues/$pr/comments" \
+            -f "body=Spec sync is stuck: ${failed:-a check} failed. $next $RUN_URL" >/dev/null
+          echo "Assigned #$pr to $ASSIGNEE (failed: ${failed:-unknown}, auto-merge armed: $armed)."
