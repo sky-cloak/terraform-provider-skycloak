@@ -29,7 +29,6 @@ while IFS= read -r -d '' msg; do
       # A merge commit's subject is boilerplate; the PR title is its first body line.
       if [[ "$line" == "Merge pull request "* ]]; then
         title_next=1
-        continue
       fi
     elif [[ $title_next -eq 1 && -n "$line" ]]; then
       title_next=0
