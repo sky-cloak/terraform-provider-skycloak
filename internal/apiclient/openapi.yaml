@@ -3150,6 +3150,10 @@ paths:
         When `include_credentials` is `true`, an `encryption_password` must be provided and the
         resulting archive will be AES-256-CBC encrypted.
 
+        Returns `409` with code `export_already_running` if an export is already pending or
+        processing for this cluster. Exports older than the two-hour stale threshold do not
+        block new requests; age is measured from start time, or creation time if not started.
+
         Required scope: `clusters:exports:write`
       parameters:
         - name: cluster_id
@@ -3206,6 +3210,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ExportConflictErrorBody'
         '422':
           description: Client error
           content:
@@ -21214,6 +21224,40 @@ components:
         created_at: '2026-04-28T10:00:00Z'
         started_at: '2026-04-28T10:00:05Z'
         completed_at: '2026-04-28T10:15:00Z'
+    ExportConflictErrorBody:
+      type: object
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - code
+      properties:
+        type:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          format: uri
+        title:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        status:
+          type: integer
+        detail:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        instance:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          format: uri
+        code:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: 'Stable machine-readable reason for the conflict: `export_already_running`.'
     ExportFormat:
       type: string
       enum:

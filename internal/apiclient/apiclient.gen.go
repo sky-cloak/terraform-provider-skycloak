@@ -1618,6 +1618,17 @@ type Export struct {
 	Status         ExportStatus                 `json:"status"`
 }
 
+// ExportConflictErrorBody defines model for ExportConflictErrorBody.
+type ExportConflictErrorBody struct {
+	// Code Stable machine-readable reason for the conflict: `export_already_running`.
+	Code     string  `json:"code" validate:"omitnil,max=500"`
+	Detail   string  `json:"detail" validate:"omitnil,max=500"`
+	Instance *string `json:"instance,omitempty" validate:"omitnil,max=500"`
+	Status   int     `json:"status"`
+	Title    string  `json:"title" validate:"omitnil,max=500"`
+	Type     string  `json:"type" validate:"omitnil,max=500"`
+}
+
 // ExportFormat defines model for ExportFormat.
 type ExportFormat string
 
@@ -18087,6 +18098,7 @@ type CreateExportResponse struct {
 	ApplicationproblemJSON402 *PlanLimitErrorBody
 	ApplicationproblemJSON403 *ErrorBody
 	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON409 *ExportConflictErrorBody
 	ApplicationproblemJSON422 *ValidationErrorBody
 	ApplicationproblemJSON429 *ErrorBody
 	ApplicationproblemJSON500 *ErrorBody
@@ -25024,6 +25036,13 @@ func ParseCreateExportResponse(rsp *http.Response) (*CreateExportResponse, error
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ExportConflictErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest ValidationErrorBody
