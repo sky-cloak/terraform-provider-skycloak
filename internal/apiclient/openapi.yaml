@@ -15889,6 +15889,119 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - clusters:read
+  /clusters/{cluster_id}/upgrade-preview:
+    get:
+      operationId: getClusterUpgradePreview
+      summary: Preview a cluster upgrade
+      description: |-
+        Returns breaking changes and per-extension jar plans for upgrading this cluster to the requested target version.
+
+        Required scope: `clusters:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: to
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/KeycloakVersion'
+          explode: false
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterUpgradePreviewResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Operations
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:read
   /clusters/{cluster_id}/upgrades:
     get:
       operationId: listClusterUpgrades
@@ -20125,6 +20238,28 @@ components:
             - $ref: '#/components/schemas/Cluster'
           description: The cluster reflecting its state after the cancel request was accepted.
       description: Response returned after a cancel-upgrade request is accepted.
+    ClusterUpgradeExtensionPlanItem:
+      type: object
+      required:
+        - name
+        - action
+      properties:
+        name:
+          type: string
+          description: Extension display name.
+        action:
+          type: string
+          description: 'Planned action: `will_update`, `unchanged`, `pinned`, `custom`, `no_compatible_build`, or `pinned_no_compatible_build`.'
+        message:
+          type: string
+          description: Customer-facing detail for this row.
+        current_jar_url:
+          type: string
+          description: Primary JAR URL currently installed, when known.
+        target_jar_url:
+          type: string
+          description: Primary JAR URL that would be used on the target Keycloak version, when applicable.
+      description: How one installed extension participates in a Keycloak upgrade to a target version.
     ClusterUpgradePathItem:
       type: object
       required:
@@ -20148,6 +20283,23 @@ components:
           format: int32
           description: Number of breaking changes recorded for this version. Auto-upgrade never applies a version with a recorded breaking change on its own.
       description: A single step in the recommended upgrade path to a target version.
+    ClusterUpgradePreviewResponse:
+      type: object
+      required:
+        - breaking_changes
+        - extensions
+      properties:
+        breaking_changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterVersionBreakingChange'
+          description: Breaking changes between the cluster's current version and the requested target.
+        extensions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterUpgradeExtensionPlanItem'
+          description: Installed extensions and how their jars participate in the upgrade.
+      description: Breaking changes and per-extension jar plans for upgrading a cluster to a target version.
     ClusterVersionBreakingChange:
       type: object
       required:

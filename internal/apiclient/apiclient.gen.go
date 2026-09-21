@@ -1034,6 +1034,24 @@ type ClusterUpgradeCancellation struct {
 	Cluster Cluster `json:"cluster"`
 }
 
+// ClusterUpgradeExtensionPlanItem How one installed extension participates in a Keycloak upgrade to a target version.
+type ClusterUpgradeExtensionPlanItem struct {
+	// Action Planned action: `will_update`, `unchanged`, `pinned`, `custom`, `no_compatible_build`, or `pinned_no_compatible_build`.
+	Action string `json:"action"`
+
+	// CurrentJarUrl Primary JAR URL currently installed, when known.
+	CurrentJarUrl *string `json:"current_jar_url,omitempty"`
+
+	// Message Customer-facing detail for this row.
+	Message *string `json:"message,omitempty"`
+
+	// Name Extension display name.
+	Name string `json:"name"`
+
+	// TargetJarUrl Primary JAR URL that would be used on the target Keycloak version, when applicable.
+	TargetJarUrl *string `json:"target_jar_url,omitempty"`
+}
+
 // ClusterUpgradePathItem A single step in the recommended upgrade path to a target version.
 type ClusterUpgradePathItem struct {
 	// BreakingChangeCount Number of breaking changes recorded for this version. Auto-upgrade never applies a version with a recorded breaking change on its own.
@@ -1047,6 +1065,15 @@ type ClusterUpgradePathItem struct {
 
 	// Version Version at this step in the upgrade path.
 	Version KeycloakVersion `json:"version"`
+}
+
+// ClusterUpgradePreviewResponse Breaking changes and per-extension jar plans for upgrading a cluster to a target version.
+type ClusterUpgradePreviewResponse struct {
+	// BreakingChanges Breaking changes between the cluster's current version and the requested target.
+	BreakingChanges []ClusterVersionBreakingChange `json:"breaking_changes"`
+
+	// Extensions Installed extensions and how their jars participate in the upgrade.
+	Extensions []ClusterUpgradeExtensionPlanItem `json:"extensions"`
 }
 
 // ClusterVersionBreakingChange A breaking change recorded for a version of a cluster type, taken from the product's own migration guide.
@@ -4101,6 +4128,12 @@ type GetClusterUpgradePathParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
 }
 
+// GetClusterUpgradePreviewParams defines parameters for GetClusterUpgradePreview.
+type GetClusterUpgradePreviewParams struct {
+	To         KeycloakVersion  `form:"to" json:"to"`
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
 // ListClusterUpgradesParams defines parameters for ListClusterUpgrades.
 type ListClusterUpgradesParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
@@ -4879,6 +4912,9 @@ type ClientInterface interface {
 
 	// GetClusterUpgradePath request
 	GetClusterUpgradePath(ctx context.Context, clusterId ClusterId, params *GetClusterUpgradePathParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClusterUpgradePreview request
+	GetClusterUpgradePreview(ctx context.Context, clusterId ClusterId, params *GetClusterUpgradePreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClusterUpgrades request
 	ListClusterUpgrades(ctx context.Context, clusterId ClusterId, params *ListClusterUpgradesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -6840,6 +6876,18 @@ func (c *Client) UpdateThemeContentWithBody(ctx context.Context, clusterId Clust
 
 func (c *Client) GetClusterUpgradePath(ctx context.Context, clusterId ClusterId, params *GetClusterUpgradePathParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetClusterUpgradePathRequest(c.Server, clusterId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClusterUpgradePreview(ctx context.Context, clusterId ClusterId, params *GetClusterUpgradePreviewParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterUpgradePreviewRequest(c.Server, clusterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -15555,6 +15603,71 @@ func NewGetClusterUpgradePathRequest(server string, clusterId ClusterId, params 
 	return req, nil
 }
 
+// NewGetClusterUpgradePreviewRequest generates requests for GetClusterUpgradePreview
+func NewGetClusterUpgradePreviewRequest(server string, clusterId ClusterId, params *GetClusterUpgradePreviewParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/upgrade-preview", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", false, "to", runtime.ParamLocationQuery, params.To); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
 // NewListClusterUpgradesRequest generates requests for ListClusterUpgrades
 func NewListClusterUpgradesRequest(server string, clusterId ClusterId, params *ListClusterUpgradesParams) (*http.Request, error) {
 	var err error
@@ -17314,6 +17427,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetClusterUpgradePathWithResponse request
 	GetClusterUpgradePathWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterUpgradePathParams, reqEditors ...RequestEditorFn) (*GetClusterUpgradePathResponse, error)
+
+	// GetClusterUpgradePreviewWithResponse request
+	GetClusterUpgradePreviewWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterUpgradePreviewParams, reqEditors ...RequestEditorFn) (*GetClusterUpgradePreviewResponse, error)
 
 	// ListClusterUpgradesWithResponse request
 	ListClusterUpgradesWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterUpgradesParams, reqEditors ...RequestEditorFn) (*ListClusterUpgradesResponse, error)
@@ -20866,6 +20982,33 @@ func (r GetClusterUpgradePathResponse) StatusCode() int {
 	return 0
 }
 
+type GetClusterUpgradePreviewResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *ClusterUpgradePreviewResponse
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterUpgradePreviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterUpgradePreviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListClusterUpgradesResponse struct {
 	Body                      []byte
 	HTTPResponse              *http.Response
@@ -23012,6 +23155,15 @@ func (c *ClientWithResponses) GetClusterUpgradePathWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseGetClusterUpgradePathResponse(rsp)
+}
+
+// GetClusterUpgradePreviewWithResponse request returning *GetClusterUpgradePreviewResponse
+func (c *ClientWithResponses) GetClusterUpgradePreviewWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterUpgradePreviewParams, reqEditors ...RequestEditorFn) (*GetClusterUpgradePreviewResponse, error) {
+	rsp, err := c.GetClusterUpgradePreview(ctx, clusterId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterUpgradePreviewResponse(rsp)
 }
 
 // ListClusterUpgradesWithResponse request returning *ListClusterUpgradesResponse
@@ -32021,6 +32173,67 @@ func ParseGetClusterUpgradePathResponse(rsp *http.Response) (*GetClusterUpgradeP
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []ClusterUpgradePathItem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClusterUpgradePreviewResponse parses an HTTP response from a GetClusterUpgradePreviewWithResponse call
+func ParseGetClusterUpgradePreviewResponse(rsp *http.Response) (*GetClusterUpgradePreviewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterUpgradePreviewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClusterUpgradePreviewResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
