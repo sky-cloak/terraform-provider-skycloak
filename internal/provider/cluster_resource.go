@@ -77,9 +77,14 @@ func (r *clusterResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				MarkdownDescription: "Keycloak version, e.g. `26.1`.",
 			},
 			"location": schema.StringAttribute{
-				Required:            true,
-				MarkdownDescription: "Region (`us`, `ca`, `eu`, `au`). Immutable — changing it replaces the cluster.",
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+				Required: true,
+				MarkdownDescription: "Region (`us` for US East, `us-west` for US West, `ca`, `eu`, `au`). Immutable: changing it replaces the cluster. " +
+					"The one exception is a cluster the API reports as `us-west`: switching its configuration between `us` and `us-west` is applied in place, because both name the same cluster.",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplaceIf(
+					requiresReplaceUnlessUSWestRelabel,
+					"Changing the location replaces the cluster, except relabelling a US West cluster between us and us-west.",
+					"Changing the location replaces the cluster, except relabelling a US West cluster between `us` and `us-west`.",
+				)},
 			},
 			"status": schema.StringAttribute{
 				Computed:            true,
@@ -143,7 +148,10 @@ func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
+	planned := plan.Location.ValueString()
 	applyClusterToModel(final, &plan)
+	plan.Location = types.StringValue(reconcileClusterLocation(planned, final.Location, &resp.Diagnostics))
+	resp.Diagnostics.Append(setAPILocation(ctx, resp.Private, final.Location)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -164,31 +172,47 @@ func (r *clusterResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
+	prior := state.Location.ValueString()
 	applyClusterToModel(cl, &state)
+	state.Location = types.StringValue(reconcileClusterLocation(prior, cl.Location, &resp.Diagnostics))
+	resp.Diagnostics.Append(setAPILocation(ctx, resp.Private, cl.Location)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan clusterModel
+	var plan, state clusterModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	size := plan.Size.ValueString()
-	version := plan.Version.ValueString()
-	autoUpgrade := plan.AutoUpgradeEnabled.ValueBool()
-	updated, err := r.client.UpdateCluster(ctx, plan.ID.ValueString(), skycloak.UpdateClusterRequest{
-		Size:               &size,
-		Version:            &version,
-		AutoUpgradeEnabled: &autoUpgrade,
-	})
+	var updated *skycloak.Cluster
+	var err error
+	if plan.Size.Equal(state.Size) && plan.Version.Equal(state.Version) && plan.AutoUpgradeEnabled.Equal(state.AutoUpgradeEnabled) {
+		// Nothing the API can update changed: in practice this is the
+		// us <-> us-west relabel of a US West cluster, the one location change
+		// that is not a replacement. Read the cluster instead of patching it.
+		updated, err = r.client.GetCluster(ctx, plan.ID.ValueString())
+	} else {
+		size := plan.Size.ValueString()
+		version := plan.Version.ValueString()
+		autoUpgrade := plan.AutoUpgradeEnabled.ValueBool()
+		updated, err = r.client.UpdateCluster(ctx, plan.ID.ValueString(), skycloak.UpdateClusterRequest{
+			Size:               &size,
+			Version:            &version,
+			AutoUpgradeEnabled: &autoUpgrade,
+		})
+	}
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update cluster", err.Error())
 		return
 	}
 
+	planned := plan.Location.ValueString()
 	applyClusterToModel(updated, &plan)
+	plan.Location = types.StringValue(reconcileClusterLocation(planned, updated.Location, &resp.Diagnostics))
+	resp.Diagnostics.Append(setAPILocation(ctx, resp.Private, updated.Location)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 

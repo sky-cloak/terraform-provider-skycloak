@@ -33,6 +33,11 @@ jobs:
         with:
           go-version: "1.25"
           cache: true
+      # Plan-level unit tests drive the provider through the Terraform CLI
+      # against a fake API (resource.UnitTest), so they need the binary.
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
       - name: Verify modules tidy
         run: |
           go mod tidy

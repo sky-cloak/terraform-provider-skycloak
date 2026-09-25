@@ -6,7 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- `skycloak_cluster`: `us-west` (US West) is a cluster location. `us` means US East. The `skycloak_cluster_locations` data source lists `us-west` as its own entry once the API reports it.
+
 ### Changed
+- `skycloak_cluster`: a US West cluster whose state and configuration say `us` is no longer replaced when the API starts reporting it as `us-west`. The provider keeps `us` in state and warns you to set `location = "us-west"`, a change that is applied in place. Any other location change, including a US East cluster changed to `us-west`, still replaces the cluster. **If you manage a US West cluster, upgrade the provider before the API reports `us-west`**: older releases plan to destroy and recreate it. Change the configuration to `us-west` only after the warning appears.
 - `skycloak_custom_theme`: a new theme archive is now applied as an in-place update through the theme content endpoint instead of forcing a destroy/create. The theme keeps its ID and name, and the realms and application clients assigned to it stay assigned, so the sign-in page is no longer left unbranded mid-apply. Configurations using the rename plus `create_before_destroy` workaround keep working and can drop it; no state migration is required. `theme_types` and `cluster_id` still force replacement.
 
 ## [0.5.1] - 2026-09-04

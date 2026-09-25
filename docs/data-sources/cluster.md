@@ -32,7 +32,7 @@ output "existing_status" {
 ### Read-Only
 
 - `auto_upgrade_enabled` (Boolean) Whether automatic patch upgrades are enabled.
-- `location` (String) Region.
+- `location` (String) Region (`us` for US East, `us-west` for US West, `ca`, `eu`, `au`).
 - `name` (String) Cluster name.
 - `size` (String) Instance size.
 - `status` (String) Lifecycle status.

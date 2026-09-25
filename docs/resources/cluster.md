@@ -18,6 +18,7 @@ resource "skycloak_cluster" "production" {
   type     = "keycloak"
   size     = "small"
   version  = "26.1"
+  # One of us (US East), us-west (US West), ca, eu, au.
   location = "eu"
 }
 
@@ -31,7 +32,7 @@ output "cluster_url" {
 
 ### Required
 
-- `location` (String) Region (`us`, `ca`, `eu`, `au`). Immutable — changing it replaces the cluster.
+- `location` (String) Region (`us` for US East, `us-west` for US West, `ca`, `eu`, `au`). Immutable: changing it replaces the cluster. The one exception is a cluster the API reports as `us-west`: switching its configuration between `us` and `us-west` is applied in place, because both name the same cluster.
 - `name` (String) Human-readable cluster name.
 - `size` (String) Instance size (`small`, `medium`, `large`).
 - `type` (String) Cluster type (`keycloak` or `tidecloak`). Immutable — changing it replaces the cluster.
