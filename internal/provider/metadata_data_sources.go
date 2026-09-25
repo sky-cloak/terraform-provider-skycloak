@@ -60,7 +60,7 @@ func (d *clusterLocationsDataSource) Schema(_ context.Context, _ datasource.Sche
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"location":  schema.StringAttribute{Computed: true, MarkdownDescription: "Region code (`us`, `ca`, `eu`, `au`)."},
+						"location":  schema.StringAttribute{Computed: true, MarkdownDescription: "Region code (`us` for US East, `us-west` for US West, `ca`, `eu`, `au`)."},
 						"name":      schema.StringAttribute{Computed: true, MarkdownDescription: "Human-readable region name."},
 						"available": schema.BoolAttribute{Computed: true, MarkdownDescription: "Whether the region is available to this workspace."},
 					},

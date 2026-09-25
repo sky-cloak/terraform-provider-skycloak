@@ -3,6 +3,7 @@ resource "skycloak_cluster" "production" {
   type     = "keycloak"
   size     = "small"
   version  = "26.1"
+  # One of us (US East), us-west (US West), ca, eu, au.
   location = "eu"
 }
 
