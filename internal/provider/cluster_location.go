@@ -58,7 +58,7 @@ func clusterLocationChangeRequiresReplace(state, config, reported string) bool {
 		return false
 	}
 	isUS := func(l string) bool { return l == locationUS || l == locationUSWest }
-	return !(isUS(state) && isUS(config) && reported == locationUSWest)
+	return !isUS(state) || !isUS(config) || reported != locationUSWest
 }
 
 // requiresReplaceUnlessUSWestRelabel is the location attribute's
