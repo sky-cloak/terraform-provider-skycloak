@@ -73,10 +73,11 @@ const (
 
 // Defines values for ClusterLocation.
 const (
-	Au ClusterLocation = "au"
-	Ca ClusterLocation = "ca"
-	Eu ClusterLocation = "eu"
-	Us ClusterLocation = "us"
+	Au     ClusterLocation = "au"
+	Ca     ClusterLocation = "ca"
+	Eu     ClusterLocation = "eu"
+	Us     ClusterLocation = "us"
+	UsWest ClusterLocation = "us-west"
 )
 
 // Defines values for ClusterSize.

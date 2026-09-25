@@ -19949,6 +19949,7 @@ components:
       type: string
       enum:
         - us
+        - us-west
         - ca
         - au
         - eu
