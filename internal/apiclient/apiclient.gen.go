@@ -49,6 +49,27 @@ const (
 	ApplicationTypePublic       ApplicationType = "public"
 )
 
+// Defines values for BackupScheduleSource.
+const (
+	BackupScheduleSourceCustom            BackupScheduleSource = "custom"
+	BackupScheduleSourceMaintenanceWindow BackupScheduleSource = "maintenance_window"
+)
+
+// Defines values for BackupStatus.
+const (
+	BackupStatusCompleted BackupStatus = "completed"
+	BackupStatusDeleted   BackupStatus = "deleted"
+	BackupStatusFailed    BackupStatus = "failed"
+	BackupStatusPending   BackupStatus = "pending"
+	BackupStatusRunning   BackupStatus = "running"
+)
+
+// Defines values for BackupType.
+const (
+	Automatic BackupType = "automatic"
+	Manual    BackupType = "manual"
+)
+
 // Defines values for BotChallengeMode.
 const (
 	BotChallengeModeCaptcha    BotChallengeMode = "captcha"
@@ -447,10 +468,10 @@ const (
 
 // Defines values for ThemeStatus.
 const (
-	Deployed    ThemeStatus = "deployed"
-	Deploying   ThemeStatus = "deploying"
-	Failed      ThemeStatus = "failed"
-	Undeploying ThemeStatus = "undeploying"
+	ThemeStatusDeployed    ThemeStatus = "deployed"
+	ThemeStatusDeploying   ThemeStatus = "deploying"
+	ThemeStatusFailed      ThemeStatus = "failed"
+	ThemeStatusUndeploying ThemeStatus = "undeploying"
 )
 
 // Defines values for ThemeType.
@@ -495,15 +516,16 @@ const (
 
 // Defines values for WAFPreset.
 const (
-	WAFPresetCustom     WAFPreset = "custom"
-	WAFPresetFullCrs    WAFPreset = "full_crs"
-	WAFPresetOwaspTop10 WAFPreset = "owasp_top_10"
+	Custom     WAFPreset = "custom"
+	FullCrs    WAFPreset = "full_crs"
+	OwaspTop10 WAFPreset = "owasp_top_10"
 )
 
 // Defines values for WebhookEventTypeCategory.
 const (
 	WebhookEventTypeCategoryAdmin                 WebhookEventTypeCategory = "admin"
 	WebhookEventTypeCategoryAuth                  WebhookEventTypeCategory = "auth"
+	WebhookEventTypeCategoryBackup                WebhookEventTypeCategory = "backup"
 	WebhookEventTypeCategoryClient                WebhookEventTypeCategory = "client"
 	WebhookEventTypeCategoryCluster               WebhookEventTypeCategory = "cluster"
 	WebhookEventTypeCategoryConsent               WebhookEventTypeCategory = "consent"
@@ -685,6 +707,92 @@ type AuthenticationMetrics struct {
 	TokenIssuances      MetricSeries   `json:"token_issuances"`
 	TokenValidations    MetricSeries   `json:"token_validations"`
 }
+
+// Backup defines model for Backup.
+type Backup struct {
+	ClusterId   ClusterId  `json:"cluster_id"`
+	CompletedAt *time.Time `json:"completed_at,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+
+	// DeletedAt When the backup was deleted from storage, for `status` `deleted`.
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
+
+	// ExpiresAt When the backup is deleted from storage.
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+
+	// FailureReason Machine-readable failure cause when `status` is `failed`: `JobFailed`, `JobLost`, `Missed`, `BackupsDisabled`, `InvalidReport`, `DatabaseNotReady` or `StorageNotConfigured`.
+	FailureReason *string `json:"failure_reason,omitempty" validate:"omitnil,max=500"`
+
+	// Id Backup identifier: `auto-<yyyymmddhhmm>` for an automatic backup, `manual-<timestamp>-<suffix>` for an on-demand one.
+	Id BackupId `json:"id"`
+
+	// KeycloakVersion Keycloak version whose database was backed up.
+	KeycloakVersion *string    `json:"keycloak_version,omitempty" validate:"omitnil,max=500"`
+	RequestedAt     *time.Time `json:"requested_at,omitempty"`
+
+	// RetentionDays Days the backup is kept after it completes.
+	RetentionDays int32 `json:"retention_days"`
+
+	// Sha256 SHA-256 of the stored (encrypted) object, hex. Set once `status` is `completed`.
+	Sha256 *string `json:"sha256,omitempty" validate:"omitnil,max=500"`
+
+	// SizeBytes Size of the stored backup in bytes. Set once `status` is `completed`.
+	SizeBytes int64        `json:"size_bytes"`
+	StartedAt *time.Time   `json:"started_at,omitempty"`
+	Status    BackupStatus `json:"status"`
+	Type      BackupType   `json:"type"`
+}
+
+// BackupDownloadLink defines model for BackupDownloadLink.
+type BackupDownloadLink struct {
+	ExpiresAt time.Time `json:"expires_at"`
+
+	// Url One-time download URL. It works once and expires at `expires_at`, about 15 minutes after it is issued. The download is the PostgreSQL custom-format archive (`pg_restore`).
+	Url string `json:"url" validate:"omitnil,max=500"`
+}
+
+// BackupId Backup identifier: `auto-<yyyymmddhhmm>` for an automatic backup, `manual-<timestamp>-<suffix>` for an on-demand one.
+type BackupId = string
+
+// BackupList defines model for BackupList.
+type BackupList struct {
+	// Backups Backups, newest first.
+	Backups []Backup `json:"backups"`
+
+	// Entitled Whether the workspace plan includes managed backups (Business and Enterprise).
+	Entitled bool `json:"entitled"`
+
+	// MaxRetentionDays Retention of automatic backups, and the most days an on-demand backup can be kept. `0` when not entitled.
+	MaxRetentionDays int32 `json:"max_retention_days"`
+
+	// NextScheduledAt When the next automatic backup starts.
+	NextScheduledAt *time.Time `json:"next_scheduled_at,omitempty"`
+
+	// StorageUsedBytes Bytes of this cluster's backups currently stored.
+	StorageUsedBytes int64 `json:"storage_used_bytes"`
+}
+
+// BackupSchedule defines model for BackupSchedule.
+type BackupSchedule struct {
+	// DefaultTimeOfDay The time derived from the maintenance window, used when no custom time is set.
+	DefaultTimeOfDay BackupTimeOfDay      `json:"default_time_of_day"`
+	Source           BackupScheduleSource `json:"source"`
+
+	// TimeOfDay When the daily automatic backup starts.
+	TimeOfDay BackupTimeOfDay `json:"time_of_day"`
+}
+
+// BackupScheduleSource defines model for BackupScheduleSource.
+type BackupScheduleSource string
+
+// BackupStatus defines model for BackupStatus.
+type BackupStatus string
+
+// BackupTimeOfDay A time of day in 24-hour UTC, `HH:MM`.
+type BackupTimeOfDay = string
+
+// BackupType defines model for BackupType.
+type BackupType string
 
 // BotChallengeMode defines model for BotChallengeMode.
 type BotChallengeMode string
@@ -1128,6 +1236,18 @@ type CreateApplicationRequest struct {
 	Type *ApplicationType `json:"type,omitempty"`
 }
 
+// CreateBackupDownloadLinkRequest defines model for CreateBackupDownloadLinkRequest.
+type CreateBackupDownloadLinkRequest struct {
+	// IncludeCredentials A managed backup is a complete database backup, so it always contains credentials (user password hashes, client secrets). Must be `true` to download; defaults to `false` like the export option.
+	IncludeCredentials *bool `json:"include_credentials,omitempty"`
+}
+
+// CreateBackupRequest defines model for CreateBackupRequest.
+type CreateBackupRequest struct {
+	// RetentionDays Days to keep this backup, from 1 to the plan maximum (Business 14, Enterprise 30).
+	RetentionDays int32 `json:"retention_days"`
+}
+
 // CreateClientRoleRequest Request body for creating a client role.
 type CreateClientRoleRequest struct {
 	Description *string       `json:"description,omitempty"`
@@ -1395,8 +1515,14 @@ type Domain struct {
 	Id     DomainId     `json:"id"`
 
 	// IsActive `true` when the domain is verified and its SSL certificate is active.
-	IsActive  bool            `json:"is_active"`
-	SslStatus DomainSslStatus `json:"ssl_status"`
+	IsActive bool `json:"is_active"`
+
+	// LastCheckError Cloudflare's reason the domain is not active yet, from the last check. Absent when there is none.
+	LastCheckError *string `json:"last_check_error,omitempty"`
+
+	// LastCheckedAt When Skycloak last checked this domain's status with Cloudflare. Pending domains are checked every few minutes for 48 hours, then hourly, then daily after 30 days. Absent until the first check.
+	LastCheckedAt *time.Time      `json:"last_checked_at,omitempty"`
+	SslStatus     DomainSslStatus `json:"ssl_status"`
 
 	// Subdomain Optional subdomain prefix.
 	Subdomain          *string                  `json:"subdomain,omitempty"`
@@ -1941,9 +2067,11 @@ type LoginBranding struct {
 	PrivacyPolicyUrl *string   `json:"privacy_policy_url,omitempty"`
 
 	// Realm Keycloak realm name (not ID). Must start with a letter; allows letters, digits, and hyphens.
-	Realm               RealmName `json:"realm"`
-	RegistrationEnabled bool      `json:"registration_enabled"`
-	RememberMeEnabled   bool      `json:"remember_me_enabled"`
+	Realm RealmName `json:"realm"`
+
+	// RegistrationEnabled The realm's own self-registration setting (Keycloak registrationAllowed), read live from the realm. It is the same field the realm API exposes as registration_allowed; branding keeps no copy of it.
+	RegistrationEnabled bool `json:"registration_enabled"`
+	RememberMeEnabled   bool `json:"remember_me_enabled"`
 
 	// ShowPoweredBy Display a 'Powered by Skycloak' badge in the footer.
 	ShowPoweredBy     bool           `json:"show_powered_by"`
@@ -2903,6 +3031,12 @@ type UpdateApplicationRequest struct {
 	WebOrigins *[]string `json:"web_origins,omitempty"`
 }
 
+// UpdateBackupScheduleRequest defines model for UpdateBackupScheduleRequest.
+type UpdateBackupScheduleRequest struct {
+	// TimeOfDay Daily start time in UTC, or `null` to follow the maintenance window again.
+	TimeOfDay nullable.Nullable[BackupTimeOfDay] `json:"time_of_day"`
+}
+
 // UpdateClientRoleRequest Patch request for updating a client role. At least one field should be provided.
 type UpdateClientRoleRequest struct {
 	Description *string        `json:"description,omitempty"`
@@ -3096,8 +3230,10 @@ type UpsertLoginBrandingRequest struct {
 	LogoUrl              *string                          `json:"logo_url,omitempty" validate:"omitempty,http_url"`
 
 	// PrimaryColor CSS hex color code.
-	PrimaryColor        *HexColor  `json:"primary_color,omitempty" validate:"omitnil,hexcolor"`
-	PrivacyPolicyUrl    *string    `json:"privacy_policy_url,omitempty" validate:"omitempty,http_url"`
+	PrimaryColor     *HexColor `json:"primary_color,omitempty" validate:"omitnil,hexcolor"`
+	PrivacyPolicyUrl *string   `json:"privacy_policy_url,omitempty" validate:"omitempty,http_url"`
+
+	// RegistrationEnabled Sets the realm's own self-registration setting (Keycloak registrationAllowed). Omitted means unchanged: unlike the other fields, leaving it out does not reset it to a default.
 	RegistrationEnabled *bool      `json:"registration_enabled,omitempty"`
 	RememberMeEnabled   *bool      `json:"remember_me_enabled,omitempty"`
 	ShowPoweredBy       *bool      `json:"show_powered_by,omitempty"`
@@ -3352,6 +3488,36 @@ type GetClusterParams struct {
 
 // UpdateClusterParams defines parameters for UpdateCluster.
 type UpdateClusterParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetClusterBackupScheduleParams defines parameters for GetClusterBackupSchedule.
+type GetClusterBackupScheduleParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateClusterBackupScheduleParams defines parameters for UpdateClusterBackupSchedule.
+type UpdateClusterBackupScheduleParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ListClusterBackupsParams defines parameters for ListClusterBackups.
+type ListClusterBackupsParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// CreateClusterBackupParams defines parameters for CreateClusterBackup.
+type CreateClusterBackupParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetClusterBackupParams defines parameters for GetClusterBackup.
+type GetClusterBackupParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// CreateClusterBackupDownloadLinkParams defines parameters for CreateClusterBackupDownloadLink.
+type CreateClusterBackupDownloadLinkParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
 }
 
@@ -4271,6 +4437,15 @@ type CreateClusterJSONRequestBody = CreateClusterRequest
 // UpdateClusterJSONRequestBody defines body for UpdateCluster for application/json ContentType.
 type UpdateClusterJSONRequestBody = UpdateClusterRequest
 
+// UpdateClusterBackupScheduleJSONRequestBody defines body for UpdateClusterBackupSchedule for application/json ContentType.
+type UpdateClusterBackupScheduleJSONRequestBody = UpdateBackupScheduleRequest
+
+// CreateClusterBackupJSONRequestBody defines body for CreateClusterBackup for application/json ContentType.
+type CreateClusterBackupJSONRequestBody = CreateBackupRequest
+
+// CreateClusterBackupDownloadLinkJSONRequestBody defines body for CreateClusterBackupDownloadLink for application/json ContentType.
+type CreateClusterBackupDownloadLinkJSONRequestBody = CreateBackupDownloadLinkRequest
+
 // CreateDomainJSONRequestBody defines body for CreateDomain for application/json ContentType.
 type CreateDomainJSONRequestBody = CreateDomainRequest
 
@@ -4515,6 +4690,30 @@ type ClientInterface interface {
 	UpdateClusterWithBody(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateCluster(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClusterBackupSchedule request
+	GetClusterBackupSchedule(ctx context.Context, clusterId ClusterId, params *GetClusterBackupScheduleParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateClusterBackupScheduleWithBody request with any body
+	UpdateClusterBackupScheduleWithBody(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupScheduleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateClusterBackupSchedule(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupScheduleParams, body UpdateClusterBackupScheduleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListClusterBackups request
+	ListClusterBackups(ctx context.Context, clusterId ClusterId, params *ListClusterBackupsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateClusterBackupWithBody request with any body
+	CreateClusterBackupWithBody(ctx context.Context, clusterId ClusterId, params *CreateClusterBackupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateClusterBackup(ctx context.Context, clusterId ClusterId, params *CreateClusterBackupParams, body CreateClusterBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClusterBackup request
+	GetClusterBackup(ctx context.Context, clusterId ClusterId, backupId BackupId, params *GetClusterBackupParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateClusterBackupDownloadLinkWithBody request with any body
+	CreateClusterBackupDownloadLinkWithBody(ctx context.Context, clusterId ClusterId, backupId BackupId, params *CreateClusterBackupDownloadLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateClusterBackupDownloadLink(ctx context.Context, clusterId ClusterId, backupId BackupId, params *CreateClusterBackupDownloadLinkParams, body CreateClusterBackupDownloadLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClusterCredentials request
 	GetClusterCredentials(ctx context.Context, clusterId ClusterId, params *GetClusterCredentialsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -5149,6 +5348,114 @@ func (c *Client) UpdateClusterWithBody(ctx context.Context, clusterId ClusterId,
 
 func (c *Client) UpdateCluster(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateClusterRequest(c.Server, clusterId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClusterBackupSchedule(ctx context.Context, clusterId ClusterId, params *GetClusterBackupScheduleParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterBackupScheduleRequest(c.Server, clusterId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClusterBackupScheduleWithBody(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupScheduleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterBackupScheduleRequestWithBody(c.Server, clusterId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClusterBackupSchedule(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupScheduleParams, body UpdateClusterBackupScheduleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterBackupScheduleRequest(c.Server, clusterId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListClusterBackups(ctx context.Context, clusterId ClusterId, params *ListClusterBackupsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListClusterBackupsRequest(c.Server, clusterId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateClusterBackupWithBody(ctx context.Context, clusterId ClusterId, params *CreateClusterBackupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateClusterBackupRequestWithBody(c.Server, clusterId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateClusterBackup(ctx context.Context, clusterId ClusterId, params *CreateClusterBackupParams, body CreateClusterBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateClusterBackupRequest(c.Server, clusterId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClusterBackup(ctx context.Context, clusterId ClusterId, backupId BackupId, params *GetClusterBackupParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterBackupRequest(c.Server, clusterId, backupId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateClusterBackupDownloadLinkWithBody(ctx context.Context, clusterId ClusterId, backupId BackupId, params *CreateClusterBackupDownloadLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateClusterBackupDownloadLinkRequestWithBody(c.Server, clusterId, backupId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateClusterBackupDownloadLink(ctx context.Context, clusterId ClusterId, backupId BackupId, params *CreateClusterBackupDownloadLinkParams, body CreateClusterBackupDownloadLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateClusterBackupDownloadLinkRequest(c.Server, clusterId, backupId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -7796,6 +8103,341 @@ func NewUpdateClusterRequestWithBody(server string, clusterId ClusterId, params 
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetClusterBackupScheduleRequest generates requests for GetClusterBackupSchedule
+func NewGetClusterBackupScheduleRequest(server string, clusterId ClusterId, params *GetClusterBackupScheduleParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/backup-schedule", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewUpdateClusterBackupScheduleRequest calls the generic UpdateClusterBackupSchedule builder with application/json body
+func NewUpdateClusterBackupScheduleRequest(server string, clusterId ClusterId, params *UpdateClusterBackupScheduleParams, body UpdateClusterBackupScheduleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateClusterBackupScheduleRequestWithBody(server, clusterId, params, "application/json", bodyReader)
+}
+
+// NewUpdateClusterBackupScheduleRequestWithBody generates requests for UpdateClusterBackupSchedule with any type of body
+func NewUpdateClusterBackupScheduleRequestWithBody(server string, clusterId ClusterId, params *UpdateClusterBackupScheduleParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/backup-schedule", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewListClusterBackupsRequest generates requests for ListClusterBackups
+func NewListClusterBackupsRequest(server string, clusterId ClusterId, params *ListClusterBackupsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/backups", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewCreateClusterBackupRequest calls the generic CreateClusterBackup builder with application/json body
+func NewCreateClusterBackupRequest(server string, clusterId ClusterId, params *CreateClusterBackupParams, body CreateClusterBackupJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateClusterBackupRequestWithBody(server, clusterId, params, "application/json", bodyReader)
+}
+
+// NewCreateClusterBackupRequestWithBody generates requests for CreateClusterBackup with any type of body
+func NewCreateClusterBackupRequestWithBody(server string, clusterId ClusterId, params *CreateClusterBackupParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/backups", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetClusterBackupRequest generates requests for GetClusterBackup
+func NewGetClusterBackupRequest(server string, clusterId ClusterId, backupId BackupId, params *GetClusterBackupParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "backup_id", runtime.ParamLocationPath, backupId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/backups/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewCreateClusterBackupDownloadLinkRequest calls the generic CreateClusterBackupDownloadLink builder with application/json body
+func NewCreateClusterBackupDownloadLinkRequest(server string, clusterId ClusterId, backupId BackupId, params *CreateClusterBackupDownloadLinkParams, body CreateClusterBackupDownloadLinkJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateClusterBackupDownloadLinkRequestWithBody(server, clusterId, backupId, params, "application/json", bodyReader)
+}
+
+// NewCreateClusterBackupDownloadLinkRequestWithBody generates requests for CreateClusterBackupDownloadLink with any type of body
+func NewCreateClusterBackupDownloadLinkRequestWithBody(server string, clusterId ClusterId, backupId BackupId, params *CreateClusterBackupDownloadLinkParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "backup_id", runtime.ParamLocationPath, backupId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/backups/%s/download-link", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -17031,6 +17673,30 @@ type ClientWithResponsesInterface interface {
 
 	UpdateClusterWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error)
 
+	// GetClusterBackupScheduleWithResponse request
+	GetClusterBackupScheduleWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterBackupScheduleParams, reqEditors ...RequestEditorFn) (*GetClusterBackupScheduleResponse, error)
+
+	// UpdateClusterBackupScheduleWithBodyWithResponse request with any body
+	UpdateClusterBackupScheduleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupScheduleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterBackupScheduleResponse, error)
+
+	UpdateClusterBackupScheduleWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupScheduleParams, body UpdateClusterBackupScheduleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterBackupScheduleResponse, error)
+
+	// ListClusterBackupsWithResponse request
+	ListClusterBackupsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterBackupsParams, reqEditors ...RequestEditorFn) (*ListClusterBackupsResponse, error)
+
+	// CreateClusterBackupWithBodyWithResponse request with any body
+	CreateClusterBackupWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *CreateClusterBackupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClusterBackupResponse, error)
+
+	CreateClusterBackupWithResponse(ctx context.Context, clusterId ClusterId, params *CreateClusterBackupParams, body CreateClusterBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClusterBackupResponse, error)
+
+	// GetClusterBackupWithResponse request
+	GetClusterBackupWithResponse(ctx context.Context, clusterId ClusterId, backupId BackupId, params *GetClusterBackupParams, reqEditors ...RequestEditorFn) (*GetClusterBackupResponse, error)
+
+	// CreateClusterBackupDownloadLinkWithBodyWithResponse request with any body
+	CreateClusterBackupDownloadLinkWithBodyWithResponse(ctx context.Context, clusterId ClusterId, backupId BackupId, params *CreateClusterBackupDownloadLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClusterBackupDownloadLinkResponse, error)
+
+	CreateClusterBackupDownloadLinkWithResponse(ctx context.Context, clusterId ClusterId, backupId BackupId, params *CreateClusterBackupDownloadLinkParams, body CreateClusterBackupDownloadLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClusterBackupDownloadLinkResponse, error)
+
 	// GetClusterCredentialsWithResponse request
 	GetClusterCredentialsWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterCredentialsParams, reqEditors ...RequestEditorFn) (*GetClusterCredentialsResponse, error)
 
@@ -17799,6 +18465,181 @@ func (r UpdateClusterResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateClusterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClusterBackupScheduleResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *BackupSchedule
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterBackupScheduleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterBackupScheduleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateClusterBackupScheduleResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *BackupSchedule
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON402 *PlanLimitErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateClusterBackupScheduleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateClusterBackupScheduleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListClusterBackupsResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *BackupList
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r ListClusterBackupsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListClusterBackupsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateClusterBackupResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON202                   *Backup
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON402 *PlanLimitErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON409 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateClusterBackupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateClusterBackupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClusterBackupResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *Backup
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterBackupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterBackupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateClusterBackupDownloadLinkResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON201                   *BackupDownloadLink
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON409 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateClusterBackupDownloadLinkResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateClusterBackupDownloadLinkResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -21896,6 +22737,84 @@ func (c *ClientWithResponses) UpdateClusterWithResponse(ctx context.Context, clu
 	return ParseUpdateClusterResponse(rsp)
 }
 
+// GetClusterBackupScheduleWithResponse request returning *GetClusterBackupScheduleResponse
+func (c *ClientWithResponses) GetClusterBackupScheduleWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterBackupScheduleParams, reqEditors ...RequestEditorFn) (*GetClusterBackupScheduleResponse, error) {
+	rsp, err := c.GetClusterBackupSchedule(ctx, clusterId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterBackupScheduleResponse(rsp)
+}
+
+// UpdateClusterBackupScheduleWithBodyWithResponse request with arbitrary body returning *UpdateClusterBackupScheduleResponse
+func (c *ClientWithResponses) UpdateClusterBackupScheduleWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupScheduleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterBackupScheduleResponse, error) {
+	rsp, err := c.UpdateClusterBackupScheduleWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClusterBackupScheduleResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateClusterBackupScheduleWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupScheduleParams, body UpdateClusterBackupScheduleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterBackupScheduleResponse, error) {
+	rsp, err := c.UpdateClusterBackupSchedule(ctx, clusterId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClusterBackupScheduleResponse(rsp)
+}
+
+// ListClusterBackupsWithResponse request returning *ListClusterBackupsResponse
+func (c *ClientWithResponses) ListClusterBackupsWithResponse(ctx context.Context, clusterId ClusterId, params *ListClusterBackupsParams, reqEditors ...RequestEditorFn) (*ListClusterBackupsResponse, error) {
+	rsp, err := c.ListClusterBackups(ctx, clusterId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListClusterBackupsResponse(rsp)
+}
+
+// CreateClusterBackupWithBodyWithResponse request with arbitrary body returning *CreateClusterBackupResponse
+func (c *ClientWithResponses) CreateClusterBackupWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *CreateClusterBackupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClusterBackupResponse, error) {
+	rsp, err := c.CreateClusterBackupWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateClusterBackupResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateClusterBackupWithResponse(ctx context.Context, clusterId ClusterId, params *CreateClusterBackupParams, body CreateClusterBackupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClusterBackupResponse, error) {
+	rsp, err := c.CreateClusterBackup(ctx, clusterId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateClusterBackupResponse(rsp)
+}
+
+// GetClusterBackupWithResponse request returning *GetClusterBackupResponse
+func (c *ClientWithResponses) GetClusterBackupWithResponse(ctx context.Context, clusterId ClusterId, backupId BackupId, params *GetClusterBackupParams, reqEditors ...RequestEditorFn) (*GetClusterBackupResponse, error) {
+	rsp, err := c.GetClusterBackup(ctx, clusterId, backupId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterBackupResponse(rsp)
+}
+
+// CreateClusterBackupDownloadLinkWithBodyWithResponse request with arbitrary body returning *CreateClusterBackupDownloadLinkResponse
+func (c *ClientWithResponses) CreateClusterBackupDownloadLinkWithBodyWithResponse(ctx context.Context, clusterId ClusterId, backupId BackupId, params *CreateClusterBackupDownloadLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClusterBackupDownloadLinkResponse, error) {
+	rsp, err := c.CreateClusterBackupDownloadLinkWithBody(ctx, clusterId, backupId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateClusterBackupDownloadLinkResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateClusterBackupDownloadLinkWithResponse(ctx context.Context, clusterId ClusterId, backupId BackupId, params *CreateClusterBackupDownloadLinkParams, body CreateClusterBackupDownloadLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateClusterBackupDownloadLinkResponse, error) {
+	rsp, err := c.CreateClusterBackupDownloadLink(ctx, clusterId, backupId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateClusterBackupDownloadLinkResponse(rsp)
+}
+
 // GetClusterCredentialsWithResponse request returning *GetClusterCredentialsResponse
 func (c *ClientWithResponses) GetClusterCredentialsWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterCredentialsParams, reqEditors ...RequestEditorFn) (*GetClusterCredentialsResponse, error) {
 	rsp, err := c.GetClusterCredentials(ctx, clusterId, params, reqEditors...)
@@ -24071,6 +24990,463 @@ func ParseUpdateClusterResponse(rsp *http.Response) (*UpdateClusterResponse, err
 			return nil, err
 		}
 		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClusterBackupScheduleResponse parses an HTTP response from a GetClusterBackupScheduleWithResponse call
+func ParseGetClusterBackupScheduleResponse(rsp *http.Response) (*GetClusterBackupScheduleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterBackupScheduleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BackupSchedule
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateClusterBackupScheduleResponse parses an HTTP response from a UpdateClusterBackupScheduleWithResponse call
+func ParseUpdateClusterBackupScheduleResponse(rsp *http.Response) (*UpdateClusterBackupScheduleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateClusterBackupScheduleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BackupSchedule
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 402:
+		var dest PlanLimitErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListClusterBackupsResponse parses an HTTP response from a ListClusterBackupsWithResponse call
+func ParseListClusterBackupsResponse(rsp *http.Response) (*ListClusterBackupsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListClusterBackupsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BackupList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateClusterBackupResponse parses an HTTP response from a CreateClusterBackupWithResponse call
+func ParseCreateClusterBackupResponse(rsp *http.Response) (*CreateClusterBackupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateClusterBackupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest Backup
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 402:
+		var dest PlanLimitErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClusterBackupResponse parses an HTTP response from a GetClusterBackupWithResponse call
+func ParseGetClusterBackupResponse(rsp *http.Response) (*GetClusterBackupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterBackupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Backup
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateClusterBackupDownloadLinkResponse parses an HTTP response from a CreateClusterBackupDownloadLinkWithResponse call
+func ParseCreateClusterBackupDownloadLinkResponse(rsp *http.Response) (*CreateClusterBackupDownloadLinkResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateClusterBackupDownloadLinkResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest BackupDownloadLink
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest ErrorBody
