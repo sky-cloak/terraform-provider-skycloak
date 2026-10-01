@@ -34,6 +34,7 @@ tags:
   - name: Extensions
   - name: Cluster Extensions
   - name: Exports
+  - name: Cluster Backups
   - name: Imports
   - name: SIEM
   - name: Webhooks
@@ -1132,6 +1133,774 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - clusters:write
+  /clusters/{cluster_id}/backup-schedule:
+    get:
+      operationId: getClusterBackupSchedule
+      summary: Get the backup schedule
+      description: |-
+        Returns when the daily automatic backup starts, in UTC.
+
+        Required scope: `clusters:backups:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupSchedule'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Backups
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:backups:read
+    put:
+      operationId: updateClusterBackupSchedule
+      summary: Set the backup schedule
+      description: |-
+        Sets the daily automatic backup time in UTC, or with `null` returns it to the start of
+        the cluster's maintenance window.
+
+        Required scope: `clusters:backups:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupSchedule'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '402':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PlanLimitErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Backups
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBackupScheduleRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:backups:write
+  /clusters/{cluster_id}/backups:
+    get:
+      operationId: listClusterBackups
+      summary: List a cluster's backups
+      description: |-
+        Returns the cluster's managed backups, newest first, with the storage they use.
+        On plans without managed backups the list is empty and `entitled` is `false`.
+
+        Required scope: `clusters:backups:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupList'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Backups
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:backups:read
+    post:
+      operationId: createClusterBackup
+      summary: Start an on-demand backup
+      description: |-
+        Starts a backup now, kept for `retention_days` (1 to the plan maximum). It is listed with type `manual`.
+
+        Returns `409` while another backup of the cluster is queued or running, or while the
+        cluster is still provisioning, and `402` on plans without managed backups.
+
+        Required scope: `clusters:backups:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '202':
+          description: The backup was queued. Poll `GET /clusters/{cluster_id}/backups/{backup_id}` until `status` is `completed` or `failed`, or subscribe to the `backup.completed` and `backup.failed` webhooks.
+          headers:
+            Location:
+              required: true
+              description: URL of the resource being created or modified. Poll this endpoint to track completion.
+              schema:
+                type: string
+                format: uri
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Backup'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '402':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PlanLimitErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Backups
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBackupRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:backups:write
+  /clusters/{cluster_id}/backups/{backup_id}:
+    get:
+      operationId: getClusterBackup
+      summary: Get a backup
+      description: |-
+        Returns one backup.
+
+        Required scope: `clusters:backups:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: backup_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/BackupId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Backup'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Backups
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:backups:read
+  /clusters/{cluster_id}/backups/{backup_id}/download-link:
+    post:
+      operationId: createClusterBackupDownloadLink
+      summary: Get a one-time download link for a backup
+      description: |-
+        Issues a link that downloads a completed backup once, within about 15 minutes. The
+        download is the PostgreSQL custom-format archive of the cluster's database; restore it
+        with `pg_restore`. Every download is recorded in the audit log.
+
+        A managed backup always contains credentials, so `include_credentials` must be `true`
+        (it defaults to `false`); otherwise the request is refused with `422`. Returns `409`
+        for a backup that is not completed or has expired.
+
+        Required scope: `clusters:backups:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: backup_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/BackupId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupDownloadLink'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Backups
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBackupDownloadLinkRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:backups:write
   /clusters/{cluster_id}/credentials:
     get:
       operationId: getClusterCredentials
@@ -19560,6 +20329,172 @@ components:
           items:
             $ref: '#/components/schemas/ProtocolStat'
       description: Authentication activity time series over the requested time window.
+    Backup:
+      type: object
+      required:
+        - id
+        - cluster_id
+        - type
+        - status
+        - retention_days
+        - size_bytes
+        - created_at
+      properties:
+        id:
+          $ref: '#/components/schemas/BackupId'
+        cluster_id:
+          $ref: '#/components/schemas/ClusterId'
+        type:
+          $ref: '#/components/schemas/BackupType'
+        status:
+          $ref: '#/components/schemas/BackupStatus'
+        retention_days:
+          type: integer
+          format: int32
+          description: Days the backup is kept after it completes.
+        size_bytes:
+          type: integer
+          format: int64
+          description: Size of the stored backup in bytes. Set once `status` is `completed`.
+        sha256:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: SHA-256 of the stored (encrypted) object, hex. Set once `status` is `completed`.
+        keycloak_version:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: Keycloak version whose database was backed up.
+        failure_reason:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: 'Machine-readable failure cause when `status` is `failed`: `JobFailed`, `JobLost`, `Missed`, `BackupsDisabled`, `InvalidReport`, `DatabaseNotReady` or `StorageNotConfigured`.'
+        requested_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+          description: When the backup is deleted from storage.
+        deleted_at:
+          type: string
+          format: date-time
+          description: When the backup was deleted from storage, for `status` `deleted`.
+        created_at:
+          type: string
+          format: date-time
+      example:
+        id: auto-202609230300
+        cluster_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        type: automatic
+        status: completed
+        retention_days: 14
+        size_bytes: 52428800
+        sha256: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+        keycloak_version: 26.3.0
+        requested_at: '2026-09-23T03:00:00Z'
+        started_at: '2026-09-23T03:00:04Z'
+        completed_at: '2026-09-23T03:04:12Z'
+        expires_at: '2026-10-07T03:04:12Z'
+        created_at: '2026-09-23T03:00:00Z'
+    BackupDownloadLink:
+      type: object
+      required:
+        - url
+        - expires_at
+      properties:
+        url:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          format: uri
+          description: One-time download URL. It works once and expires at `expires_at`, about 15 minutes after it is issued. The download is the PostgreSQL custom-format archive (`pg_restore`).
+        expires_at:
+          type: string
+          format: date-time
+    BackupId:
+      type: string
+      pattern: ^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$
+      description: 'Backup identifier: `auto-<yyyymmddhhmm>` for an automatic backup, `manual-<timestamp>-<suffix>` for an on-demand one.'
+    BackupList:
+      type: object
+      required:
+        - entitled
+        - max_retention_days
+        - storage_used_bytes
+        - backups
+      properties:
+        entitled:
+          type: boolean
+          description: Whether the workspace plan includes managed backups (Business and Enterprise).
+        max_retention_days:
+          type: integer
+          format: int32
+          description: Retention of automatic backups, and the most days an on-demand backup can be kept. `0` when not entitled.
+        storage_used_bytes:
+          type: integer
+          format: int64
+          description: Bytes of this cluster's backups currently stored.
+        next_scheduled_at:
+          type: string
+          format: date-time
+          description: When the next automatic backup starts.
+        backups:
+          type: array
+          items:
+            $ref: '#/components/schemas/Backup'
+          description: Backups, newest first.
+    BackupSchedule:
+      type: object
+      required:
+        - time_of_day
+        - source
+        - default_time_of_day
+      properties:
+        time_of_day:
+          allOf:
+            - $ref: '#/components/schemas/BackupTimeOfDay'
+          description: When the daily automatic backup starts.
+        source:
+          $ref: '#/components/schemas/BackupScheduleSource'
+        default_time_of_day:
+          allOf:
+            - $ref: '#/components/schemas/BackupTimeOfDay'
+          description: The time derived from the maintenance window, used when no custom time is set.
+      example:
+        time_of_day: '02:30'
+        source: custom
+        default_time_of_day: '04:00'
+    BackupScheduleSource:
+      type: string
+      enum:
+        - custom
+        - maintenance_window
+    BackupStatus:
+      type: string
+      enum:
+        - pending
+        - running
+        - completed
+        - failed
+        - deleted
+    BackupTimeOfDay:
+      type: string
+      pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]$
+      description: A time of day in 24-hour UTC, `HH:MM`.
+    BackupType:
+      type: string
+      enum:
+        - automatic
+        - manual
     BotChallengeMode:
       type: string
       enum:
@@ -20380,6 +21315,26 @@ components:
             - $ref: '#/components/schemas/SAMLConfiguration'
           description: SAML configuration. Required when `protocol` is `saml`.
       description: Request body for creating a new application.
+    CreateBackupDownloadLinkRequest:
+      type: object
+      properties:
+        include_credentials:
+          type: boolean
+          description: A managed backup is a complete database backup, so it always contains credentials (user password hashes, client secrets). Must be `true` to download; defaults to `false` like the export option.
+          default: false
+    CreateBackupRequest:
+      type: object
+      required:
+        - retention_days
+      properties:
+        retention_days:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 365
+          description: Days to keep this backup, from 1 to the plan maximum (Business 14, Enterprise 30).
+      example:
+        retention_days: 7
     CreateClientRoleRequest:
       type: object
       required:
@@ -20914,6 +21869,14 @@ components:
         is_active:
           type: boolean
           description: '`true` when the domain is verified and its SSL certificate is active.'
+        last_checked_at:
+          type: string
+          format: date-time
+          description: When Skycloak last checked this domain's status with Cloudflare. Pending domains are checked every few minutes for 48 hours, then hourly, then daily after 30 days. Absent until the first check.
+        last_check_error:
+          type: string
+          description: Cloudflare's reason the domain is not active yet, from the last check. Absent when there is none.
+          example: custom hostname does not CNAME to this zone.
         created_at:
           type: string
           format: date-time
@@ -22066,6 +23029,7 @@ components:
           description: URL of a custom web font.
         registration_enabled:
           type: boolean
+          description: The realm's own self-registration setting (Keycloak registrationAllowed), read live from the realm. It is the same field the realm API exposes as registration_allowed; branding keeps no copy of it.
         remember_me_enabled:
           type: boolean
         forgot_password_enabled:
@@ -24141,6 +25105,19 @@ components:
           type: string
           description: Admin URL.
       description: Partial update request. All fields are optional; only provided fields are updated.
+    UpdateBackupScheduleRequest:
+      type: object
+      required:
+        - time_of_day
+      properties:
+        time_of_day:
+          type: string
+          allOf:
+            - $ref: '#/components/schemas/BackupTimeOfDay'
+          nullable: true
+          description: Daily start time in UTC, or `null` to follow the maintenance window again.
+      example:
+        time_of_day: '02:30'
     UpdateClientRoleRequest:
       type: object
       properties:
@@ -24529,6 +25506,7 @@ components:
             validate: omitempty,http_url
         registration_enabled:
           type: boolean
+          description: "Sets the realm's own self-registration setting (Keycloak registrationAllowed). Omitted means unchanged: unlike the other fields, leaving it out does not reset it to a default."
         remember_me_enabled:
           type: boolean
         forgot_password_enabled:
@@ -24851,6 +25829,7 @@ components:
         - domain
         - migration
         - export
+        - backup
     WebhookId:
       type: string
       format: uuid
