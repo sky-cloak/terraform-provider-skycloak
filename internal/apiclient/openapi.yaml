@@ -21986,6 +21986,9 @@ components:
         footer_text:
           type: string
           maxLength: 500
+        show_powered_by:
+          type: boolean
+          description: Display a 'Powered by Skycloak' line in the email footer.
         internationalization:
           $ref: '#/components/schemas/InternationalizationConfig'
         status:
@@ -23027,6 +23030,18 @@ components:
           type: string
           format: uri
           description: URL of a custom web font.
+        font_family:
+          type: string
+          description: CSS font-family name used with `font_url`, for example `Inter`.
+        apply_to_account_console:
+          type: boolean
+          description: Whether the realm's account console uses the login branding.
+        apply_to_admin_console:
+          type: boolean
+          description: Whether the realm's admin console uses the login branding.
+        theme_name:
+          type: string
+          description: The realm's current Keycloak login theme, read live from the realm. Every branding save installs the theme under a new name, so read it from here rather than pinning it in realm configuration. Absent when the realm uses Keycloak's default theme.
         registration_enabled:
           type: boolean
           description: The realm's own self-registration setting (Keycloak registrationAllowed), read live from the realm. It is the same field the realm API exposes as registration_allowed; branding keeps no copy of it.
@@ -25480,6 +25495,9 @@ components:
         footer_text:
           type: string
           maxLength: 500
+        show_powered_by:
+          type: boolean
+          description: Display a 'Powered by Skycloak' line in the email footer. Hiding it requires a plan that allows removing branding; otherwise it stays on. Omitted means unchanged.
         internationalization:
           $ref: '#/components/schemas/InternationalizationConfig'
     UpsertLoginBrandingRequest:
@@ -25504,6 +25522,16 @@ components:
           format: uri
           x-oapi-codegen-extra-tags:
             validate: omitempty,http_url
+        font_family:
+          type: string
+          maxLength: 100
+          description: 'CSS font-family name used with `font_url`: letters, digits, spaces, hyphens and underscores only. Omitted means unchanged.'
+        apply_to_account_console:
+          type: boolean
+          description: Apply the login branding to the realm's account console. Omitted means unchanged.
+        apply_to_admin_console:
+          type: boolean
+          description: Apply the login branding to the realm's admin console. Omitted means unchanged.
         registration_enabled:
           type: boolean
           description: "Sets the realm's own self-registration setting (Keycloak registrationAllowed). Omitted means unchanged: unlike the other fields, leaving it out does not reset it to a default."
