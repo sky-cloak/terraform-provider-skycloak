@@ -1590,9 +1590,12 @@ type EmailBranding struct {
 	PrimaryColor *HexColor `json:"primary_color,omitempty"`
 
 	// Realm Keycloak realm name (not ID). Must start with a letter; allows letters, digits, and hyphens.
-	Realm     RealmName      `json:"realm"`
-	Status    BrandingStatus `json:"status"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	Realm RealmName `json:"realm"`
+
+	// ShowPoweredBy Display a 'Powered by Skycloak' line in the email footer.
+	ShowPoweredBy *bool          `json:"show_powered_by,omitempty"`
+	Status        BrandingStatus `json:"status"`
+	UpdatedAt     time.Time      `json:"updated_at"`
 }
 
 // EndpointRateLimit defines model for EndpointRateLimit.
@@ -2046,11 +2049,20 @@ type LoginBranding struct {
 	// AppliedAt Timestamp of the most recent successful deployment to Keycloak.
 	AppliedAt *time.Time `json:"applied_at,omitempty"`
 
+	// ApplyToAccountConsole Whether the realm's account console uses the login branding.
+	ApplyToAccountConsole *bool `json:"apply_to_account_console,omitempty"`
+
+	// ApplyToAdminConsole Whether the realm's admin console uses the login branding.
+	ApplyToAdminConsole *bool `json:"apply_to_admin_console,omitempty"`
+
 	// BackgroundColor CSS hex color code.
 	BackgroundColor *HexColor `json:"background_color,omitempty" validate:"omitnil,hexcolor"`
 	ClusterId       ClusterId `json:"cluster_id"`
 	CreatedAt       time.Time `json:"created_at"`
 	FaviconUrl      *string   `json:"favicon_url,omitempty"`
+
+	// FontFamily CSS font-family name used with `font_url`, for example `Inter`.
+	FontFamily *string `json:"font_family,omitempty"`
 
 	// FontUrl URL of a custom web font.
 	FontUrl               *string `json:"font_url,omitempty"`
@@ -2078,7 +2090,10 @@ type LoginBranding struct {
 	Sso               *SsoConfig     `json:"sso,omitempty"`
 	Status            BrandingStatus `json:"status"`
 	TermsOfServiceUrl *string        `json:"terms_of_service_url,omitempty"`
-	UpdatedAt         time.Time      `json:"updated_at"`
+
+	// ThemeName The realm's current Keycloak login theme, read live from the realm. Every branding save installs the theme under a new name, so read it from here rather than pinning it in realm configuration. Absent when the realm uses Keycloak's default theme.
+	ThemeName *string   `json:"theme_name,omitempty"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // LoginInternationalizationConfig Login page internationalization settings.
@@ -3215,15 +3230,27 @@ type UpsertEmailBrandingRequest struct {
 
 	// PrimaryColor CSS hex color code.
 	PrimaryColor *HexColor `json:"primary_color,omitempty" validate:"omitnil,hexcolor"`
+
+	// ShowPoweredBy Display a 'Powered by Skycloak' line in the email footer. Hiding it requires a plan that allows removing branding; otherwise it stays on. Omitted means unchanged.
+	ShowPoweredBy *bool `json:"show_powered_by,omitempty"`
 }
 
 // UpsertLoginBrandingRequest defines model for UpsertLoginBrandingRequest.
 type UpsertLoginBrandingRequest struct {
+	// ApplyToAccountConsole Apply the login branding to the realm's account console. Omitted means unchanged.
+	ApplyToAccountConsole *bool `json:"apply_to_account_console,omitempty"`
+
+	// ApplyToAdminConsole Apply the login branding to the realm's admin console. Omitted means unchanged.
+	ApplyToAdminConsole *bool `json:"apply_to_admin_console,omitempty"`
+
 	// BackgroundColor CSS hex color code.
-	BackgroundColor       *HexColor `json:"background_color,omitempty" validate:"omitnil,hexcolor"`
-	FaviconUrl            *string   `json:"favicon_url,omitempty" validate:"omitempty,http_url"`
-	FontUrl               *string   `json:"font_url,omitempty" validate:"omitempty,http_url"`
-	ForgotPasswordEnabled *bool     `json:"forgot_password_enabled,omitempty"`
+	BackgroundColor *HexColor `json:"background_color,omitempty" validate:"omitnil,hexcolor"`
+	FaviconUrl      *string   `json:"favicon_url,omitempty" validate:"omitempty,http_url"`
+
+	// FontFamily CSS font-family name used with `font_url`: letters, digits, spaces, hyphens and underscores only. Omitted means unchanged.
+	FontFamily            *string `json:"font_family,omitempty"`
+	FontUrl               *string `json:"font_url,omitempty" validate:"omitempty,http_url"`
+	ForgotPasswordEnabled *bool   `json:"forgot_password_enabled,omitempty"`
 
 	// Internationalization Login page internationalization settings.
 	Internationalization *LoginInternationalizationConfig `json:"internationalization,omitempty"`
