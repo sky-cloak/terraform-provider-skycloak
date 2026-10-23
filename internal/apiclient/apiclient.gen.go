@@ -1849,7 +1849,7 @@ type Extension struct {
 	UploadedAt nullable.Nullable[time.Time] `json:"uploaded_at"`
 	UsageNotes nullable.Nullable[string]    `json:"usage_notes" validate:"omitnil,max=500"`
 
-	// Version Active version of the extension.
+	// Version Active version of the extension. For `platform` extensions this is the newest release across its supported Keycloak versions; the version a given cluster gets is `available_version` on its cluster extension. For `custom` extensions it is the uploader-supplied version.
 	Version string `json:"version" validate:"omitnil,max=500"`
 
 	// Visibility Set for `platform` extensions only: `private` marks an early-access extension your workspace has been granted. Absent for `custom` extensions.
