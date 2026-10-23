@@ -22492,7 +22492,7 @@ components:
           type: string
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
-          description: Active version of the extension.
+          description: Active version of the extension. For `platform` extensions this is the newest release across its supported Keycloak versions; the version a given cluster gets is `available_version` on its cluster extension. For `custom` extensions it is the uploader-supplied version.
         previous_versions:
           type: array
           items:
