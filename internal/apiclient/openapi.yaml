@@ -25871,6 +25871,13 @@ components:
       enum:
         - keycloak
         - platform
+    WebhookStatus:
+      type: string
+      enum:
+        - active
+        - paused
+        - disabled
+      description: Delivery state of a webhook, set by Skycloak and independent of `enabled`, which is your own switch.
     WebhookSubscription:
       type: object
       required:
@@ -25913,6 +25920,22 @@ components:
           type: boolean
         has_signing_secret:
           type: boolean
+        status:
+          allOf:
+            - $ref: '#/components/schemas/WebhookStatus'
+          description: Read-only. Delivery state set by Skycloak.
+          readOnly: true
+        paused_until:
+          type: string
+          format: date-time
+          description: Read-only. While paused, the time of the next endpoint check; delivery cannot resume before it.
+          readOnly: true
+        last_failure_reason:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: Read-only. What the endpoint returned on the latest failed delivery or check, for example `HTTP 404 Not Found`. Absent once the webhook delivers again.
+          readOnly: true
         created_at:
           type: string
           format: date-time

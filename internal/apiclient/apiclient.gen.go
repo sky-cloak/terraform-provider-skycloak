@@ -552,6 +552,13 @@ const (
 	WebhookSourcePlatform WebhookSource = "platform"
 )
 
+// Defines values for WebhookStatus.
+const (
+	Active   WebhookStatus = "active"
+	Disabled WebhookStatus = "disabled"
+	Paused   WebhookStatus = "paused"
+)
+
 // ActiveUserCounts Active user counts across fixed rolling time windows.
 type ActiveUserCounts struct {
 	// Daily Distinct users who logged in during the last 24 hours.
@@ -3421,20 +3428,32 @@ type WebhookSigningSecret = string
 // WebhookSource defines model for WebhookSource.
 type WebhookSource string
 
+// WebhookStatus Delivery state of a webhook, set by Skycloak and independent of `enabled`, which is your own switch.
+type WebhookStatus string
+
 // WebhookSubscription Saved webhook subscription for the authenticated workspace.
 type WebhookSubscription struct {
-	ClusterId              *ClusterId              `json:"cluster_id,omitempty"`
-	CreatedAt              time.Time               `json:"created_at"`
-	Enabled                bool                    `json:"enabled"`
-	EventTypes             []string                `json:"event_types"`
-	HasAuthorizationHeader bool                    `json:"has_authorization_header"`
-	HasSigningSecret       bool                    `json:"has_signing_secret"`
-	Id                     WebhookId               `json:"id"`
-	Name                   WebhookSubscriptionName `json:"name"`
-	RealmId                *string                 `json:"realm_id,omitempty" validate:"omitnil,max=500"`
-	Source                 WebhookSource           `json:"source"`
-	UpdatedAt              time.Time               `json:"updated_at"`
-	Url                    string                  `json:"url" validate:"omitnil,max=500"`
+	ClusterId              *ClusterId `json:"cluster_id,omitempty"`
+	CreatedAt              time.Time  `json:"created_at"`
+	Enabled                bool       `json:"enabled"`
+	EventTypes             []string   `json:"event_types"`
+	HasAuthorizationHeader bool       `json:"has_authorization_header"`
+	HasSigningSecret       bool       `json:"has_signing_secret"`
+	Id                     WebhookId  `json:"id"`
+
+	// LastFailureReason Read-only. What the endpoint returned on the latest failed delivery or check, for example `HTTP 404 Not Found`. Absent once the webhook delivers again.
+	LastFailureReason *string                 `json:"last_failure_reason,omitempty" validate:"omitnil,max=500"`
+	Name              WebhookSubscriptionName `json:"name"`
+
+	// PausedUntil Read-only. While paused, the time of the next endpoint check; delivery cannot resume before it.
+	PausedUntil *time.Time    `json:"paused_until,omitempty"`
+	RealmId     *string       `json:"realm_id,omitempty" validate:"omitnil,max=500"`
+	Source      WebhookSource `json:"source"`
+
+	// Status Read-only. Delivery state set by Skycloak.
+	Status    *WebhookStatus `json:"status,omitempty"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	Url       string         `json:"url" validate:"omitnil,max=500"`
 }
 
 // WebhookSubscriptionName defines model for WebhookSubscriptionName.
