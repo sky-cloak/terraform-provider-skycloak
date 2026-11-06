@@ -115,6 +115,23 @@ func (r *customThemeResource) ModifyPlan(ctx context.Context, req resource.Modif
 		return
 	}
 	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("content_sha256"), hash)...)
+
+	// New bytes at an unchanged path leave config and state identical, so the
+	// framework does not mark the API-owned attributes unknown. Mark them here,
+	// or the values Update reads back would contradict the plan. Unchanged
+	// bytes are left alone, otherwise every plan would show a diff. A create
+	// has no state and its computed attributes are already unknown.
+	if req.State.Raw.IsNull() {
+		return
+	}
+	var state customThemeResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() || state.ContentSHA256.ValueString() == hash {
+		return
+	}
+	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("file_size"), types.Int64Unknown())...)
+	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("deployed_at"), types.StringUnknown())...)
+	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("status"), types.StringUnknown())...)
 }
 
 func (r *customThemeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
