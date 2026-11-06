@@ -57,11 +57,9 @@ jobs:
             exit 0
           fi
           # Docs, tests, CI and other chores alone do not release; anything else does.
-          # A breaking footer on any of them goes on, so next-version.sh stops for a person.
           # Captured first: under pipefail, an early exit can fail the git log.
-          subjects=$(git log --format=%s "$last..HEAD")
-          bodies=$(git log --format=%b "$last..HEAD")
-          if ! grep -Eq '^BREAKING[ -]CHANGE:' <<< "$bodies" && ! scripts/release/should-release.sh <<< "$subjects"; then
+          messages=$(git log --format='%B%x00' "$last..HEAD" | tr '\0' '\1')
+          if ! tr '\1' '\0' <<< "$messages" | scripts/release/should-release.sh; then
             echo "Nothing to release since $last."
             exit 0
           fi
