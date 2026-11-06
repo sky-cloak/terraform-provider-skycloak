@@ -36,11 +36,14 @@ check "a fix listed in a chore squash" 0 $'chore: tidy (#31)\n\n* fix: a bug\n* 
 check "a breaking mark listed in a chore squash" 0 $'chore: tidy (#31)\n\n* feat!: drop a field'
 check "a merge commit of a fix" 0 $'Merge pull request #32 from a/b\n\nfix: a bug'
 check "a merge commit of a loose title" 0 $'Merge pull request #32 from a/b\n\nMake it right'
+check "a loose bullet in a chore squash" 0 $'chore: tidy (#35)\n\n* update the provider'
+check "a breaking footer in a chore squash" 0 $'chore: tidy (#36)\n\n* chore: one\n\nBREAKING-CHANGE: a field went'
+check "a breaking footer on a merge commit" 0 $'Merge pull request #37 from a/b\n\ndocs: a note\n\nBREAKING CHANGE: a field went'
 check "docs alone" 1 "docs: a note"
 check "CI alone" 1 "ci: bump a step" "build(deps): bump a tool"
 check "tests and chores alone" 1 "test: cover it" "chore: tidy" "style: format"
 check "a merge commit of docs" 1 $'Merge pull request #33 from a/b\n\ndocs: a note'
-check "a chore squash listing chores" 1 $'chore: tidy (#34)\n\n* chore: one\n* a loose line of prose'
+check "a chore squash listing chores" 1 $'chore: tidy (#34)\n\n* chore: one\n* docs: two'
 check "nothing" 1
 
 exit $fail

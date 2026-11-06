@@ -38,7 +38,7 @@ while IFS= read -r -d '' msg; do
           exit 0
         fi
       fi
-    elif [[ "$line" =~ ^\*\ [a-z]+(\([^\)]*\))?!?: ]]; then
+    elif [[ "$line" == "* "* ]]; then
       if matters "${line#\* }"; then
         exit 0
       fi
