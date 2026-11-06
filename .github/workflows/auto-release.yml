@@ -1,8 +1,8 @@
 name: auto-release
 
-# Tags a release once main's tests pass and an unreleased fix, feature or spec
-# sync is on main, however it was merged. The version comes from the commit types since the last
-# tag; a breaking change stops here for a human.
+# Tags a release once main's tests pass and something unreleased is on main that
+# users could notice, however it was merged. The version comes from the commit
+# types since the last tag; a breaking change stops here for a human.
 on:
   workflow_run:
     workflows: [test]
@@ -56,11 +56,12 @@ jobs:
             echo "$last is not in this commit's history; a newer commit was already released."
             exit 0
           fi
-          # Fixes, features and spec syncs release; docs, tests and CI alone do not.
-          # Reads subjects, so a sync merged by rebase or merge commit still counts.
-          # Captured first: under pipefail, grep -q exiting early can fail the git log.
+          # Docs, tests, CI and other chores alone do not release; anything else does.
+          # A breaking footer on any of them goes on, so next-version.sh stops for a person.
+          # Captured first: under pipefail, an early exit can fail the git log.
           subjects=$(git log --format=%s "$last..HEAD")
-          if ! grep -Eq '^((feat|fix)(\([^)]*\))?!?:|chore: sync OpenAPI spec)' <<< "$subjects"; then
+          bodies=$(git log --format=%b "$last..HEAD")
+          if ! grep -Eq '^BREAKING[ -]CHANGE:' <<< "$bodies" && ! scripts/release/should-release.sh <<< "$subjects"; then
             echo "Nothing to release since $last."
             exit 0
           fi
