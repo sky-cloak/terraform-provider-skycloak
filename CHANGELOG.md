@@ -7,6 +7,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- `skycloak_openfga_instance` resource and data source: a dedicated OpenFGA instance bound to one realm. Creation waits until the instance is ready, `terraform import` takes `cluster_id/instance_id`, and changing `cluster_id` or `realm` replaces the instance. The data source finds an instance by ID or by realm.
 - `skycloak_cluster`: `us-west` (US West) is a cluster location. `us` means US East. The `skycloak_cluster_locations` data source lists `us-west` as its own entry once the API reports it.
 
 ### Changed
