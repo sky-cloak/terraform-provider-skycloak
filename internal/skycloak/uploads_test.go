@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -265,5 +266,39 @@ func TestPublishExtensionVersionAndDelete(t *testing.T) {
 	}
 	if err := c.DeleteExtension(context.Background(), extUID); err != nil {
 		t.Fatalf("DeleteExtension: %v", err)
+	}
+}
+
+func TestUploadThemeExactThemeNames(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		exact     bool
+		wantField []string
+	}{
+		{"sent when true", true, []string{"true"}},
+		{"left out when false", false, nil},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var got []string
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				fields, _ := parseMultipart(t, r)
+				got = fields["exact_theme_names"]
+				writeJSON(w, http.StatusCreated, `{"id":"`+themeUID+`","cluster_id":"`+cuid+`","name":"corp","status":"deploying","theme_types":["login"],"file_size":12,"exact_theme_names":`+strconv.FormatBool(tc.exact)+`,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}`)
+			}))
+			defer srv.Close()
+
+			theme, err := newTestClient(srv.URL).UploadTheme(context.Background(), cuid, UploadThemeRequest{
+				Name: "corp", ExactThemeNames: tc.exact, FileName: "corp.zip", Content: []byte("PK\x03\x04zip"),
+			})
+			if err != nil {
+				t.Fatalf("UploadTheme: %v", err)
+			}
+			if strings.Join(got, ",") != strings.Join(tc.wantField, ",") {
+				t.Errorf("exact_theme_names field = %v, want %v", got, tc.wantField)
+			}
+			if theme.ExactThemeNames != tc.exact {
+				t.Errorf("ExactThemeNames = %v, want %v", theme.ExactThemeNames, tc.exact)
+			}
+		})
 	}
 }
