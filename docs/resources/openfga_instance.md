@@ -3,7 +3,7 @@
 page_title: "skycloak_openfga_instance Resource - skycloak"
 subcategory: ""
 description: |-
-  A dedicated OpenFGA instance bound to one realm of a cluster. The instance's API accepts only tokens issued by that realm. Creation waits until the instance is `ready`. Destroying the instance deletes all of its authorization data and cannot be undone. Changing `cluster_id` or `realm` replaces the instance. Requires a workspace with OpenFGA access. A realm can have only one instance.
+  A dedicated OpenFGA instance bound to one realm of a cluster. The instance's API accepts only tokens issued by that realm. Creation waits until the instance is ready. Destroying the instance deletes all of its authorization data and cannot be undone. Changing cluster_id or realm replaces the instance. Requires a workspace with OpenFGA access. A realm can have only one instance.
 ---
 
 # skycloak_openfga_instance (Resource)
