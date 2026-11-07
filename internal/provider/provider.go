@@ -133,6 +133,7 @@ func (p *skycloakProvider) Resources(_ context.Context) []func() resource.Resour
 		NewWebhookSubscriptionResource,
 		NewRealmExportResource,
 		NewRealmImportResource,
+		NewOpenFGAInstanceResource,
 	}
 }
 
@@ -176,6 +177,7 @@ func (p *skycloakProvider) DataSources(_ context.Context) []func() datasource.Da
 		NewSIEMDestinationsDataSource,
 		NewWebhookSubscriptionsDataSource,
 		NewWebhookEventTypesDataSource,
+		NewOpenFGAInstanceDataSource,
 	}
 }
 

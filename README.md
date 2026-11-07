@@ -83,6 +83,7 @@ honor the `Retry-After` header.
 | `skycloak_realm_import` | Imports a realm from a local artifact or a stored export |
 | `skycloak_siem_destination` | SIEM forwarding to syslog, S3, or HTTP collectors |
 | `skycloak_webhook_subscription` | Webhook deliveries for workspace and Keycloak events |
+| `skycloak_openfga_instance` | A dedicated OpenFGA instance bound to one realm (waits until ready) |
 
 | Data source | Description |
 |---|---|
@@ -114,6 +115,7 @@ honor the `Retry-After` header.
 | `skycloak_siem_destinations` | All SIEM destinations in the workspace |
 | `skycloak_webhook_subscriptions` | All webhook subscriptions in the workspace |
 | `skycloak_webhook_event_types` | Webhook event type catalog |
+| `skycloak_openfga_instance` | Look up an OpenFGA instance by ID or by realm |
 
 | Action (Terraform >= 1.14) | Description |
 |---|---|
