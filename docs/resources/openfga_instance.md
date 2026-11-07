@@ -52,6 +52,8 @@ output "openfga_api_url" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # Import with `<cluster_id>/<instance_id>`.
 terraform import skycloak_openfga_instance.orders 11111111-1111-1111-1111-111111111111/7c9e6679-7425-40de-944b-e07fc1f90ae7

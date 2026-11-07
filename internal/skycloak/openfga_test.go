@@ -117,7 +117,7 @@ func TestWaitForOpenFGAInstanceReady(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			n := 0
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				s := tc.states[min(n, len(tc.states)-1)]
 				n++
 				extra := ""
@@ -147,7 +147,7 @@ func TestWaitForOpenFGAInstanceGone(t *testing.T) {
 	defer func() { openFGAPollInterval = old }()
 
 	n := 0
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		n++
 		if n < 3 {
 			writeJSON(w, 200, ofgaJSON("deleting", ""))
