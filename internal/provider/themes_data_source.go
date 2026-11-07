@@ -21,14 +21,15 @@ type themesDataSource struct{ client *skycloak.Client }
 func NewThemesDataSource() datasource.DataSource { return &themesDataSource{} }
 
 type themeModel struct {
-	ID          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Description types.String `tfsdk:"description"`
-	Version     types.String `tfsdk:"version"`
-	Status      types.String `tfsdk:"status"`
-	ThemeTypes  types.List   `tfsdk:"theme_types"`
-	FileSize    types.Int64  `tfsdk:"file_size"`
-	DeployedAt  types.String `tfsdk:"deployed_at"`
+	ID              types.String `tfsdk:"id"`
+	Name            types.String `tfsdk:"name"`
+	Description     types.String `tfsdk:"description"`
+	Version         types.String `tfsdk:"version"`
+	Status          types.String `tfsdk:"status"`
+	ThemeTypes      types.List   `tfsdk:"theme_types"`
+	ExactThemeNames types.Bool   `tfsdk:"exact_theme_names"`
+	FileSize        types.Int64  `tfsdk:"file_size"`
+	DeployedAt      types.String `tfsdk:"deployed_at"`
 }
 
 type themesModel struct {
@@ -49,14 +50,15 @@ func (d *themesDataSource) Schema(_ context.Context, _ datasource.SchemaRequest,
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"id":          schema.StringAttribute{Computed: true, MarkdownDescription: "Theme ID."},
-						"name":        schema.StringAttribute{Computed: true, MarkdownDescription: "Theme name."},
-						"description": schema.StringAttribute{Computed: true, MarkdownDescription: "Theme description."},
-						"version":     schema.StringAttribute{Computed: true, MarkdownDescription: "Theme version."},
-						"status":      schema.StringAttribute{Computed: true, MarkdownDescription: "Deployment status (`deployed`, `deploying`, `failed`, `undeploying`)."},
-						"theme_types": schema.ListAttribute{Computed: true, ElementType: types.StringType, MarkdownDescription: "Keycloak theme types in the package (`login`, `account`, `admin`, `email`)."},
-						"file_size":   schema.Int64Attribute{Computed: true, MarkdownDescription: "Size of the uploaded archive in bytes."},
-						"deployed_at": schema.StringAttribute{Computed: true, MarkdownDescription: "Timestamp of the last successful deployment (RFC 3339)."},
+						"id":                schema.StringAttribute{Computed: true, MarkdownDescription: "Theme ID."},
+						"name":              schema.StringAttribute{Computed: true, MarkdownDescription: "Theme name."},
+						"description":       schema.StringAttribute{Computed: true, MarkdownDescription: "Theme description."},
+						"version":           schema.StringAttribute{Computed: true, MarkdownDescription: "Theme version."},
+						"status":            schema.StringAttribute{Computed: true, MarkdownDescription: "Deployment status (`deployed`, `deploying`, `failed`, `undeploying`)."},
+						"theme_types":       schema.ListAttribute{Computed: true, ElementType: types.StringType, MarkdownDescription: "Keycloak theme types in the package (`login`, `account`, `admin`, `email`)."},
+						"exact_theme_names": schema.BoolAttribute{Computed: true, MarkdownDescription: "Whether the theme was uploaded with exact theme names, deployed under the theme folder names found in the archive."},
+						"file_size":         schema.Int64Attribute{Computed: true, MarkdownDescription: "Size of the uploaded archive in bytes."},
+						"deployed_at":       schema.StringAttribute{Computed: true, MarkdownDescription: "Timestamp of the last successful deployment (RFC 3339)."},
 					},
 				},
 			},
@@ -82,14 +84,15 @@ func (d *themesDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	state := themesModel{ClusterID: cfg.ClusterID}
 	for _, t := range themes {
 		state.Themes = append(state.Themes, themeModel{
-			ID:          types.StringValue(t.ID),
-			Name:        types.StringValue(t.Name),
-			Description: optionalString(t.Description),
-			Version:     optionalString(t.Version),
-			Status:      types.StringValue(t.Status),
-			ThemeTypes:  sliceToStringList(ctx, t.ThemeTypes, &resp.Diagnostics),
-			FileSize:    types.Int64Value(t.FileSize),
-			DeployedAt:  optionalString(t.DeployedAt),
+			ID:              types.StringValue(t.ID),
+			Name:            types.StringValue(t.Name),
+			Description:     optionalString(t.Description),
+			Version:         optionalString(t.Version),
+			Status:          types.StringValue(t.Status),
+			ThemeTypes:      sliceToStringList(ctx, t.ThemeTypes, &resp.Diagnostics),
+			ExactThemeNames: types.BoolValue(t.ExactThemeNames),
+			FileSize:        types.Int64Value(t.FileSize),
+			DeployedAt:      optionalString(t.DeployedAt),
 		})
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

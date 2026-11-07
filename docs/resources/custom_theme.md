@@ -3,12 +3,12 @@
 page_title: "skycloak_custom_theme Resource - skycloak"
 subcategory: ""
 description: |-
-  Uploads a custom Keycloak theme (ZIP or Keycloakify JAR) to a cluster. New file contents are deployed in place: the theme keeps its ID and name, and the realms and application clients using it stay assigned to it. Only a change to theme_types (or cluster_id) recreates the theme.
+  Uploads a custom Keycloak theme (ZIP or Keycloakify JAR) to a cluster. New file contents are deployed in place: the theme keeps its ID and name, and the realms and application clients using it stay assigned to it. Only a change to theme_types, exact_theme_names (or cluster_id) recreates the theme.
 ---
 
 # skycloak_custom_theme (Resource)
 
-Uploads a custom Keycloak theme (ZIP or Keycloakify JAR) to a cluster. New file contents are deployed in place: the theme keeps its ID and name, and the realms and application clients using it stay assigned to it. Only a change to `theme_types` (or `cluster_id`) recreates the theme.
+Uploads a custom Keycloak theme (ZIP or Keycloakify JAR) to a cluster. New file contents are deployed in place: the theme keeps its ID and name, and the realms and application clients using it stay assigned to it. Only a change to `theme_types`, `exact_theme_names` (or `cluster_id`) recreates the theme.
 
 ## Example Usage
 
@@ -25,6 +25,10 @@ resource "skycloak_custom_theme" "corporate" {
 
   # Optional: deploy only specific theme types (omit to deploy all detected).
   theme_types = ["login", "email"]
+
+  # Optional: deploy under the theme folder names found in the archive.
+  # Defaults to false. Changing it replaces the theme.
+  exact_theme_names = true
 }
 
 # Activate it on a realm.
@@ -47,6 +51,7 @@ resource "skycloak_theme_assignment" "app" {
 ### Optional
 
 - `description` (String) Theme description.
+- `exact_theme_names` (Boolean) Deploy the theme under the theme folder names found in the archive. Defaults to `false`. Immutable.
 - `theme_types` (List of String) Subset of theme types to deploy (`login`, `account`, `admin`, `email`). Omit to deploy all detected types. Immutable.
 - `version` (String) Semantic version (e.g. `1.2.3`).
 

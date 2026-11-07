@@ -16569,6 +16569,10 @@ paths:
                     Omit to deploy all detected types. Sent as a single plain-text multipart field, not JSON -
                     oapi-codegen would otherwise infer `application/json` encoding for an array-typed part,
                     which does not match how this field is actually written and read.
+                exact_theme_names:
+                  type: boolean
+                  default: false
+                  description: When true, the theme is deployed under the theme folder names found in the archive. When false or omitted, the folder names follow the default naming. Fixed at upload.
               required:
                 - name
                 - theme_file
@@ -25708,6 +25712,7 @@ components:
         - theme_types
         - status
         - file_size
+        - exact_theme_names
         - created_at
         - updated_at
       properties:
@@ -25746,6 +25751,9 @@ components:
         directory:
           type: string
           description: 'Directory name Keycloak serves this theme from. Use this exact value when setting a realm or application theme outside Skycloak. Valid once `status` is `deployed`. It changes when the theme content is replaced: realm theme settings that name the previous directory are moved automatically, but application themes set outside Skycloak are not and must be updated after a replace.'
+        exact_theme_names:
+          type: boolean
+          description: True when the theme was uploaded with `exact_theme_names`, so it is deployed under the theme folder names found in the archive. Fixed at upload.
         restart_required:
           type: boolean
           description: True when the theme's content was replaced under its exact name and Keycloak has not restarted since, so the previous content may still be served. Only workspaces that keep exact theme names replace content in place; for every other theme this is false.

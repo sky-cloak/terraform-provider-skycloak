@@ -7,6 +7,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- `skycloak_custom_theme`: new optional `exact_theme_names` attribute (default `false`) that deploys the theme under the theme folder names found in the archive. It is sent with the upload, read back on refresh and import, and changing it replaces the theme, like `theme_types`. Existing configurations plan no change. The `skycloak_themes` data source exposes `exact_theme_names` on every theme.
 - `skycloak_openfga_instance` resource and data source: a dedicated OpenFGA instance bound to one realm. Creation waits until the instance is ready, `terraform import` takes `cluster_id/instance_id`, and changing `cluster_id` or `realm` replaces the instance. The data source finds an instance by ID or by realm.
 - `skycloak_cluster`: `us-west` (US West) is a cluster location. `us` means US East. The `skycloak_cluster_locations` data source lists `us-west` as its own entry once the API reports it.
 

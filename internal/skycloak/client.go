@@ -1496,6 +1496,7 @@ type Theme struct {
 	ID, ClusterID, Name, Description, Version, Status string
 	ThemeTypes                                        []string
 	FileSize                                          int64
+	ExactThemeNames                                   bool
 	ErrorMessage                                      string
 	DeployedAt, CreatedAt, UpdatedAt                  string
 }
@@ -1503,7 +1504,7 @@ type Theme struct {
 func themeFromAPI(t *apiclient.Theme) Theme {
 	out := Theme{
 		ID: t.Id.String(), ClusterID: t.ClusterId.String(), Name: t.Name, Status: string(t.Status),
-		FileSize: t.FileSize, CreatedAt: fmtTime(t.CreatedAt), UpdatedAt: fmtTime(t.UpdatedAt),
+		FileSize: t.FileSize, ExactThemeNames: t.ExactThemeNames, CreatedAt: fmtTime(t.CreatedAt), UpdatedAt: fmtTime(t.UpdatedAt),
 	}
 	out.Description = derefStr(t.Description)
 	out.Version = derefStr(t.Version)
@@ -2061,8 +2062,11 @@ type UploadThemeRequest struct {
 	Description string
 	Version     string
 	ThemeTypes  []string
-	FileName    string
-	Content     []byte
+	// ExactThemeNames deploys the theme under the folder names found in the
+	// archive. It is fixed at upload.
+	ExactThemeNames bool
+	FileName        string
+	Content         []byte
 }
 
 // UploadTheme uploads a theme archive (ZIP or Keycloakify JAR) to a cluster.
@@ -2078,6 +2082,9 @@ func (c *Client) UploadTheme(ctx context.Context, clusterID string, req UploadTh
 	}
 	for _, tt := range req.ThemeTypes {
 		_ = mw.WriteField("theme_types", tt)
+	}
+	if req.ExactThemeNames {
+		_ = mw.WriteField("exact_theme_names", "true")
 	}
 	if err := filePart(mw, "theme_file", req.FileName, themeFileContentType(req.FileName), req.Content); err != nil {
 		return nil, err

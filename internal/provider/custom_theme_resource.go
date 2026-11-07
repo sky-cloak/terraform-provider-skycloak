@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -38,17 +40,18 @@ type customThemeResource struct {
 func NewCustomThemeResource() resource.Resource { return &customThemeResource{} }
 
 type customThemeResourceModel struct {
-	ID            types.String `tfsdk:"id"`
-	ClusterID     types.String `tfsdk:"cluster_id"`
-	Source        types.String `tfsdk:"source"`
-	ContentSHA256 types.String `tfsdk:"content_sha256"`
-	Name          types.String `tfsdk:"name"`
-	Description   types.String `tfsdk:"description"`
-	Version       types.String `tfsdk:"version"`
-	ThemeTypes    types.List   `tfsdk:"theme_types"`
-	Status        types.String `tfsdk:"status"`
-	FileSize      types.Int64  `tfsdk:"file_size"`
-	DeployedAt    types.String `tfsdk:"deployed_at"`
+	ID              types.String `tfsdk:"id"`
+	ClusterID       types.String `tfsdk:"cluster_id"`
+	Source          types.String `tfsdk:"source"`
+	ContentSHA256   types.String `tfsdk:"content_sha256"`
+	Name            types.String `tfsdk:"name"`
+	Description     types.String `tfsdk:"description"`
+	Version         types.String `tfsdk:"version"`
+	ThemeTypes      types.List   `tfsdk:"theme_types"`
+	ExactThemeNames types.Bool   `tfsdk:"exact_theme_names"`
+	Status          types.String `tfsdk:"status"`
+	FileSize        types.Int64  `tfsdk:"file_size"`
+	DeployedAt      types.String `tfsdk:"deployed_at"`
 }
 
 func (r *customThemeResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -58,7 +61,7 @@ func (r *customThemeResource) Metadata(_ context.Context, req resource.MetadataR
 func (r *customThemeResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	rrStr := []planmodifier.String{stringplanmodifier.RequiresReplace()}
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Uploads a custom Keycloak theme (ZIP or Keycloakify JAR) to a cluster. New file contents are deployed in place: the theme keeps its ID and name, and the realms and application clients using it stay assigned to it. Only a change to `theme_types` (or `cluster_id`) recreates the theme.",
+		MarkdownDescription: "Uploads a custom Keycloak theme (ZIP or Keycloakify JAR) to a cluster. New file contents are deployed in place: the theme keeps its ID and name, and the realms and application clients using it stay assigned to it. Only a change to `theme_types`, `exact_theme_names` (or `cluster_id`) recreates the theme.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -78,6 +81,11 @@ func (r *customThemeResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Optional: true, ElementType: types.StringType,
 				MarkdownDescription: "Subset of theme types to deploy (`login`, `account`, `admin`, `email`). Omit to deploy all detected types. Immutable.",
 				PlanModifiers:       []planmodifier.List{listplanmodifier.RequiresReplace()},
+			},
+			"exact_theme_names": schema.BoolAttribute{
+				Optional: true, Computed: true, Default: booldefault.StaticBool(false),
+				MarkdownDescription: "Deploy the theme under the theme folder names found in the archive. Defaults to `false`. Immutable.",
+				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
 			},
 			"status":      schema.StringAttribute{Computed: true, MarkdownDescription: "Deployment status (`deployed`, `deploying`, `failed`, `undeploying`)."},
 			"file_size":   schema.Int64Attribute{Computed: true, MarkdownDescription: "Size of the uploaded archive in bytes."},
@@ -146,12 +154,13 @@ func (r *customThemeResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 	theme, err := r.client.UploadTheme(ctx, plan.ClusterID.ValueString(), skycloak.UploadThemeRequest{
-		Name:        plan.Name.ValueString(),
-		Description: plan.Description.ValueString(),
-		Version:     plan.Version.ValueString(),
-		ThemeTypes:  stringListToSlice(ctx, plan.ThemeTypes, &resp.Diagnostics),
-		FileName:    filepath.Base(plan.Source.ValueString()),
-		Content:     content,
+		Name:            plan.Name.ValueString(),
+		Description:     plan.Description.ValueString(),
+		Version:         plan.Version.ValueString(),
+		ThemeTypes:      stringListToSlice(ctx, plan.ThemeTypes, &resp.Diagnostics),
+		ExactThemeNames: plan.ExactThemeNames.ValueBool(),
+		FileName:        filepath.Base(plan.Source.ValueString()),
+		Content:         content,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to upload theme", err.Error())
@@ -316,6 +325,7 @@ func applyThemeToModel(t *skycloak.Theme, m *customThemeResourceModel) {
 	m.Name = types.StringValue(t.Name)
 	m.Description = optionalString(t.Description)
 	m.Version = optionalString(t.Version)
+	m.ExactThemeNames = types.BoolValue(t.ExactThemeNames)
 	m.Status = types.StringValue(t.Status)
 	m.FileSize = types.Int64Value(t.FileSize)
 	m.DeployedAt = optionalString(t.DeployedAt)

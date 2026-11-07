@@ -3029,6 +3029,9 @@ type Theme struct {
 	// ErrorMessage Error detail from the last failed deployment.
 	ErrorMessage *string `json:"error_message,omitempty"`
 
+	// ExactThemeNames True when the theme was uploaded with `exact_theme_names`, so it is deployed under the theme folder names found in the archive. Fixed at upload.
+	ExactThemeNames bool `json:"exact_theme_names"`
+
 	// FileSize Size of the uploaded theme archive in bytes.
 	FileSize int64   `json:"file_size"`
 	Id       ThemeId `json:"id"`
@@ -4365,7 +4368,10 @@ type ListThemesParams struct {
 // UploadThemeMultipartBody defines parameters for UploadTheme.
 type UploadThemeMultipartBody struct {
 	Description *string `json:"description,omitempty" validate:"omitnil,max=500"`
-	Name        string  `json:"name" validate:"omitnil,max=500"`
+
+	// ExactThemeNames When true, the theme is deployed under the theme folder names found in the archive. When false or omitted, the folder names follow the default naming. Fixed at upload.
+	ExactThemeNames *bool  `json:"exact_theme_names,omitempty"`
+	Name            string `json:"name" validate:"omitnil,max=500"`
 
 	// ThemeFile Keycloak-compatible theme archive. Content type must be `application/zip` (ZIP) or `application/java-archive` (Keycloakify JAR).
 	ThemeFile openapi_types.File `json:"theme_file"`

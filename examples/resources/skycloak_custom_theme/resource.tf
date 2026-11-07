@@ -10,6 +10,10 @@ resource "skycloak_custom_theme" "corporate" {
 
   # Optional: deploy only specific theme types (omit to deploy all detected).
   theme_types = ["login", "email"]
+
+  # Optional: deploy under the theme folder names found in the archive.
+  # Defaults to false. Changing it replaces the theme.
+  exact_theme_names = true
 }
 
 # Activate it on a realm.

@@ -40,6 +40,7 @@ Read-Only:
 
 - `deployed_at` (String) Timestamp of the last successful deployment (RFC 3339).
 - `description` (String) Theme description.
+- `exact_theme_names` (Boolean) Whether the theme was uploaded with exact theme names, deployed under the theme folder names found in the archive.
 - `file_size` (Number) Size of the uploaded archive in bytes.
 - `id` (String) Theme ID.
 - `name` (String) Theme name.
