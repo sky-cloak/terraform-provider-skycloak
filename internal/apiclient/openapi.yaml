@@ -1328,6 +1328,489 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - clusters:write
+  /clusters/{cluster_id}/backup-destination:
+    get:
+      operationId: getClusterBackupDestination
+      summary: Get the off-site copy destination
+      description: |-
+        Returns the S3-compatible bucket finished backups are copied to. The secret access key is never returned.
+        Returns `404` when none is set and `403` on plans without off-site copy (it is included in Business and Enterprise).
+
+        Required scope: `clusters:backups:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupDestination'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Backups
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:backups:read
+    put:
+      operationId: updateClusterBackupDestination
+      summary: Set the off-site copy destination
+      description: |-
+        Creates or replaces the cluster's one destination. After each completed backup the plain
+        `pg_restore` archive is copied to `<prefix>/<cluster_id>/<backup_id>.dump` with its manifest
+        `<backup_id>.json` beside it. Skycloak never deletes anything in your bucket.
+
+        Returns `403` on plans without off-site copy.
+
+        Required scope: `clusters:backups:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupDestination'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Backups
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutBackupDestinationRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:backups:write
+    delete:
+      operationId: deleteClusterBackupDestination
+      summary: Remove the off-site copy destination
+      description: |-
+        Removes the destination. Future backups are no longer copied; copies already in your bucket stay.
+
+        Required scope: `clusters:backups:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '204':
+          description: There is no content to send for this request, but the headers may be useful.
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Backups
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:backups:write
+  /clusters/{cluster_id}/backup-destination/test:
+    post:
+      operationId: testClusterBackupDestination
+      summary: Test the off-site copy destination
+      description: |-
+        Writes one small probe object under the prefix with the given credentials and reports
+        success or the provider's error. It never deletes anything. With an empty body it tests
+        the saved destination.
+
+        Required scope: `clusters:backups:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupDestinationTestResult'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Backups
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestBackupDestinationRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:backups:write
   /clusters/{cluster_id}/backup-schedule:
     get:
       operationId: getClusterBackupSchedule
@@ -1954,6 +2437,131 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - clusters:backups:read
+  /clusters/{cluster_id}/backups/{backup_id}/copy-retry:
+    post:
+      operationId: retryClusterBackupCopy
+      summary: Retry a failed off-site copy
+      description: |-
+        Queues a backup whose `copy_status` is `failed` to be copied again. Returns `409` for a
+        backup whose copy has not failed.
+
+        Required scope: `clusters:backups:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: backup_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/BackupId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '202':
+          description: The copy was queued again.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Backup'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Backups
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:backups:write
   /clusters/{cluster_id}/backups/{backup_id}/download-link:
     post:
       operationId: createClusterBackupDownloadLink
@@ -16571,14 +17179,20 @@ paths:
                     which does not match how this field is actually written and read.
                 exact_theme_names:
                   type: boolean
-                  default: false
-                  description: When true, the theme is deployed under the theme folder names found in the archive. When false or omitted, the folder names follow the default naming. Fixed at upload.
+                  description: |-
+                    When `true`, the theme is deployed on the cluster under the theme folder names found in the archive,
+                    so realm and application settings made outside Skycloak can refer to them. Defaults to `false`.
+                    Sent as a plain-text multipart field (`true` or `false`). Fixed at upload: to change it, delete
+                    the theme and upload it again. Rejected with `422 Unprocessable Entity` when another theme on the cluster
+                    already uses the same name.
               required:
                 - name
                 - theme_file
             encoding:
               theme_file:
                 contentType: application/zip, application/java-archive
+              exact_theme_names:
+                contentType: text/plain
       security:
         - ApiKeyAuth: []
       x-scopes:
@@ -21055,6 +21669,7 @@ components:
         - status
         - retention_days
         - size_bytes
+        - copy_status
         - created_at
       properties:
         id:
@@ -21088,6 +21703,19 @@ components:
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
           description: 'Machine-readable failure cause when `status` is `failed`: `JobFailed`, `JobLost`, `Missed`, `BackupsDisabled`, `InvalidReport`, `DatabaseNotReady` or `StorageNotConfigured`.'
+        copy_status:
+          allOf:
+            - $ref: '#/components/schemas/BackupCopyStatus'
+          description: State of the off-site copy to your own bucket. A failed copy never changes `status`, retention or the download link.
+        copy_failure_reason:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: Short failure code when `copy_status` is `failed`.
+        copied_at:
+          type: string
+          format: date-time
+          description: When the copy to your bucket finished, for `copy_status` `copied`.
         requested_at:
           type: string
           format: date-time
@@ -21117,11 +21745,99 @@ components:
         size_bytes: 52428800
         sha256: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
         keycloak_version: 26.3.0
+        copy_status: copied
+        copied_at: '2026-09-23T03:09:30Z'
         requested_at: '2026-09-23T03:00:00Z'
         started_at: '2026-09-23T03:00:04Z'
         completed_at: '2026-09-23T03:04:12Z'
         expires_at: '2026-10-07T03:04:12Z'
         created_at: '2026-09-23T03:00:00Z'
+    BackupCopyStatus:
+      type: string
+      enum:
+        - not_configured
+        - pending
+        - copied
+        - failed
+    BackupDestination:
+      type: object
+      required:
+        - bucket
+        - access_key_id
+        - enabled
+        - created_at
+        - updated_at
+      properties:
+        endpoint:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: S3-compatible endpoint, for example `https://<account>.r2.cloudflarestorage.com`. Omitted for AWS S3.
+        region:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: Signing region. Required with a custom endpoint.
+        bucket:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        prefix:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: 'Key prefix the copies are written under: `<prefix>/<cluster_id>/<backup_id>.dump` and `.json`.'
+        access_key_id:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+        enabled:
+          type: boolean
+          description: Whether finished backups are copied. Turn off to pause copying without removing the destination.
+        last_tested_at:
+          type: string
+          format: date-time
+          description: When Test connection last ran against this destination.
+        last_test_ok:
+          type: boolean
+          description: Whether the last Test connection succeeded.
+        last_test_error:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: The provider's error from the last failed Test connection.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      description: 'Where finished backups are copied: one S3-compatible bucket you own. The secret access key is write-only and is never returned.'
+      example:
+        bucket: acme-keycloak-backups
+        region: eu-central-1
+        prefix: skycloak
+        access_key_id: AKIAEXAMPLE
+        enabled: true
+        created_at: '2026-11-08T10:00:00Z'
+        updated_at: '2026-11-08T10:00:00Z'
+    BackupDestinationTestResult:
+      type: object
+      required:
+        - ok
+        - tested_at
+      properties:
+        ok:
+          type: boolean
+          description: Whether the probe object was written.
+        error:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: The provider's error when `ok` is `false`.
+        tested_at:
+          type: string
+          format: date-time
     BackupDownloadLink:
       type: object
       required:
@@ -21169,6 +21885,10 @@ components:
           items:
             $ref: '#/components/schemas/Backup'
           description: Backups, newest first.
+        destination:
+          allOf:
+            - $ref: '#/components/schemas/BackupDestination'
+          description: The off-site copy destination, when one is set. Never includes the secret.
     BackupSchedule:
       type: object
       required:
@@ -24321,6 +25041,54 @@ components:
           maxLength: 50
           description: Semantic version string for the new release (e.g. `"1.2.0"`).
       description: Version metadata submitted as the `metadata` part of a `multipart/form-data` upload.
+    PutBackupDestinationRequest:
+      type: object
+      required:
+        - bucket
+        - access_key_id
+      properties:
+        endpoint:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 512
+          description: S3-compatible endpoint. Omit for AWS S3. Must be an https URL to a public host.
+        region:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 512
+          description: Signing region. Required when `endpoint` is set.
+        bucket:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 512
+        prefix:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 512
+          description: Optional key prefix for the copies.
+        access_key_id:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 512
+        secret_access_key:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 1024
+          description: Secret access key. Required for a new destination and whenever the endpoint, bucket or access key changes; otherwise omit it to keep the stored one. Never returned.
+        enabled:
+          type: boolean
+          description: Defaults to `true` for a new destination; omit to keep the current value.
+      example:
+        bucket: acme-keycloak-backups
+        region: eu-central-1
+        access_key_id: AKIAEXAMPLE
+        secret_access_key: write-only
     RateLimitHeaders:
       type: object
     RateLimitingConfig:
@@ -25680,6 +26448,40 @@ components:
         - udp
         - tcp
         - tls
+    TestBackupDestinationRequest:
+      type: object
+      properties:
+        endpoint:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 512
+        region:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 512
+        bucket:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 512
+        prefix:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 512
+        access_key_id:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 512
+        secret_access_key:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          maxLength: 1024
+      description: Credentials to test. Send an empty body to test the saved destination. Omit `secret_access_key` to reuse the saved one for the same endpoint, bucket and access key.
     TestProviderConnectionRequest:
       type: object
       properties:
@@ -25712,7 +26514,6 @@ components:
         - theme_types
         - status
         - file_size
-        - exact_theme_names
         - created_at
         - updated_at
       properties:
@@ -25751,12 +26552,12 @@ components:
         directory:
           type: string
           description: 'Directory name Keycloak serves this theme from. Use this exact value when setting a realm or application theme outside Skycloak. Valid once `status` is `deployed`. It changes when the theme content is replaced: realm theme settings that name the previous directory are moved automatically, but application themes set outside Skycloak are not and must be updated after a replace.'
-        exact_theme_names:
-          type: boolean
-          description: True when the theme was uploaded with `exact_theme_names`, so it is deployed under the theme folder names found in the archive. Fixed at upload.
         restart_required:
           type: boolean
           description: True when the theme's content was replaced under its exact name and Keycloak has not restarted since, so the previous content may still be served. Only workspaces that keep exact theme names replace content in place; for every other theme this is false.
+        exact_theme_names:
+          type: boolean
+          description: True when the theme is deployed under the theme folder names found in its archive. Chosen at upload and fixed for the theme's life; `false` for themes uploaded without it.
         created_at:
           type: string
           format: date-time
