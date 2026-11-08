@@ -1504,7 +1504,7 @@ type Theme struct {
 func themeFromAPI(t *apiclient.Theme) Theme {
 	out := Theme{
 		ID: t.Id.String(), ClusterID: t.ClusterId.String(), Name: t.Name, Status: string(t.Status),
-		FileSize: t.FileSize, ExactThemeNames: t.ExactThemeNames, CreatedAt: fmtTime(t.CreatedAt), UpdatedAt: fmtTime(t.UpdatedAt),
+		FileSize: t.FileSize, ExactThemeNames: t.ExactThemeNames != nil && *t.ExactThemeNames, CreatedAt: fmtTime(t.CreatedAt), UpdatedAt: fmtTime(t.UpdatedAt),
 	}
 	out.Description = derefStr(t.Description)
 	out.Version = derefStr(t.Version)
