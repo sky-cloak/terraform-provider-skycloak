@@ -49,6 +49,14 @@ const (
 	ApplicationTypePublic       ApplicationType = "public"
 )
 
+// Defines values for BackupCopyStatus.
+const (
+	BackupCopyStatusCopied        BackupCopyStatus = "copied"
+	BackupCopyStatusFailed        BackupCopyStatus = "failed"
+	BackupCopyStatusNotConfigured BackupCopyStatus = "not_configured"
+	BackupCopyStatusPending       BackupCopyStatus = "pending"
+)
+
 // Defines values for BackupScheduleSource.
 const (
 	BackupScheduleSourceCustom            BackupScheduleSource = "custom"
@@ -476,10 +484,10 @@ const (
 
 // Defines values for ThemeStatus.
 const (
-	Deployed    ThemeStatus = "deployed"
-	Deploying   ThemeStatus = "deploying"
-	Failed      ThemeStatus = "failed"
-	Undeploying ThemeStatus = "undeploying"
+	ThemeStatusDeployed    ThemeStatus = "deployed"
+	ThemeStatusDeploying   ThemeStatus = "deploying"
+	ThemeStatusFailed      ThemeStatus = "failed"
+	ThemeStatusUndeploying ThemeStatus = "undeploying"
 )
 
 // Defines values for ThemeType.
@@ -727,7 +735,16 @@ type AuthenticationMetrics struct {
 type Backup struct {
 	ClusterId   ClusterId  `json:"cluster_id"`
 	CompletedAt *time.Time `json:"completed_at,omitempty"`
-	CreatedAt   time.Time  `json:"created_at"`
+
+	// CopiedAt When the copy to your bucket finished, for `copy_status` `copied`.
+	CopiedAt *time.Time `json:"copied_at,omitempty"`
+
+	// CopyFailureReason Short failure code when `copy_status` is `failed`.
+	CopyFailureReason *string `json:"copy_failure_reason,omitempty" validate:"omitnil,max=500"`
+
+	// CopyStatus State of the off-site copy to your own bucket. A failed copy never changes `status`, retention or the download link.
+	CopyStatus BackupCopyStatus `json:"copy_status"`
+	CreatedAt  time.Time        `json:"created_at"`
 
 	// DeletedAt When the backup was deleted from storage, for `status` `deleted`.
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
@@ -758,6 +775,48 @@ type Backup struct {
 	Type      BackupType   `json:"type"`
 }
 
+// BackupCopyStatus defines model for BackupCopyStatus.
+type BackupCopyStatus string
+
+// BackupDestination Where finished backups are copied: one S3-compatible bucket you own. The secret access key is write-only and is never returned.
+type BackupDestination struct {
+	AccessKeyId string    `json:"access_key_id" validate:"omitnil,max=500"`
+	Bucket      string    `json:"bucket" validate:"omitnil,max=500"`
+	CreatedAt   time.Time `json:"created_at"`
+
+	// Enabled Whether finished backups are copied. Turn off to pause copying without removing the destination.
+	Enabled bool `json:"enabled"`
+
+	// Endpoint S3-compatible endpoint, for example `https://<account>.r2.cloudflarestorage.com`. Omitted for AWS S3.
+	Endpoint *string `json:"endpoint,omitempty" validate:"omitnil,max=500"`
+
+	// LastTestError The provider's error from the last failed Test connection.
+	LastTestError *string `json:"last_test_error,omitempty" validate:"omitnil,max=500"`
+
+	// LastTestOk Whether the last Test connection succeeded.
+	LastTestOk *bool `json:"last_test_ok,omitempty"`
+
+	// LastTestedAt When Test connection last ran against this destination.
+	LastTestedAt *time.Time `json:"last_tested_at,omitempty"`
+
+	// Prefix Key prefix the copies are written under: `<prefix>/<cluster_id>/<backup_id>.dump` and `.json`.
+	Prefix *string `json:"prefix,omitempty" validate:"omitnil,max=500"`
+
+	// Region Signing region. Required with a custom endpoint.
+	Region    *string   `json:"region,omitempty" validate:"omitnil,max=500"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// BackupDestinationTestResult defines model for BackupDestinationTestResult.
+type BackupDestinationTestResult struct {
+	// Error The provider's error when `ok` is `false`.
+	Error *string `json:"error,omitempty" validate:"omitnil,max=500"`
+
+	// Ok Whether the probe object was written.
+	Ok       bool      `json:"ok"`
+	TestedAt time.Time `json:"tested_at"`
+}
+
 // BackupDownloadLink defines model for BackupDownloadLink.
 type BackupDownloadLink struct {
 	ExpiresAt time.Time `json:"expires_at"`
@@ -773,6 +832,9 @@ type BackupId = string
 type BackupList struct {
 	// Backups Backups, newest first.
 	Backups []Backup `json:"backups"`
+
+	// Destination The off-site copy destination, when one is set. Never includes the secret.
+	Destination *BackupDestination `json:"destination,omitempty"`
 
 	// Entitled Whether the workspace plan includes managed backups (Business and Enterprise).
 	Entitled bool `json:"entitled"`
@@ -2375,6 +2437,27 @@ type PublishExtensionVersionMetadata struct {
 	Version string `json:"version" validate:"required"`
 }
 
+// PutBackupDestinationRequest defines model for PutBackupDestinationRequest.
+type PutBackupDestinationRequest struct {
+	AccessKeyId string `json:"access_key_id" validate:"omitnil,max=500"`
+	Bucket      string `json:"bucket" validate:"omitnil,max=500"`
+
+	// Enabled Defaults to `true` for a new destination; omit to keep the current value.
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Endpoint S3-compatible endpoint. Omit for AWS S3. Must be an https URL to a public host.
+	Endpoint *string `json:"endpoint,omitempty" validate:"omitnil,max=500"`
+
+	// Prefix Optional key prefix for the copies.
+	Prefix *string `json:"prefix,omitempty" validate:"omitnil,max=500"`
+
+	// Region Signing region. Required when `endpoint` is set.
+	Region *string `json:"region,omitempty" validate:"omitnil,max=500"`
+
+	// SecretAccessKey Secret access key. Required for a new destination and whenever the endpoint, bucket or access key changes; otherwise omit it to keep the stored one. Never returned.
+	SecretAccessKey *string `json:"secret_access_key,omitempty" validate:"omitnil,max=500"`
+}
+
 // RateLimitingConfig defines model for RateLimitingConfig.
 type RateLimitingConfig struct {
 	Enabled        bool                 `json:"enabled"`
@@ -3000,6 +3083,16 @@ type SyslogFormat string
 // SyslogProtocol defines model for SyslogProtocol.
 type SyslogProtocol string
 
+// TestBackupDestinationRequest Credentials to test. Send an empty body to test the saved destination. Omit `secret_access_key` to reuse the saved one for the same endpoint, bucket and access key.
+type TestBackupDestinationRequest struct {
+	AccessKeyId     *string `json:"access_key_id,omitempty" validate:"omitnil,max=500"`
+	Bucket          *string `json:"bucket,omitempty" validate:"omitnil,max=500"`
+	Endpoint        *string `json:"endpoint,omitempty" validate:"omitnil,max=500"`
+	Prefix          *string `json:"prefix,omitempty" validate:"omitnil,max=500"`
+	Region          *string `json:"region,omitempty" validate:"omitnil,max=500"`
+	SecretAccessKey *string `json:"secret_access_key,omitempty" validate:"omitnil,max=500"`
+}
+
 // TestProviderConnectionRequest Optional credential overrides for a connectivity test. When omitted, the provider's stored credentials are used.
 type TestProviderConnectionRequest struct {
 	// ClientId Override client identifier for this test only. Not persisted.
@@ -3029,8 +3122,8 @@ type Theme struct {
 	// ErrorMessage Error detail from the last failed deployment.
 	ErrorMessage *string `json:"error_message,omitempty"`
 
-	// ExactThemeNames True when the theme was uploaded with `exact_theme_names`, so it is deployed under the theme folder names found in the archive. Fixed at upload.
-	ExactThemeNames bool `json:"exact_theme_names"`
+	// ExactThemeNames True when the theme is deployed under the theme folder names found in its archive. Chosen at upload and fixed for the theme's life; `false` for themes uploaded without it.
+	ExactThemeNames *bool `json:"exact_theme_names,omitempty"`
 
 	// FileSize Size of the uploaded theme archive in bytes.
 	FileSize int64   `json:"file_size"`
@@ -3603,6 +3696,26 @@ type UpdateClusterParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
 }
 
+// DeleteClusterBackupDestinationParams defines parameters for DeleteClusterBackupDestination.
+type DeleteClusterBackupDestinationParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// GetClusterBackupDestinationParams defines parameters for GetClusterBackupDestination.
+type GetClusterBackupDestinationParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// UpdateClusterBackupDestinationParams defines parameters for UpdateClusterBackupDestination.
+type UpdateClusterBackupDestinationParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// TestClusterBackupDestinationParams defines parameters for TestClusterBackupDestination.
+type TestClusterBackupDestinationParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
 // GetClusterBackupScheduleParams defines parameters for GetClusterBackupSchedule.
 type GetClusterBackupScheduleParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
@@ -3625,6 +3738,11 @@ type CreateClusterBackupParams struct {
 
 // GetClusterBackupParams defines parameters for GetClusterBackup.
 type GetClusterBackupParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// RetryClusterBackupCopyParams defines parameters for RetryClusterBackupCopy.
+type RetryClusterBackupCopyParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
 }
 
@@ -4369,7 +4487,11 @@ type ListThemesParams struct {
 type UploadThemeMultipartBody struct {
 	Description *string `json:"description,omitempty" validate:"omitnil,max=500"`
 
-	// ExactThemeNames When true, the theme is deployed under the theme folder names found in the archive. When false or omitted, the folder names follow the default naming. Fixed at upload.
+	// ExactThemeNames When `true`, the theme is deployed on the cluster under the theme folder names found in the archive,
+	// so realm and application settings made outside Skycloak can refer to them. Defaults to `false`.
+	// Sent as a plain-text multipart field (`true` or `false`). Fixed at upload: to change it, delete
+	// the theme and upload it again. Rejected with `422 Unprocessable Entity` when another theme on the cluster
+	// already uses the same name.
 	ExactThemeNames *bool  `json:"exact_theme_names,omitempty"`
 	Name            string `json:"name" validate:"omitnil,max=500"`
 
@@ -4571,6 +4693,12 @@ type CreateClusterJSONRequestBody = CreateClusterRequest
 
 // UpdateClusterJSONRequestBody defines body for UpdateCluster for application/json ContentType.
 type UpdateClusterJSONRequestBody = UpdateClusterRequest
+
+// UpdateClusterBackupDestinationJSONRequestBody defines body for UpdateClusterBackupDestination for application/json ContentType.
+type UpdateClusterBackupDestinationJSONRequestBody = PutBackupDestinationRequest
+
+// TestClusterBackupDestinationJSONRequestBody defines body for TestClusterBackupDestination for application/json ContentType.
+type TestClusterBackupDestinationJSONRequestBody = TestBackupDestinationRequest
 
 // UpdateClusterBackupScheduleJSONRequestBody defines body for UpdateClusterBackupSchedule for application/json ContentType.
 type UpdateClusterBackupScheduleJSONRequestBody = UpdateBackupScheduleRequest
@@ -4835,6 +4963,22 @@ type ClientInterface interface {
 
 	UpdateCluster(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteClusterBackupDestination request
+	DeleteClusterBackupDestination(ctx context.Context, clusterId ClusterId, params *DeleteClusterBackupDestinationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClusterBackupDestination request
+	GetClusterBackupDestination(ctx context.Context, clusterId ClusterId, params *GetClusterBackupDestinationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateClusterBackupDestinationWithBody request with any body
+	UpdateClusterBackupDestinationWithBody(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateClusterBackupDestination(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupDestinationParams, body UpdateClusterBackupDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// TestClusterBackupDestinationWithBody request with any body
+	TestClusterBackupDestinationWithBody(ctx context.Context, clusterId ClusterId, params *TestClusterBackupDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	TestClusterBackupDestination(ctx context.Context, clusterId ClusterId, params *TestClusterBackupDestinationParams, body TestClusterBackupDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetClusterBackupSchedule request
 	GetClusterBackupSchedule(ctx context.Context, clusterId ClusterId, params *GetClusterBackupScheduleParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -4853,6 +4997,9 @@ type ClientInterface interface {
 
 	// GetClusterBackup request
 	GetClusterBackup(ctx context.Context, clusterId ClusterId, backupId BackupId, params *GetClusterBackupParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RetryClusterBackupCopy request
+	RetryClusterBackupCopy(ctx context.Context, clusterId ClusterId, backupId BackupId, params *RetryClusterBackupCopyParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateClusterBackupDownloadLinkWithBody request with any body
 	CreateClusterBackupDownloadLinkWithBody(ctx context.Context, clusterId ClusterId, backupId BackupId, params *CreateClusterBackupDownloadLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -5540,6 +5687,78 @@ func (c *Client) UpdateCluster(ctx context.Context, clusterId ClusterId, params 
 	return c.Client.Do(req)
 }
 
+func (c *Client) DeleteClusterBackupDestination(ctx context.Context, clusterId ClusterId, params *DeleteClusterBackupDestinationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteClusterBackupDestinationRequest(c.Server, clusterId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClusterBackupDestination(ctx context.Context, clusterId ClusterId, params *GetClusterBackupDestinationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterBackupDestinationRequest(c.Server, clusterId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClusterBackupDestinationWithBody(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterBackupDestinationRequestWithBody(c.Server, clusterId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClusterBackupDestination(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupDestinationParams, body UpdateClusterBackupDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterBackupDestinationRequest(c.Server, clusterId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) TestClusterBackupDestinationWithBody(ctx context.Context, clusterId ClusterId, params *TestClusterBackupDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTestClusterBackupDestinationRequestWithBody(c.Server, clusterId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) TestClusterBackupDestination(ctx context.Context, clusterId ClusterId, params *TestClusterBackupDestinationParams, body TestClusterBackupDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTestClusterBackupDestinationRequest(c.Server, clusterId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetClusterBackupSchedule(ctx context.Context, clusterId ClusterId, params *GetClusterBackupScheduleParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetClusterBackupScheduleRequest(c.Server, clusterId, params)
 	if err != nil {
@@ -5614,6 +5833,18 @@ func (c *Client) CreateClusterBackup(ctx context.Context, clusterId ClusterId, p
 
 func (c *Client) GetClusterBackup(ctx context.Context, clusterId ClusterId, backupId BackupId, params *GetClusterBackupParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetClusterBackupRequest(c.Server, clusterId, backupId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RetryClusterBackupCopy(ctx context.Context, clusterId ClusterId, backupId BackupId, params *RetryClusterBackupCopyParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRetryClusterBackupCopyRequest(c.Server, clusterId, backupId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -8421,6 +8652,220 @@ func NewUpdateClusterRequestWithBody(server string, clusterId ClusterId, params 
 	return req, nil
 }
 
+// NewDeleteClusterBackupDestinationRequest generates requests for DeleteClusterBackupDestination
+func NewDeleteClusterBackupDestinationRequest(server string, clusterId ClusterId, params *DeleteClusterBackupDestinationParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/backup-destination", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetClusterBackupDestinationRequest generates requests for GetClusterBackupDestination
+func NewGetClusterBackupDestinationRequest(server string, clusterId ClusterId, params *GetClusterBackupDestinationParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/backup-destination", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewUpdateClusterBackupDestinationRequest calls the generic UpdateClusterBackupDestination builder with application/json body
+func NewUpdateClusterBackupDestinationRequest(server string, clusterId ClusterId, params *UpdateClusterBackupDestinationParams, body UpdateClusterBackupDestinationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateClusterBackupDestinationRequestWithBody(server, clusterId, params, "application/json", bodyReader)
+}
+
+// NewUpdateClusterBackupDestinationRequestWithBody generates requests for UpdateClusterBackupDestination with any type of body
+func NewUpdateClusterBackupDestinationRequestWithBody(server string, clusterId ClusterId, params *UpdateClusterBackupDestinationParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/backup-destination", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewTestClusterBackupDestinationRequest calls the generic TestClusterBackupDestination builder with application/json body
+func NewTestClusterBackupDestinationRequest(server string, clusterId ClusterId, params *TestClusterBackupDestinationParams, body TestClusterBackupDestinationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewTestClusterBackupDestinationRequestWithBody(server, clusterId, params, "application/json", bodyReader)
+}
+
+// NewTestClusterBackupDestinationRequestWithBody generates requests for TestClusterBackupDestination with any type of body
+func NewTestClusterBackupDestinationRequestWithBody(server string, clusterId ClusterId, params *TestClusterBackupDestinationParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/backup-destination/test", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
 // NewGetClusterBackupScheduleRequest generates requests for GetClusterBackupSchedule
 func NewGetClusterBackupScheduleRequest(server string, clusterId ClusterId, params *GetClusterBackupScheduleParams) (*http.Request, error) {
 	var err error
@@ -8669,6 +9114,60 @@ func NewGetClusterBackupRequest(server string, clusterId ClusterId, backupId Bac
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewRetryClusterBackupCopyRequest generates requests for RetryClusterBackupCopy
+func NewRetryClusterBackupCopyRequest(server string, clusterId ClusterId, backupId BackupId, params *RetryClusterBackupCopyParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "backup_id", runtime.ParamLocationPath, backupId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/backups/%s/copy-retry", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -18190,6 +18689,22 @@ type ClientWithResponsesInterface interface {
 
 	UpdateClusterWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterParams, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error)
 
+	// DeleteClusterBackupDestinationWithResponse request
+	DeleteClusterBackupDestinationWithResponse(ctx context.Context, clusterId ClusterId, params *DeleteClusterBackupDestinationParams, reqEditors ...RequestEditorFn) (*DeleteClusterBackupDestinationResponse, error)
+
+	// GetClusterBackupDestinationWithResponse request
+	GetClusterBackupDestinationWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterBackupDestinationParams, reqEditors ...RequestEditorFn) (*GetClusterBackupDestinationResponse, error)
+
+	// UpdateClusterBackupDestinationWithBodyWithResponse request with any body
+	UpdateClusterBackupDestinationWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterBackupDestinationResponse, error)
+
+	UpdateClusterBackupDestinationWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupDestinationParams, body UpdateClusterBackupDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterBackupDestinationResponse, error)
+
+	// TestClusterBackupDestinationWithBodyWithResponse request with any body
+	TestClusterBackupDestinationWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *TestClusterBackupDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestClusterBackupDestinationResponse, error)
+
+	TestClusterBackupDestinationWithResponse(ctx context.Context, clusterId ClusterId, params *TestClusterBackupDestinationParams, body TestClusterBackupDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*TestClusterBackupDestinationResponse, error)
+
 	// GetClusterBackupScheduleWithResponse request
 	GetClusterBackupScheduleWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterBackupScheduleParams, reqEditors ...RequestEditorFn) (*GetClusterBackupScheduleResponse, error)
 
@@ -18208,6 +18723,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetClusterBackupWithResponse request
 	GetClusterBackupWithResponse(ctx context.Context, clusterId ClusterId, backupId BackupId, params *GetClusterBackupParams, reqEditors ...RequestEditorFn) (*GetClusterBackupResponse, error)
+
+	// RetryClusterBackupCopyWithResponse request
+	RetryClusterBackupCopyWithResponse(ctx context.Context, clusterId ClusterId, backupId BackupId, params *RetryClusterBackupCopyParams, reqEditors ...RequestEditorFn) (*RetryClusterBackupCopyResponse, error)
 
 	// CreateClusterBackupDownloadLinkWithBodyWithResponse request with any body
 	CreateClusterBackupDownloadLinkWithBodyWithResponse(ctx context.Context, clusterId ClusterId, backupId BackupId, params *CreateClusterBackupDownloadLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClusterBackupDownloadLinkResponse, error)
@@ -19056,6 +19574,120 @@ func (r UpdateClusterResponse) StatusCode() int {
 	return 0
 }
 
+type DeleteClusterBackupDestinationResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteClusterBackupDestinationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteClusterBackupDestinationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClusterBackupDestinationResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *BackupDestination
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterBackupDestinationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterBackupDestinationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateClusterBackupDestinationResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *BackupDestination
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateClusterBackupDestinationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateClusterBackupDestinationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type TestClusterBackupDestinationResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *BackupDestinationTestResult
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r TestClusterBackupDestinationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r TestClusterBackupDestinationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetClusterBackupScheduleResponse struct {
 	Body                      []byte
 	HTTPResponse              *http.Response
@@ -19195,6 +19827,35 @@ func (r GetClusterBackupResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetClusterBackupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RetryClusterBackupCopyResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON202                   *Backup
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON409 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r RetryClusterBackupCopyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RetryClusterBackupCopyResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -23457,6 +24118,58 @@ func (c *ClientWithResponses) UpdateClusterWithResponse(ctx context.Context, clu
 	return ParseUpdateClusterResponse(rsp)
 }
 
+// DeleteClusterBackupDestinationWithResponse request returning *DeleteClusterBackupDestinationResponse
+func (c *ClientWithResponses) DeleteClusterBackupDestinationWithResponse(ctx context.Context, clusterId ClusterId, params *DeleteClusterBackupDestinationParams, reqEditors ...RequestEditorFn) (*DeleteClusterBackupDestinationResponse, error) {
+	rsp, err := c.DeleteClusterBackupDestination(ctx, clusterId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteClusterBackupDestinationResponse(rsp)
+}
+
+// GetClusterBackupDestinationWithResponse request returning *GetClusterBackupDestinationResponse
+func (c *ClientWithResponses) GetClusterBackupDestinationWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterBackupDestinationParams, reqEditors ...RequestEditorFn) (*GetClusterBackupDestinationResponse, error) {
+	rsp, err := c.GetClusterBackupDestination(ctx, clusterId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterBackupDestinationResponse(rsp)
+}
+
+// UpdateClusterBackupDestinationWithBodyWithResponse request with arbitrary body returning *UpdateClusterBackupDestinationResponse
+func (c *ClientWithResponses) UpdateClusterBackupDestinationWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterBackupDestinationResponse, error) {
+	rsp, err := c.UpdateClusterBackupDestinationWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClusterBackupDestinationResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateClusterBackupDestinationWithResponse(ctx context.Context, clusterId ClusterId, params *UpdateClusterBackupDestinationParams, body UpdateClusterBackupDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterBackupDestinationResponse, error) {
+	rsp, err := c.UpdateClusterBackupDestination(ctx, clusterId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClusterBackupDestinationResponse(rsp)
+}
+
+// TestClusterBackupDestinationWithBodyWithResponse request with arbitrary body returning *TestClusterBackupDestinationResponse
+func (c *ClientWithResponses) TestClusterBackupDestinationWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *TestClusterBackupDestinationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TestClusterBackupDestinationResponse, error) {
+	rsp, err := c.TestClusterBackupDestinationWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTestClusterBackupDestinationResponse(rsp)
+}
+
+func (c *ClientWithResponses) TestClusterBackupDestinationWithResponse(ctx context.Context, clusterId ClusterId, params *TestClusterBackupDestinationParams, body TestClusterBackupDestinationJSONRequestBody, reqEditors ...RequestEditorFn) (*TestClusterBackupDestinationResponse, error) {
+	rsp, err := c.TestClusterBackupDestination(ctx, clusterId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTestClusterBackupDestinationResponse(rsp)
+}
+
 // GetClusterBackupScheduleWithResponse request returning *GetClusterBackupScheduleResponse
 func (c *ClientWithResponses) GetClusterBackupScheduleWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterBackupScheduleParams, reqEditors ...RequestEditorFn) (*GetClusterBackupScheduleResponse, error) {
 	rsp, err := c.GetClusterBackupSchedule(ctx, clusterId, params, reqEditors...)
@@ -23516,6 +24229,15 @@ func (c *ClientWithResponses) GetClusterBackupWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseGetClusterBackupResponse(rsp)
+}
+
+// RetryClusterBackupCopyWithResponse request returning *RetryClusterBackupCopyResponse
+func (c *ClientWithResponses) RetryClusterBackupCopyWithResponse(ctx context.Context, clusterId ClusterId, backupId BackupId, params *RetryClusterBackupCopyParams, reqEditors ...RequestEditorFn) (*RetryClusterBackupCopyResponse, error) {
+	rsp, err := c.RetryClusterBackupCopy(ctx, clusterId, backupId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRetryClusterBackupCopyResponse(rsp)
 }
 
 // CreateClusterBackupDownloadLinkWithBodyWithResponse request with arbitrary body returning *CreateClusterBackupDownloadLinkResponse
@@ -25924,6 +26646,292 @@ func ParseUpdateClusterResponse(rsp *http.Response) (*UpdateClusterResponse, err
 	return response, nil
 }
 
+// ParseDeleteClusterBackupDestinationResponse parses an HTTP response from a DeleteClusterBackupDestinationWithResponse call
+func ParseDeleteClusterBackupDestinationResponse(rsp *http.Response) (*DeleteClusterBackupDestinationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteClusterBackupDestinationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClusterBackupDestinationResponse parses an HTTP response from a GetClusterBackupDestinationWithResponse call
+func ParseGetClusterBackupDestinationResponse(rsp *http.Response) (*GetClusterBackupDestinationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterBackupDestinationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BackupDestination
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateClusterBackupDestinationResponse parses an HTTP response from a UpdateClusterBackupDestinationWithResponse call
+func ParseUpdateClusterBackupDestinationResponse(rsp *http.Response) (*UpdateClusterBackupDestinationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateClusterBackupDestinationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BackupDestination
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseTestClusterBackupDestinationResponse parses an HTTP response from a TestClusterBackupDestinationWithResponse call
+func ParseTestClusterBackupDestinationResponse(rsp *http.Response) (*TestClusterBackupDestinationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &TestClusterBackupDestinationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BackupDestinationTestResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetClusterBackupScheduleResponse parses an HTTP response from a GetClusterBackupScheduleWithResponse call
 func ParseGetClusterBackupScheduleResponse(rsp *http.Response) (*GetClusterBackupScheduleResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -26272,6 +27280,81 @@ func ParseGetClusterBackupResponse(rsp *http.Response) (*GetClusterBackupRespons
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRetryClusterBackupCopyResponse parses an HTTP response from a RetryClusterBackupCopyWithResponse call
+func ParseRetryClusterBackupCopyResponse(rsp *http.Response) (*RetryClusterBackupCopyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RetryClusterBackupCopyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest Backup
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
 		var dest ErrorBody
