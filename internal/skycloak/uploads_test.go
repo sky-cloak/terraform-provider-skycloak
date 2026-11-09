@@ -2,7 +2,6 @@ package skycloak
 
 import (
 	"context"
-	"github.com/sky-cloak/terraform-provider-skycloak/internal/apiclient"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/sky-cloak/terraform-provider-skycloak/internal/apiclient"
 )
 
 // parseMultipart reads a request's multipart body into field→value (text) and
@@ -306,11 +307,11 @@ func TestUploadThemeExactThemeNames(t *testing.T) {
 
 // exact_theme_names is optional in the API: absent reads as false, present is kept.
 func TestThemeFromAPIExactThemeNamesIsOptional(t *testing.T) {
-	yes := true
+	yes, no := true, false
 	for name, tc := range map[string]struct {
 		in   *bool
 		want bool
-	}{"absent": {nil, false}, "true": {&yes, true}} {
+	}{"absent": {nil, false}, "false": {&no, false}, "true": {&yes, true}} {
 		t.Run(name, func(t *testing.T) {
 			if got := themeFromAPI(&apiclient.Theme{ExactThemeNames: tc.in}).ExactThemeNames; got != tc.want {
 				t.Fatalf("ExactThemeNames = %v, want %v", got, tc.want)
