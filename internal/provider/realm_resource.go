@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -12,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/sky-cloak/terraform-provider-skycloak/internal/skycloak"
@@ -43,6 +45,7 @@ type realmModel struct {
 	RegistrationEmailAsUsername types.Bool   `tfsdk:"registration_email_as_username"`
 	LoginWithEmailAllowed       types.Bool   `tfsdk:"login_with_email_allowed"`
 	DuplicateEmailsAllowed      types.Bool   `tfsdk:"duplicate_emails_allowed"`
+	FrontendURL                 types.String `tfsdk:"frontend_url"`
 	CreatedAt                   types.String `tfsdk:"created_at"`
 }
 
@@ -112,6 +115,11 @@ func (r *realmResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Default:             booldefault.StaticBool(false),
 				MarkdownDescription: "Allow duplicate emails across users. Defaults to `false`.",
 			},
+			"frontend_url": schema.StringAttribute{
+				Optional:            true,
+				Validators:          []validator.String{frontendURLValidator{}},
+				MarkdownDescription: "Public URL the realm serves on when you put your own proxy in front of the cluster: an `https` URL with a host and an optional port, and no path, query, fragment or credentials. While it is set, the realm's issuer is this URL followed by `/realms/{name}`, whatever host a request arrives on. Leave it unset, or remove it, to clear it. Changing it changes the realm's issuer, its links and its passkey origin. Only realms on a dedicated cluster can set it, never the `master` realm, and never a realm that serves on a Skycloak custom domain.",
+			},
 			"created_at": schema.StringAttribute{
 				Computed:            true,
 				MarkdownDescription: "Creation timestamp.",
@@ -140,7 +148,12 @@ func (r *realmResource) Create(ctx context.Context, req resource.CreateRequest, 
 	}
 
 	clusterID := plan.ClusterID.ValueString()
-	created, err := r.client.CreateRealm(ctx, clusterID, realmFromModel(&plan))
+	realm := realmFromModel(&plan)
+	// A new realm has no frontend URL, so only a configured value is sent.
+	if plan.FrontendURL.IsNull() || plan.FrontendURL.IsUnknown() {
+		realm.FrontendURL = nil
+	}
+	created, err := r.client.CreateRealm(ctx, clusterID, realm)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create realm", err.Error())
 		return
@@ -177,8 +190,20 @@ func (r *realmResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		return
 	}
 
+	var state realmModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	clusterID := plan.ClusterID.ValueString()
-	updated, err := r.client.UpdateRealm(ctx, clusterID, plan.Name.ValueString(), realmFromModel(&plan))
+	realm := realmFromModel(&plan)
+	// Send the frontend URL only when it changes, so an update of another
+	// setting never touches it. Removing it from the configuration clears it.
+	if plan.FrontendURL.Equal(state.FrontendURL) {
+		realm.FrontendURL = nil
+	}
+	updated, err := r.client.UpdateRealm(ctx, clusterID, plan.Name.ValueString(), realm)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update realm", err.Error())
 		return
@@ -219,6 +244,7 @@ func realmFromModel(m *realmModel) skycloak.Realm {
 		RegistrationEmailAsUsername: m.RegistrationEmailAsUsername.ValueBool(),
 		LoginWithEmailAllowed:       m.LoginWithEmailAllowed.ValueBool(),
 		DuplicateEmailsAllowed:      m.DuplicateEmailsAllowed.ValueBool(),
+		FrontendURL:                 frontendURLFromModel(m.FrontendURL),
 	}
 }
 
@@ -233,5 +259,58 @@ func applyRealmToModel(clusterID string, rl *skycloak.Realm, m *realmModel) {
 	m.RegistrationEmailAsUsername = types.BoolValue(rl.RegistrationEmailAsUsername)
 	m.LoginWithEmailAllowed = types.BoolValue(rl.LoginWithEmailAllowed)
 	m.DuplicateEmailsAllowed = types.BoolValue(rl.DuplicateEmailsAllowed)
+	m.FrontendURL = frontendURLToModel(m.FrontendURL, rl.FrontendURL)
 	m.CreatedAt = types.StringValue(rl.CreatedAt)
+}
+
+// frontendURLFromModel maps the attribute to the client's write semantics: a
+// null value clears the setting and a value sets it.
+func frontendURLFromModel(v types.String) *string {
+	s := v.ValueString()
+	return &s
+}
+
+// frontendURLToModel maps the API value to the attribute. A realm with no
+// frontend URL, or one that only has the custom domain's value, reads as null.
+// When the API returns the prior value in another spelling (case of the host,
+// a trailing slash), the prior value is kept so the plan stays consistent.
+func frontendURLToModel(prior types.String, u *string) types.String {
+	if u == nil || *u == "" {
+		return types.StringNull()
+	}
+	if !prior.IsNull() && !prior.IsUnknown() && sameFrontendURL(prior.ValueString(), *u) {
+		return prior
+	}
+	return types.StringValue(*u)
+}
+
+func sameFrontendURL(a, b string) bool {
+	norm := func(s string) string { return strings.ToLower(strings.TrimRight(s, "/")) }
+	return norm(a) == norm(b)
+}
+
+// frontendURLValidator rejects, at plan time, values the API would refuse as
+// malformed: an empty string, a non-https URL, or one with a path, query,
+// fragment or credentials.
+type frontendURLValidator struct{}
+
+func (frontendURLValidator) Description(context.Context) string {
+	return "must be an https URL with a host and an optional port, and no path, query, fragment or credentials"
+}
+
+func (v frontendURLValidator) MarkdownDescription(ctx context.Context) string {
+	return v.Description(ctx)
+}
+
+func (frontendURLValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	value := req.ConfigValue.ValueString()
+	u, err := url.Parse(value)
+	if err != nil || u.Scheme != "https" || u.Hostname() == "" || u.User != nil ||
+		(u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.Fragment != "" || strings.ContainsAny(value, "?#") {
+		resp.Diagnostics.AddAttributeError(req.Path, "Invalid frontend_url",
+			fmt.Sprintf("frontend_url %q must be an https URL with a host and an optional port, and no path, query, fragment or credentials. Remove the attribute to clear it.", value))
+	}
 }

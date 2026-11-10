@@ -1543,8 +1543,11 @@ type CreatedRealm struct {
 	DuplicateEmailsAllowed bool `json:"duplicate_emails_allowed"`
 
 	// Enabled Whether users can sign in to this realm.
-	Enabled bool    `json:"enabled"`
-	Id      RealmId `json:"id"`
+	Enabled bool `json:"enabled"`
+
+	// FrontendUrl The public URL the realm serves on when you put your own proxy in front of the cluster, or `null` when none is set. While it is set, the realm's issuer is this URL followed by `/realms/{name}` whatever host a request arrives on. Always `null` for a realm that serves on a Skycloak custom domain.
+	FrontendUrl nullable.Nullable[string] `json:"frontend_url,omitempty"`
+	Id          RealmId                   `json:"id"`
 
 	// LoginWithEmailAllowed Whether users can sign in with their email address instead of username.
 	LoginWithEmailAllowed bool      `json:"login_with_email_allowed"`
@@ -2480,8 +2483,11 @@ type Realm struct {
 	DuplicateEmailsAllowed bool `json:"duplicate_emails_allowed"`
 
 	// Enabled Whether users can sign in to this realm.
-	Enabled bool    `json:"enabled"`
-	Id      RealmId `json:"id"`
+	Enabled bool `json:"enabled"`
+
+	// FrontendUrl The public URL the realm serves on when you put your own proxy in front of the cluster, or `null` when none is set. While it is set, the realm's issuer is this URL followed by `/realms/{name}` whatever host a request arrives on. Always `null` for a realm that serves on a Skycloak custom domain.
+	FrontendUrl nullable.Nullable[string] `json:"frontend_url,omitempty"`
+	Id          RealmId                   `json:"id"`
 
 	// LoginWithEmailAllowed Whether users can sign in with their email address instead of username.
 	LoginWithEmailAllowed bool      `json:"login_with_email_allowed"`
@@ -3301,6 +3307,9 @@ type UpdateRealmRequest struct {
 
 	// Enabled Whether users can sign in to this realm.
 	Enabled *bool `json:"enabled,omitempty"`
+
+	// FrontendUrl The public URL the realm serves on behind your own proxy: an `https` URL with a host and an optional port, and no path, query, fragment or credentials. Send `null` to clear it, so the issuer follows the request host again. Omit it to leave it unchanged. Changing it changes the realm's issuer, its links and its passkey origin. Only realms on a dedicated cluster can set it (`403` otherwise), never the `master` realm (`422`), and never a realm that serves on a Skycloak custom domain (`409`).
+	FrontendUrl nullable.Nullable[string] `json:"frontend_url,omitempty"`
 
 	// LoginWithEmailAllowed Whether users can sign in with their email address instead of username.
 	LoginWithEmailAllowed *bool `json:"login_with_email_allowed,omitempty"`

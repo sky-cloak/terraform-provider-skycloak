@@ -338,7 +338,11 @@ type Realm struct {
 	RegistrationEmailAsUsername bool
 	LoginWithEmailAllowed       bool
 	DuplicateEmailsAllowed      bool
-	CreatedAt                   string
+	// FrontendURL is the public URL the realm serves on behind the customer's
+	// own proxy. On a read, nil means none is set. On a write, nil leaves the
+	// value unchanged, an empty string clears it and anything else sets it.
+	FrontendURL *string
+	CreatedAt   string
 }
 
 func realmFromAPI(r *apiclient.Realm) *Realm {
@@ -348,6 +352,9 @@ func realmFromAPI(r *apiclient.Realm) *Realm {
 		RegistrationEmailAsUsername: r.RegistrationEmailAsUsername,
 		LoginWithEmailAllowed:       r.LoginWithEmailAllowed,
 		DuplicateEmailsAllowed:      r.DuplicateEmailsAllowed,
+	}
+	if u, err := r.FrontendUrl.Get(); err == nil {
+		out.FrontendURL = &u
 	}
 	if r.CreatedAt != nil {
 		out.CreatedAt = fmtTime(*r.CreatedAt)
@@ -398,8 +405,17 @@ func (c *Client) CreateRealm(ctx context.Context, clusterID string, r Realm) (*R
 	if resp.JSON201 == nil {
 		return nil, statusError(resp.HTTPResponse, resp.Body)
 	}
-	// Apply the remaining settings (enabled, ssl_required, registration flags).
-	return c.UpdateRealm(ctx, clusterID, r.Name, r)
+	// Apply the remaining settings (enabled, ssl_required, registration flags,
+	// frontend URL). If the API refuses them, remove the new realm so a failed
+	// create leaves nothing behind that Terraform does not track.
+	updated, err := c.UpdateRealm(ctx, clusterID, r.Name, r)
+	if err != nil {
+		if delErr := c.DeleteRealm(ctx, clusterID, r.Name); delErr != nil {
+			return nil, fmt.Errorf("%w (removing the new realm also failed: %v)", err, delErr)
+		}
+		return nil, err
+	}
+	return updated, nil
 }
 
 // UpdateRealm updates a realm's mutable settings.
@@ -423,6 +439,13 @@ func (c *Client) UpdateRealm(ctx context.Context, clusterID, name string, r Real
 	if r.SSLRequired != "" {
 		ssl := apiclient.RealmSslRequired(r.SSLRequired)
 		body.SslRequired = &ssl
+	}
+	if r.FrontendURL != nil {
+		if *r.FrontendURL == "" {
+			body.FrontendUrl = nullable.NewNullNullable[string]()
+		} else {
+			body.FrontendUrl = nullable.NewNullableWithValue(*r.FrontendURL)
+		}
 	}
 	resp, err := c.gen.UpdateRealmWithResponse(ctx, cid(clusterID), apiclient.RealmName(name), &apiclient.UpdateRealmParams{APIVersion: c.ver()}, body)
 	if err != nil {
