@@ -27,6 +27,9 @@ resource "skycloak_realm" "app" {
   display_name             = "Application Realm"
   enabled                  = true
   login_with_email_allowed = true
+
+  # Only on a dedicated cluster, when you run your own proxy in front of it.
+  frontend_url = "https://login.example.com"
 }
 ```
 
@@ -43,6 +46,7 @@ resource "skycloak_realm" "app" {
 - `display_name` (String) Human-readable realm display name.
 - `duplicate_emails_allowed` (Boolean) Allow duplicate emails across users. Defaults to `false`.
 - `enabled` (Boolean) Whether the realm is enabled. Defaults to `true`.
+- `frontend_url` (String) Public URL the realm serves on when you put your own proxy in front of the cluster: an `https` URL with a host and an optional port, and no path, query, fragment or credentials. While it is set, the realm's issuer is this URL followed by `/realms/{name}`, whatever host a request arrives on. Leave it unset, or remove it, to clear it. Changing it changes the realm's issuer, its links and its passkey origin. Only realms on a dedicated cluster can set it, never the `master` realm, and never a realm that serves on a Skycloak custom domain.
 - `login_with_email_allowed` (Boolean) Allow login with email. Defaults to `false`.
 - `registration_allowed` (Boolean) Allow self-registration. Defaults to `false`.
 - `registration_email_as_username` (Boolean) Use email as username on registration. Defaults to `false`.

@@ -12,4 +12,7 @@ resource "skycloak_realm" "app" {
   display_name             = "Application Realm"
   enabled                  = true
   login_with_email_allowed = true
+
+  # Only on a dedicated cluster, when you run your own proxy in front of it.
+  frontend_url = "https://login.example.com"
 }

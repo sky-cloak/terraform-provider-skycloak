@@ -23226,6 +23226,15 @@ components:
           type: boolean
           description: Whether multiple accounts may share the same email address.
           example: false
+        frontend_url:
+          type: string
+          nullable: true
+          description: |-
+            The public URL the realm serves on when you put your own proxy in front of the cluster,
+            or `null` when none is set. While it is set, the realm's issuer is this URL followed by
+            `/realms/{name}` whatever host a request arrives on. Always `null` for a realm that
+            serves on a Skycloak custom domain.
+          example: https://login.example.com
         created_at:
           type: string
           format: date-time
@@ -25157,6 +25166,15 @@ components:
           type: boolean
           description: Whether multiple accounts may share the same email address.
           example: false
+        frontend_url:
+          type: string
+          nullable: true
+          description: |-
+            The public URL the realm serves on when you put your own proxy in front of the cluster,
+            or `null` when none is set. While it is set, the realm's issuer is this URL followed by
+            `/realms/{name}` whatever host a request arrives on. Always `null` for a realm that
+            serves on a Skycloak custom domain.
+          example: https://login.example.com
         created_at:
           type: string
           format: date-time
@@ -25172,6 +25190,7 @@ components:
         registration_email_as_username: false
         login_with_email_allowed: true
         duplicate_emails_allowed: false
+        frontend_url: null
     RealmClientRef:
       type: string
       minLength: 1
@@ -26941,6 +26960,18 @@ components:
           type: boolean
           description: Whether multiple accounts may share the same email address.
           example: false
+        frontend_url:
+          type: string
+          nullable: true
+          description: |-
+            The public URL the realm serves on behind your own proxy: an `https` URL with a host and
+            an optional port, and no path, query, fragment or credentials. Send `null` to clear it, so
+            the issuer follows the request host again. Omit it to leave it unchanged.
+
+            Changing it changes the realm's issuer, its links and its passkey origin. Only realms on a
+            dedicated cluster can set it (`403` otherwise), never the `master` realm (`422`), and never
+            a realm that serves on a Skycloak custom domain (`409`).
+          example: https://login.example.com
       description: Patch request for updating realm settings. At least one field should be provided.
       example:
         enabled: false
