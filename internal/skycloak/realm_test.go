@@ -36,7 +36,7 @@ func TestRealmFrontendURL(t *testing.T) {
 	ctx := context.Background()
 
 	url := "https://login.example.com"
-	clear := ""
+	cleared := ""
 	cases := []struct {
 		name     string
 		set      *string
@@ -45,7 +45,7 @@ func TestRealmFrontendURL(t *testing.T) {
 	}{
 		{"omitted when unset", nil, "", false},
 		{"sent when set", &url, `"https://login.example.com"`, true},
-		{"null when cleared", &clear, `null`, true},
+		{"null when cleared", &cleared, `null`, true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
