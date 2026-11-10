@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 )
 
@@ -75,5 +76,36 @@ func TestRealmFrontendURL(t *testing.T) {
 	got, err := c.GetRealm(ctx, cuid, "app")
 	if err != nil || got.FrontendURL != nil {
 		t.Fatalf("GetRealm without the field: %+v, %v", got, err)
+	}
+}
+
+func TestCreateRealmRemovesRealmWhenSettingsAreRefused(t *testing.T) {
+	const realmJSON = `{"id":"123e4567-e89b-12d3-a456-426614174000","name":"app","display_name":"App","enabled":true,"ssl_required":"external","registration_allowed":false,"registration_email_as_username":false,"login_with_email_allowed":false,"duplicate_emails_allowed":false}`
+	for _, status := range []int{http.StatusConflict, http.StatusForbidden} {
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			deleted := false
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				switch {
+				case r.Method == http.MethodPost:
+					writeJSON(w, 201, realmJSON)
+				case r.Method == http.MethodPatch:
+					writeJSON(w, status, `{"title":"refused","status":`+strconv.Itoa(status)+`}`)
+				case r.Method == http.MethodDelete && r.URL.Path == "/clusters/"+cuid+"/realms/app":
+					deleted = true
+					w.WriteHeader(http.StatusNoContent)
+				default:
+					http.NotFound(w, r)
+				}
+			}))
+			defer srv.Close()
+			url := "https://login.example.com"
+			_, err := newTestClient(srv.URL).CreateRealm(context.Background(), cuid, Realm{Name: "app", Enabled: true, FrontendURL: &url})
+			if err == nil {
+				t.Fatal("CreateRealm succeeded, want the update error")
+			}
+			if !deleted {
+				t.Fatal("the new realm was not deleted after the update failed")
+			}
+		})
 	}
 }
