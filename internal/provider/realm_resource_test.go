@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -54,6 +55,10 @@ resource "skycloak_realm" "test" {
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccRealmDestroyed(clusterID),
 		Steps: []resource.TestStep{
+			{
+				Config:      config("http://login.example.com"),
+				ExpectError: regexp.MustCompile(`Invalid frontend_url`),
+			},
 			{
 				Config: config("https://login.example.com"),
 				Check:  resource.TestCheckResourceAttr(res, "frontend_url", "https://login.example.com"),

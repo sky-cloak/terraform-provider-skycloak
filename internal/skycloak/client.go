@@ -406,8 +406,16 @@ func (c *Client) CreateRealm(ctx context.Context, clusterID string, r Realm) (*R
 		return nil, statusError(resp.HTTPResponse, resp.Body)
 	}
 	// Apply the remaining settings (enabled, ssl_required, registration flags,
-	// frontend URL).
-	return c.UpdateRealm(ctx, clusterID, r.Name, r)
+	// frontend URL). If the API refuses them, remove the new realm so a failed
+	// create leaves nothing behind that Terraform does not track.
+	updated, err := c.UpdateRealm(ctx, clusterID, r.Name, r)
+	if err != nil {
+		if delErr := c.DeleteRealm(ctx, clusterID, r.Name); delErr != nil {
+			return nil, fmt.Errorf("%w (removing the new realm also failed: %v)", err, delErr)
+		}
+		return nil, err
+	}
+	return updated, nil
 }
 
 // UpdateRealm updates a realm's mutable settings.
