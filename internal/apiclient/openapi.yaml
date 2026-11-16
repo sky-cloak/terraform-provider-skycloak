@@ -420,6 +420,110 @@ paths:
         - Cluster Locations
       security:
         - ApiKeyAuth: []
+  /cluster-locations/{location}/sites:
+    get:
+      operationId: listClusterSites
+      summary: List the sites usable in a region
+      description: "Returns the sites in the region of the given location that your workspace may create clusters in: the region's default site plus the sites your workspace has been granted, and no other site."
+      parameters:
+        - name: location
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterLocation'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClusterSiteInfo'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Locations
+      security:
+        - ApiKeyAuth: []
   /cluster-types:
     get:
       operationId: listClusterTypes
@@ -1455,6 +1559,11 @@ paths:
         Creates or replaces the cluster's one destination. After each completed backup the plain
         `pg_restore` archive is copied to `<prefix>/<cluster_id>/<backup_id>.dump` with its manifest
         `<backup_id>.json` beside it. Skycloak never deletes anything in your bucket.
+
+        A custom `endpoint` must be `https://<host>` on port 443 with no path, in every region; a
+        bucket is 3 to 255 letters, digits, `.`, `_` and `-`; a region is 1 to 64 letters, digits,
+        `_` and `-`; one leading and one trailing `/` are trimmed from a prefix, which must not contain `//`, `.` or `..` segments.
+        A value outside these rules is refused with `422`.
 
         Returns `403` on plans without off-site copy.
 
@@ -7442,6 +7551,250 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - openfga:write
+  /clusters/{cluster_id}/private-link:
+    get:
+      operationId: getClusterPrivateLink
+      summary: Get the cluster's private link
+      description: |-
+        Returns whether Azure private link is on, the Azure subscription IDs allowed to connect, the Private Link Service
+        `alias` to use when creating the private endpoint, and the `status`. Returns `422` when the cluster's site has no
+        Azure private link.
+
+        Required scope: `clusters:private-link:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterPrivateLink'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Operations
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:private-link:read
+    put:
+      operationId: updateClusterPrivateLink
+      summary: Update the cluster's private link
+      description: |-
+        Turns Azure private link on or off and sets the Azure subscription IDs. The `alias` is returned once private link
+        is enabled. Connections are approved afterwards, per listed subscription, so `status` moves from `waiting` to
+        `connected` once a private endpoint from a listed subscription connects.
+
+        Returns `403` when the workspace's plan lacks the `private_network` feature, and `422` when the cluster's site
+        has no Azure private link or the subscription IDs are not valid.
+
+        Required scope: `clusters:private-link:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterPrivateLink'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Operations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClusterPrivateLinkRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:private-link:write
   /clusters/{cluster_id}/realms:
     get:
       operationId: listRealms
@@ -8147,6 +8500,12 @@ paths:
                 $ref: '#/components/schemas/ErrorBody'
         '404':
           description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
           content:
             application/problem+json:
               schema:
@@ -17989,6 +18348,623 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - clusters:read
+  /clusters/{cluster_id}/upgrade-path-preview:
+    get:
+      operationId: previewClusterUpgradePath
+      summary: Preview a cluster upgrade path
+      description: |-
+        Walks every version from the cluster's current one to `to` without starting anything, and reports the steps and
+        the blockers. `allowed` tells whether a start request with the same `force` would be accepted. Refuses with
+        `409 Conflict` for the same cluster states as starting a path.
+
+        Required scope: `clusters:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: to
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/KeycloakVersion'
+          explode: false
+        - name: force
+          in: query
+          required: false
+          schema:
+            type: boolean
+          explode: false
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterUpgradePathPreview'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Operations
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:read
+  /clusters/{cluster_id}/upgrade-paths:
+    post:
+      operationId: startClusterUpgradePath
+      summary: Start a cluster upgrade path
+      description: |-
+        Takes the cluster to `target_version` one version at a time, running every version of the upgrade path in order,
+        either right now (`timing: now`) or one step per maintenance window (`timing: maintenance_window`).
+
+        Without `force`, a path with a breaking-change step or a major jump is refused up front with `422`, and the body
+        lists the blocking versions in `blockers`; the cluster is unchanged. With `force: true` those steps are accepted
+        and the path is recorded in the audit log as forced. A step with an incompatible extension, or an inactive or
+        quarantined version, refuses the request with or without `force`, naming the version and the extension.
+
+        A cluster holds one active path at a time. Returns `409 Conflict` while the cluster already has an active path,
+        is being upgraded, or has an upgrade queued.
+
+        A forced path can cross breaking changes with no rollback once the database has migrated. Use
+        `GET /clusters/{cluster_id}/upgrade-path-preview` to see the path first.
+
+        Required scope: `clusters:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '202':
+          description: The request has been accepted for processing, but processing has not yet completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterUpgradePathRun'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ClusterUpgradePathRefusedBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Operations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterUpgradePathRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:write
+    get:
+      operationId: listClusterUpgradePaths
+      summary: List cluster upgrade paths
+      description: |-
+        Returns the cluster's upgrade paths, newest first and capped at the 20 most recent. The first entry with status `pending` or `running` is the active path, so a path started from the dashboard or elsewhere can be read and cancelled without knowing its id.
+
+        Required scope: `clusters:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClusterUpgradePathRun'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Operations
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:read
+  /clusters/{cluster_id}/upgrade-paths/{path_id}:
+    get:
+      operationId: getClusterUpgradePathRun
+      summary: Get a cluster upgrade path
+      description: |-
+        Returns the target, timing, force flag, status, each step's state and the version the cluster last confirmed running.
+
+        Required scope: `clusters:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: path_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterUpgradePathRun'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Operations
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:read
+  /clusters/{cluster_id}/upgrade-paths/{path_id}/cancel:
+    post:
+      operationId: cancelClusterUpgradePath
+      summary: Cancel a cluster upgrade path
+      description: |-
+        Stops an active path. The step in progress finishes, the remaining steps are skipped, and the path shows
+        `cancelled`. `reached_version` is the version at the moment of the cancel; it is not updated if the step in progress then finishes. Returns `409 Conflict` when the path already ended.
+
+        Required scope: `clusters:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: path_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterUpgradePathRun'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Operations
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:write
   /clusters/{cluster_id}/upgrade-preview:
     get:
       operationId: getClusterUpgradePreview
@@ -21849,7 +22825,7 @@ components:
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
           format: uri
-          description: One-time download URL. It works once and expires at `expires_at`, about 15 minutes after it is issued. The download is the PostgreSQL custom-format archive (`pg_restore`).
+          description: One-time download URL. It works once and expires at `expires_at`, about 15 minutes after it is issued. The download is the PostgreSQL custom-format archive (`pg_restore`). In regions that serve backups from their own region, the URL answers `302` with a regional download address valid for about a minute, so follow redirects (for example `curl -L`).
         expires_at:
           type: string
           format: date-time
@@ -22148,6 +23124,9 @@ components:
           $ref: '#/components/schemas/KeycloakVersion'
         location:
           $ref: '#/components/schemas/ClusterLocation'
+        site:
+          type: string
+          description: Site hosting the cluster, a free text code such as `us-east`. Clusters created without a site are in their region's default site.
         status:
           $ref: '#/components/schemas/ClusterStatus'
         management_mode:
@@ -22415,6 +23394,37 @@ components:
           format: int64
           description: Largest per-pod in-memory session-cache occupancy across the cluster's pods. Compare against the configured max-count to gauge eviction pressure / OOM risk.
       description: High-level summary of cluster activity over the requested time window.
+    ClusterPrivateLink:
+      type: object
+      required:
+        - enabled
+        - azure_subscription_ids
+        - status
+      properties:
+        enabled:
+          type: boolean
+          description: Whether private link is on.
+        azure_subscription_ids:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          description: Azure subscription IDs allowed to connect a private endpoint, lowercase GUIDs.
+        alias:
+          type: string
+          description: Private Link Service alias to paste when creating the private endpoint in Azure. Only present while private link is enabled.
+        dns_name:
+          type: string
+          description: Private hostname to create in your private DNS zone. Only present while private link is enabled.
+        status:
+          $ref: '#/components/schemas/PrivateLinkStatus'
+        connections:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrivateLinkConnection'
+          description: Connection state of each subscription seen so far. A subscription with no private endpoint yet is absent.
+      description: A cluster's Azure private link.
     ClusterRestartOutcome:
       type: object
       required:
@@ -22448,6 +23458,22 @@ components:
         ip_access_control:
           $ref: '#/components/schemas/IPAccessControlConfig'
       description: Security policy configuration for this cluster.
+    ClusterSiteInfo:
+      type: object
+      required:
+        - site
+        - location
+        - is_default
+      properties:
+        site:
+          type: string
+          description: Site code, as accepted by the `site` field when creating a cluster.
+        location:
+          $ref: '#/components/schemas/ClusterLocation'
+        is_default:
+          type: boolean
+          description: Whether this is the region's default site, which is open to every workspace. Other sites are listed only when your workspace has been granted them.
+      description: A site a workspace may create clusters in.
     ClusterSize:
       type: string
       enum:
@@ -22498,6 +23524,9 @@ components:
           $ref: '#/components/schemas/KeycloakVersion'
         location:
           $ref: '#/components/schemas/ClusterLocation'
+        site:
+          type: string
+          description: Site hosting the cluster, a free text code such as `us-east`. Clusters created without a site are in their region's default site.
         status:
           $ref: '#/components/schemas/ClusterStatus'
         management_mode:
@@ -22633,6 +23662,42 @@ components:
           type: string
           description: Primary JAR URL that would be used on the target Keycloak version, when applicable.
       description: How one installed extension participates in a Keycloak upgrade to a target version.
+    ClusterUpgradePathBlocker:
+      type: object
+      required:
+        - version
+        - kind
+        - overridable
+        - detail
+      properties:
+        version:
+          allOf:
+            - $ref: '#/components/schemas/KeycloakVersion'
+          description: The blocking version.
+        kind:
+          type: string
+          description: Why the version blocks the path. `breaking_change` and `major_jump` are accepted with `force`. `extension` (an installed extension has no compatible build for the step, or a TideCloak cluster has any extension) and `inactive_version` (the version is inactive or quarantined) are never overridden.
+        overridable:
+          type: boolean
+          description: Whether `force` accepts this blocker.
+        detail:
+          type: string
+          description: Human-readable detail.
+        extensions:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          description: Extensions behind an `extension` blocker.
+        breaking_changes:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          description: Titles of the breaking changes behind a `breaking_change` blocker.
+      description: A reason a version on an upgrade path cannot be taken.
     ClusterUpgradePathItem:
       type: object
       required:
@@ -22656,6 +23721,178 @@ components:
           format: int32
           description: Number of breaking changes recorded for this version. Auto-upgrade never applies a version with a recorded breaking change on its own.
       description: A single step in the recommended upgrade path to a target version.
+    ClusterUpgradePathPreview:
+      type: object
+      required:
+        - from_version
+        - target_version
+        - force
+        - allowed
+        - steps
+        - blockers
+      properties:
+        from_version:
+          allOf:
+            - $ref: '#/components/schemas/KeycloakVersion'
+          description: Version the cluster runs now.
+        target_version:
+          allOf:
+            - $ref: '#/components/schemas/KeycloakVersion'
+          description: Requested target version.
+        force:
+          type: boolean
+          description: Whether `force` was assumed for this preview.
+        allowed:
+          type: boolean
+          description: Whether a request with these values would start. `false` when any blocker is not accepted.
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterUpgradePathStep'
+          description: Every version the cluster would move through, in order.
+        blockers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterUpgradePathBlocker'
+          description: 'Everything that blocks the path. A blocker with `overridable: true` is accepted when `force` is set.'
+      description: An upgrade path walked without starting it.
+    ClusterUpgradePathRefusedBody:
+      type: object
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - blockers
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        blockers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterUpgradePathBlocker'
+          description: 'The versions that block the path and why. A blocker with `overridable: true` is accepted when `force` is set.'
+      description: Returned when an upgrade path cannot start. `blockers` lists the blocking versions.
+    ClusterUpgradePathRequest:
+      type: object
+      required:
+        - target_version
+        - timing
+      properties:
+        target_version:
+          allOf:
+            - $ref: '#/components/schemas/KeycloakVersion'
+          description: Version the cluster should end on. Every version of the upgrade path up to it is run in order.
+        timing:
+          allOf:
+            - $ref: '#/components/schemas/ClusterUpgradePathTiming'
+          description: 'When each step runs: `now` starts each step when the previous one is confirmed complete, `maintenance_window` runs one step per maintenance window.'
+        force:
+          type: boolean
+          description: Accept breaking changes and major version jumps. Does not override an incompatible extension or an inactive version. A forced path is recorded in the audit log. Defaults to `false`.
+      description: Request to take a cluster to a target version, one version at a time.
+    ClusterUpgradePathRun:
+      type: object
+      required:
+        - id
+        - cluster_id
+        - from_version
+        - target_version
+        - timing
+        - force
+        - status
+        - reached_version
+        - steps
+        - created_at
+      properties:
+        id:
+          type: string
+          description: Unique upgrade path identifier.
+        cluster_id:
+          allOf:
+            - $ref: '#/components/schemas/ClusterId'
+          description: Cluster the path belongs to.
+        from_version:
+          allOf:
+            - $ref: '#/components/schemas/KeycloakVersion'
+          description: Version the cluster ran when the path was requested.
+        target_version:
+          allOf:
+            - $ref: '#/components/schemas/KeycloakVersion'
+          description: Version the cluster should end on.
+        timing:
+          allOf:
+            - $ref: '#/components/schemas/ClusterUpgradePathTiming'
+          description: When each step runs.
+        force:
+          type: boolean
+          description: Whether breaking changes and major jumps were accepted.
+        status:
+          type: string
+          description: 'Lifecycle of the path. One of: `pending`, `running`, `completed`, `failed`, `cancelled`. `pending` and `running` hold the cluster: no second path or manual upgrade is accepted.'
+        reached_version:
+          allOf:
+            - $ref: '#/components/schemas/KeycloakVersion'
+          description: Last version the cluster confirmed running. When the path is cancelled it is the version at the moment of the cancel and is not updated if the step in progress then finishes.
+        in_progress_version:
+          allOf:
+            - $ref: '#/components/schemas/KeycloakVersion'
+          description: Version of the step in progress. Absent when no step is running. The version the cluster runs is `reached_version`.
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterUpgradePathStep'
+          description: Every step of the path, in order.
+        failure_reason:
+          type: string
+          description: Why the path stopped. Present when `status` is `failed`.
+        created_at:
+          type: string
+          format: date-time
+          description: When the path was requested.
+        finished_at:
+          type: string
+          format: date-time
+          description: When the path completed, failed or was cancelled. Absent while it is active.
+      description: An upgrade path of a cluster.
+    ClusterUpgradePathStep:
+      type: object
+      required:
+        - version
+        - state
+        - is_major_change
+        - has_breaking_changes
+      properties:
+        version:
+          allOf:
+            - $ref: '#/components/schemas/KeycloakVersion'
+          description: Version of this step.
+        state:
+          type: string
+          description: 'State of this step. One of: `pending`, `running`, `done`, `failed`, `skipped`. Cancelling a path leaves the step in progress as it is and marks every step that had not started `skipped`.'
+        is_major_change:
+          type: boolean
+          description: Whether moving onto this version crosses a major version boundary.
+        has_breaking_changes:
+          type: boolean
+          description: Whether moving onto this version crosses recorded breaking changes.
+      description: One version a cluster moves through on an upgrade path.
+    ClusterUpgradePathTiming:
+      type: string
+      enum:
+        - now
+        - maintenance_window
+      description: When each step of an upgrade path runs.
     ClusterUpgradePreviewResponse:
       type: object
       required:
@@ -22809,6 +24046,9 @@ components:
           $ref: '#/components/schemas/KeycloakVersion'
         location:
           $ref: '#/components/schemas/ClusterLocation'
+        site:
+          type: string
+          description: "Site to host the cluster in, a free text code and not an enum. Optional: when omitted the cluster is placed in the region's default site. It must be a site in the chosen `location` that your workspace may use; a site that does not exist and a site your workspace is not granted get the same `400` refusal. List the usable sites with `GET /cluster-locations/{location}/sites`."
         management_mode:
           allOf:
             - $ref: '#/components/schemas/ManagementMode'
@@ -23229,7 +24469,11 @@ components:
         frontend_url:
           type: string
           nullable: true
-          description: The public URL the realm serves on when you put your own proxy in front of the cluster, or `null` when none is set. While it is set, the realm's issuer is this URL followed by `/realms/{name}` whatever host a request arrives on. Always `null` for a realm that serves on a Skycloak custom domain.
+          description: |-
+            The public URL the realm serves on when you put your own proxy in front of the cluster,
+            or `null` when none is set. While it is set, the realm's issuer is this URL followed by
+            `/realms/{name}` whatever host a request arrives on. Always `null` for a realm that
+            serves on a Skycloak custom domain.
           example: https://login.example.com
         created_at:
           type: string
@@ -24957,6 +26201,32 @@ components:
           type: integer
           description: Maximum allowed by the current plan. `0` means the plan does not include the resource at all.
       description: Returned when a workspace plan quota would be exceeded. `required_plan` indicates the minimum plan needed to complete the request.
+    PrivateLinkConnection:
+      type: object
+      required:
+        - subscription_id
+        - status
+      properties:
+        subscription_id:
+          type: string
+          description: Azure subscription ID, a GUID.
+        status:
+          $ref: '#/components/schemas/PrivateLinkConnectionStatus'
+      description: The private endpoint connection of one Azure subscription.
+    PrivateLinkConnectionStatus:
+      type: string
+      enum:
+        - waiting
+        - connected
+        - rejected
+      description: Connection state of one subscription's private endpoint.
+    PrivateLinkStatus:
+      type: string
+      enum:
+        - disabled
+        - waiting
+        - connected
+      description: Status of a cluster's private link.
     ProtocolStat:
       type: object
       required:
@@ -25057,29 +26327,31 @@ components:
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
           maxLength: 512
-          description: S3-compatible endpoint. Omit for AWS S3. Must be an https URL to a public host.
+          description: 'S3-compatible endpoint. Omit for AWS S3. Must be `https://<host>` on port 443 (`https://<host>:443` is the same) naming a public host, with nothing after the host: one trailing `/` is accepted, but `http`, another port, a path, a query, a fragment or user info is refused with `422`. This holds in every region, on purpose: an endpoint on another port, such as MinIO on `:9000`, is refused everywhere, so serve it on 443.'
         region:
           type: string
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
           maxLength: 512
-          description: Signing region. Required when `endpoint` is set.
+          description: Signing region. Required when `endpoint` is set. 1 to 64 letters, digits, `_` and `-`.
         bucket:
           type: string
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
           maxLength: 512
+          description: 'Bucket name: 3 to 255 letters, digits, `.`, `_` and `-`, starting with a letter or digit.'
         prefix:
           type: string
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
           maxLength: 512
-          description: Optional key prefix for the copies.
+          description: Optional key prefix for the copies. One leading and one trailing `/` are trimmed. It must not contain `//`, a `.` or `..` segment, or control characters.
         access_key_id:
           type: string
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
           maxLength: 512
+          description: Access key ID, without control characters.
         secret_access_key:
           type: string
           x-oapi-codegen-extra-tags:
@@ -25165,7 +26437,11 @@ components:
         frontend_url:
           type: string
           nullable: true
-          description: The public URL the realm serves on when you put your own proxy in front of the cluster, or `null` when none is set. While it is set, the realm's issuer is this URL followed by `/realms/{name}` whatever host a request arrives on. Always `null` for a realm that serves on a Skycloak custom domain.
+          description: |-
+            The public URL the realm serves on when you put your own proxy in front of the cluster,
+            or `null` when none is set. While it is set, the realm's issuer is this URL followed by
+            `/realms/{name}` whatever host a request arrives on. Always `null` for a realm that
+            serves on a Skycloak custom domain.
           example: https://login.example.com
         created_at:
           type: string
@@ -25182,6 +26458,7 @@ components:
         registration_email_as_username: false
         login_with_email_allowed: true
         duplicate_emails_allowed: false
+        frontend_url: null
     RealmClientRef:
       type: string
       minLength: 1
@@ -26466,6 +27743,7 @@ components:
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
           maxLength: 512
+          description: 'Same rule as the destination: `https://<host>` on port 443, with no path.'
         region:
           type: string
           x-oapi-codegen-extra-tags:
@@ -26491,7 +27769,7 @@ components:
           x-oapi-codegen-extra-tags:
             validate: omitnil,max=500
           maxLength: 1024
-      description: Credentials to test. Send an empty body to test the saved destination. Omit `secret_access_key` to reuse the saved one for the same endpoint, bucket and access key.
+      description: Credentials to test. Send an empty body to test the saved destination. Omit `secret_access_key` to reuse the saved one for the same endpoint, bucket and access key. The fields follow the same rules as when setting the destination.
     TestProviderConnectionRequest:
       type: object
       properties:
@@ -26795,6 +28073,22 @@ components:
       description: Patch request for updating a client role. At least one field should be provided.
       example:
         description: Read and export invoices
+    UpdateClusterPrivateLinkRequest:
+      type: object
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
+          description: Turn private link on or off.
+        azure_subscription_ids:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          description: Azure subscription IDs (GUIDs, at most 20) allowed to connect. Replaces the stored list; an empty list clears it. When omitted the stored list is kept. At least one is required to enable.
+      description: Turns a cluster's Azure private link on or off and sets its subscription IDs.
     UpdateClusterRequest:
       type: object
       properties:
@@ -26954,7 +28248,14 @@ components:
         frontend_url:
           type: string
           nullable: true
-          description: 'The public URL the realm serves on behind your own proxy: an `https` URL with a host and an optional port, and no path, query, fragment or credentials. Send `null` to clear it, so the issuer follows the request host again. Omit it to leave it unchanged. Changing it changes the realm''s issuer, its links and its passkey origin. Only realms on a dedicated cluster can set it (`403` otherwise), never the `master` realm (`422`), and never a realm that serves on a Skycloak custom domain (`409`).'
+          description: |-
+            The public URL the realm serves on behind your own proxy: an `https` URL with a host and
+            an optional port, and no path, query, fragment or credentials. Send `null` to clear it, so
+            the issuer follows the request host again. Omit it to leave it unchanged.
+
+            Changing it changes the realm's issuer, its links and its passkey origin. Only realms on a
+            dedicated cluster can set it (`403` otherwise), never the `master` realm (`422`), and never
+            a realm that serves on a Skycloak custom domain (`409`).
           example: https://login.example.com
       description: Patch request for updating realm settings. At least one field should be provided.
       example:
