@@ -41,6 +41,7 @@ type clusterModel struct {
 	Size               types.String `tfsdk:"size"`
 	Version            types.String `tfsdk:"version"`
 	Location           types.String `tfsdk:"location"`
+	Site               types.String `tfsdk:"site"`
 	Status             types.String `tfsdk:"status"`
 	URL                types.String `tfsdk:"url"`
 	AutoUpgradeEnabled types.Bool   `tfsdk:"auto_upgrade_enabled"`
@@ -86,6 +87,16 @@ func (r *clusterResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 					"Changing the location replaces the cluster, except relabelling a US West cluster between `us` and `us-west`.",
 				)},
 			},
+			"site": schema.StringAttribute{
+				Optional: true,
+				Computed: true,
+				MarkdownDescription: "Site hosting the cluster, a code such as `us-east`. Leave it out to use the location's default site; the site the cluster landed on is then read back. " +
+					"Only sites your workspace has been granted can be used. Immutable: changing it replaces the cluster.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
 			"status": schema.StringAttribute{
 				Computed:            true,
 				MarkdownDescription: "Lifecycle status (`provisioning`, `available`, ...).",
@@ -130,6 +141,7 @@ func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest
 		Size:               plan.Size.ValueString(),
 		Version:            plan.Version.ValueString(),
 		Location:           plan.Location.ValueString(),
+		Site:               plan.Site.ValueString(),
 		AutoUpgradeEnabled: &autoUpgrade,
 	})
 	if err != nil {
@@ -239,6 +251,12 @@ func applyClusterToModel(c *skycloak.Cluster, m *clusterModel) {
 	m.Size = types.StringValue(c.Size)
 	m.Version = types.StringValue(c.Version)
 	m.Location = types.StringValue(c.Location)
+	// An empty site means the API reported none: keep it null, not "".
+	if c.Site == "" {
+		m.Site = types.StringNull()
+	} else {
+		m.Site = types.StringValue(c.Site)
+	}
 	m.Status = types.StringValue(c.Status)
 	m.URL = types.StringValue(c.URL)
 	m.AutoUpgradeEnabled = types.BoolValue(c.AutoUpgradeEnabled)

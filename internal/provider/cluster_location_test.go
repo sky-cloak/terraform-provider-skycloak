@@ -92,6 +92,7 @@ type clusterLocationAPI struct {
 	name      string
 	size      string
 	location  string
+	site      string // site the API reports; empty means none
 	mutations []string
 }
 
@@ -115,9 +116,11 @@ func (a *clusterLocationAPI) serve(w http.ResponseWriter, r *http.Request) {
 			Name     string `json:"name"`
 			Size     string `json:"size"`
 			Location string `json:"location"`
+			Site     string `json:"site"`
 		}
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		a.exists, a.name, a.size, a.location = true, body.Name, body.Size, body.Location
+		a.site = body.Site
 		a.write(w, http.StatusCreated)
 	case r.URL.Path == "/clusters/"+testLocationClusterID && a.exists:
 		switch r.Method {
@@ -148,8 +151,16 @@ func (a *clusterLocationAPI) serve(w http.ResponseWriter, r *http.Request) {
 func (a *clusterLocationAPI) write(w http.ResponseWriter, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_, _ = fmt.Fprintf(w, `{"id":%q,"name":%q,"type":"keycloak","size":%q,"version":"26.1","location":%q,"status":"available","url":"https://example.test","auto_upgrade_enabled":false,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}`,
-		testLocationClusterID, a.name, a.size, a.location)
+	_, _ = fmt.Fprintf(w, `{"id":%q,"name":%q,"type":"keycloak","size":%q,"version":"26.1","location":%q,%s"status":"available","url":"https://example.test","auto_upgrade_enabled":false,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}`,
+		testLocationClusterID, a.name, a.size, a.location, a.siteJSON())
+}
+
+// siteJSON renders the site member of the fake cluster, omitted when none.
+func (a *clusterLocationAPI) siteJSON() string {
+	if a.site == "" {
+		return ""
+	}
+	return fmt.Sprintf(`"site":%q,`, a.site)
 }
 
 // report switches the location the fake API reports for the cluster.
@@ -360,4 +371,11 @@ func TestClusterLocationPlainUSNoDiff(t *testing.T) {
 			},
 		},
 	})
+}
+
+// reportSite switches the site the fake API reports for the cluster.
+func (a *clusterLocationAPI) reportSite(site string) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.site = site
 }

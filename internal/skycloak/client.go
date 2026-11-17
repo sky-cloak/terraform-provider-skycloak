@@ -176,6 +176,7 @@ type Cluster struct {
 	Size               string
 	Version            string
 	Location           string
+	Site               string
 	Status             string
 	URL                string
 	AutoUpgradeEnabled bool
@@ -190,6 +191,7 @@ type CreateClusterRequest struct {
 	Size               string
 	Version            string
 	Location           string
+	Site               string
 	AutoUpgradeEnabled *bool
 }
 
@@ -200,6 +202,13 @@ type UpdateClusterRequest struct {
 	AutoUpgradeEnabled *bool
 }
 
+func strDeref(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
 func boolDeref(p *bool) bool {
 	return p != nil && *p
 }
@@ -208,7 +217,7 @@ func clusterFromAPI(c *apiclient.Cluster) *Cluster {
 	return &Cluster{
 		ID: c.Id.String(), Name: string(c.Name), Type: string(c.Type), Size: string(c.Size),
 		Version: string(c.Version), Location: string(c.Location), Status: string(c.Status),
-		URL: c.Url, AutoUpgradeEnabled: boolDeref(c.AutoUpgradeEnabled),
+		Site: strDeref(c.Site), URL: c.Url, AutoUpgradeEnabled: boolDeref(c.AutoUpgradeEnabled),
 		CreatedAt: fmtTime(c.CreatedAt), UpdatedAt: fmtTime(c.UpdatedAt),
 	}
 }
@@ -227,7 +236,7 @@ func (c *Client) ListClusters(ctx context.Context) ([]Cluster, error) {
 		out = append(out, Cluster{
 			ID: s.Id.String(), Name: string(s.Name), Type: string(s.Type), Size: string(s.Size),
 			Version: string(s.Version), Location: string(s.Location), Status: string(s.Status),
-			URL: s.Url, AutoUpgradeEnabled: boolDeref(s.AutoUpgradeEnabled),
+			Site: strDeref(s.Site), URL: s.Url, AutoUpgradeEnabled: boolDeref(s.AutoUpgradeEnabled),
 			CreatedAt: fmtTime(s.CreatedAt), UpdatedAt: fmtTime(s.UpdatedAt),
 		})
 	}
@@ -258,6 +267,9 @@ func (c *Client) CreateCluster(ctx context.Context, req CreateClusterRequest) (*
 	if req.Type != "" {
 		t := apiclient.ClusterType(req.Type)
 		body.Type = &t
+	}
+	if req.Site != "" {
+		body.Site = &req.Site
 	}
 	resp, err := c.gen.CreateClusterWithResponse(ctx, &apiclient.CreateClusterParams{APIVersion: c.ver()}, body)
 	if err != nil {

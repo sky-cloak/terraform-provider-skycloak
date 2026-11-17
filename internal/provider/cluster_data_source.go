@@ -39,6 +39,7 @@ func (d *clusterDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 			"size":     schema.StringAttribute{Computed: true, MarkdownDescription: "Instance size."},
 			"version":  schema.StringAttribute{Computed: true, MarkdownDescription: "Keycloak version."},
 			"location": schema.StringAttribute{Computed: true, MarkdownDescription: "Region (`us` for US East, `us-west` for US West, `ca`, `eu`, `au`)."},
+			"site":     schema.StringAttribute{Computed: true, MarkdownDescription: "Site hosting the cluster, a code such as `us-east`."},
 			"status":   schema.StringAttribute{Computed: true, MarkdownDescription: "Lifecycle status."},
 			"url":      schema.StringAttribute{Computed: true, MarkdownDescription: "Cluster base URL."},
 			"auto_upgrade_enabled": schema.BoolAttribute{Computed: true, MarkdownDescription: "Whether automatic patch upgrades are enabled."},

@@ -2,6 +2,7 @@ package skycloak
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -85,6 +86,38 @@ func TestCreateAndGetCluster(t *testing.T) {
 	got, err := c.GetCluster(context.Background(), cuid)
 	if err != nil || got.Status != "available" {
 		t.Fatalf("GetCluster: %+v, %v", got, err)
+	}
+}
+
+func TestClusterSite(t *testing.T) {
+	var sent map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/clusters":
+			_ = json.NewDecoder(r.Body).Decode(&sent)
+			writeJSON(w, http.StatusCreated, `{"id":"`+cuid+`","name":"prod","type":"keycloak","size":"small","version":"26.1","location":"eu","site":"azure-north-europe","status":"provisioning"}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c := newTestClient(srv.URL)
+	created, err := c.CreateCluster(context.Background(), CreateClusterRequest{Name: "prod", Type: "keycloak", Size: "small", Version: "26.1", Location: "eu", Site: "azure-north-europe"})
+	if err != nil || created.Site != "azure-north-europe" {
+		t.Fatalf("CreateCluster: %+v, %v", created, err)
+	}
+	if sent["site"] != "azure-north-europe" {
+		t.Errorf("site sent = %v", sent["site"])
+	}
+
+	// No site configured: the member is omitted from the request.
+	sent = nil
+	if _, err := c.CreateCluster(context.Background(), CreateClusterRequest{Name: "prod", Type: "keycloak", Size: "small", Version: "26.1", Location: "eu"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sent["site"]; ok {
+		t.Errorf("site must be omitted when empty, sent %v", sent)
 	}
 }
 
