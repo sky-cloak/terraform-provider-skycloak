@@ -984,7 +984,7 @@ type Cluster struct {
 	// Id Unique cluster identifier.
 	Id ClusterId `json:"id"`
 
-	// Location Region where the cluster is hosted.
+	// Location Region where the cluster is hosted. `us-west` is open to paid plans, while free trials stay on `us`. `ca` is hosted in Beauharnois, Quebec.
 	Location ClusterLocation `json:"location"`
 
 	// ManagementMode Skycloak manages the full lifecycle of the cluster. Every cluster is fully managed.
@@ -992,6 +992,9 @@ type Cluster struct {
 
 	// Name Human-readable cluster name.
 	Name ClusterName `json:"name"`
+
+	// PublicAccess Whether the cluster's public hostname is served. When `false` the cluster is reachable only through its private link hostname.
+	PublicAccess *bool `json:"public_access,omitempty"`
 
 	// Site Site hosting the cluster, a free text code such as `us-east`. Clusters created without a site are in their region's default site.
 	Site *string     `json:"site,omitempty"`
@@ -1072,7 +1075,7 @@ type ClusterFeatureInfo struct {
 // ClusterId defines model for ClusterId.
 type ClusterId = openapi_types.UUID
 
-// ClusterLocation Region where the cluster is hosted.
+// ClusterLocation Region where the cluster is hosted. `us-west` is open to paid plans, while free trials stay on `us`. `ca` is hosted in Beauharnois, Quebec.
 type ClusterLocation string
 
 // ClusterLocationInfo Metadata about a supported deployment region.
@@ -1080,11 +1083,29 @@ type ClusterLocationInfo struct {
 	// Available Whether the workspace can create a cluster in this region. Regions the workspace cannot use are still listed, with this field set to false.
 	Available bool `json:"available"`
 
-	// Location Region where the cluster is hosted.
+	// City City where the region's default site runs.
+	City *string `json:"city,omitempty"`
+
+	// Cloud Cloud provider that hosts the region's default site, e.g. `azure`, `aws`, `ovh` or `akamai`.
+	Cloud *string `json:"cloud,omitempty"`
+
+	// CountryCode ISO 3166-1 alpha-2 country code of the region's default site, in lowercase, e.g. `ca`.
+	CountryCode *string `json:"country_code,omitempty"`
+
+	// Location Region where the cluster is hosted. `us-west` is open to paid plans, while free trials stay on `us`. `ca` is hosted in Beauharnois, Quebec.
 	Location ClusterLocation `json:"location"`
 
 	// Name Human-readable region name.
 	Name string `json:"name"`
+
+	// PrivateNetworking Private networking options the default site supports, as provider names such as `aws-privatelink`. Empty when it has none.
+	PrivateNetworking *[]string `json:"private_networking,omitempty"`
+
+	// ProviderRegion The provider's own name for the region, e.g. `eastus2`.
+	ProviderRegion *string `json:"provider_region,omitempty"`
+
+	// Status Whether the default site is `open` or `closed` as a site. This is separate from `available`, which also depends on the workspace's access to the region.
+	Status *string `json:"status,omitempty"`
 }
 
 // ClusterLog A Keycloak application log entry.
@@ -1173,7 +1194,7 @@ type ClusterSiteInfo struct {
 	// IsDefault Whether this is the region's default site, which is open to every workspace. Other sites are listed only when your workspace has been granted them.
 	IsDefault bool `json:"is_default"`
 
-	// Location Region where the cluster is hosted.
+	// Location Region where the cluster is hosted. `us-west` is open to paid plans, while free trials stay on `us`. `ca` is hosted in Beauharnois, Quebec.
 	Location ClusterLocation `json:"location"`
 
 	// Site Site code, as accepted by the `site` field when creating a cluster.
@@ -1198,7 +1219,7 @@ type ClusterSummary struct {
 	// Id Unique cluster identifier.
 	Id ClusterId `json:"id"`
 
-	// Location Region where the cluster is hosted.
+	// Location Region where the cluster is hosted. `us-west` is open to paid plans, while free trials stay on `us`. `ca` is hosted in Beauharnois, Quebec.
 	Location ClusterLocation `json:"location"`
 
 	// ManagementMode Skycloak manages the full lifecycle of the cluster. Every cluster is fully managed.
@@ -1529,7 +1550,7 @@ type CreateClusterRequest struct {
 	// HttpRelativePath HTTP path prefix to serve Keycloak from (e.g. `/auth`). Defaults to `/`.
 	HttpRelativePath *string `json:"http_relative_path,omitempty"`
 
-	// Location Region where the cluster is hosted.
+	// Location Region where the cluster is hosted. `us-west` is open to paid plans, while free trials stay on `us`. `ca` is hosted in Beauharnois, Quebec.
 	Location ClusterLocation `json:"location"`
 
 	// MaintenanceWindow Set the cluster's maintenance window at creation. A region default is provisioned if omitted.
@@ -3469,7 +3490,10 @@ type UpdateClusterRequest struct {
 	// ManagementMode Change the management mode of the cluster.
 	ManagementMode *ManagementMode `json:"management_mode,omitempty"`
 	Name           *ClusterName    `json:"name,omitempty"`
-	Size           *ClusterSize    `json:"size,omitempty"`
+
+	// PublicAccess Turn the cluster's public hostname on or off. Turning it off needs the `private_network` plan feature and is refused with `409` unless Azure private link is enabled and ready on the cluster, because the private hostname is then the only way in. Returns `403` without the plan feature and `422` when the cluster's site has no Azure private link.
+	PublicAccess *bool        `json:"public_access,omitempty"`
+	Size         *ClusterSize `json:"size,omitempty"`
 
 	// SsoEnabled Whether to enable or disable SSO integration.
 	SsoEnabled *bool `json:"sso_enabled,omitempty"`
@@ -20488,6 +20512,7 @@ type UpdateClusterResponse struct {
 	JSON200                   *Cluster
 	ApplicationproblemJSON400 *ErrorBody
 	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
 	ApplicationproblemJSON404 *ErrorBody
 	ApplicationproblemJSON409 *ErrorBody
 	ApplicationproblemJSON422 *ValidationErrorBody
@@ -21847,6 +21872,7 @@ type UpdateClusterPrivateLinkResponse struct {
 	ApplicationproblemJSON401 *ErrorBody
 	ApplicationproblemJSON403 *ErrorBody
 	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON409 *ErrorBody
 	ApplicationproblemJSON422 *ValidationErrorBody
 	ApplicationproblemJSON429 *ErrorBody
 	ApplicationproblemJSON500 *ErrorBody
@@ -27885,6 +27911,13 @@ func ParseUpdateClusterResponse(rsp *http.Response) (*UpdateClusterResponse, err
 		}
 		response.ApplicationproblemJSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest ErrorBody
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -31381,6 +31414,13 @@ func ParseUpdateClusterPrivateLinkResponse(rsp *http.Response) (*UpdateClusterPr
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest ValidationErrorBody
