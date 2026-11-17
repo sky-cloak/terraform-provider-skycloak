@@ -55,6 +55,7 @@ honor the `Retry-After` header.
 | Resource | Description |
 |---|---|
 | `skycloak_cluster` | A managed Keycloak cluster (incl. `auto_upgrade_enabled`) |
+| `skycloak_cluster_private_link` | Azure private link, allowed subscriptions and service alias |
 | `skycloak_cluster_maintenance_window` | The cluster's upgrade/maintenance window |
 | `skycloak_cluster_security` | Edge security: IP allow-listing, rate limiting, WAF, geo-blocking, bot management, CAPTCHA |
 | `skycloak_captcha_domain` | A hostname registered for CAPTCHA protection |
