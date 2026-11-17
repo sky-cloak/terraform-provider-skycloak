@@ -1200,6 +1200,13 @@ paths:
         Cancelling a major upgrade mid-flight via `POST /clusters/{cluster_id}/upgrades/cancel` is possible but risky
         if migrations have already been applied.
 
+        **Public access**
+
+        Set `public_access` to `false` to serve the cluster only on its private link hostname. This needs the
+        `private_network` plan feature (`403` without it) and a site with Azure private link (`422` otherwise), and is
+        refused with `409` unless private link is enabled and ready on the cluster. Setting it back to `true` is always
+        allowed. Public access is applied before the other fields, so if the rest of the update is then refused or fails, the public access change has still been made.
+
         Required scope: `clusters:write`
       parameters:
         - name: cluster_id
@@ -1223,6 +1230,12 @@ paths:
                 $ref: '#/components/schemas/ErrorBody'
         '401':
           description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
           content:
             application/problem+json:
               schema:
@@ -7674,8 +7687,9 @@ paths:
         is enabled. Connections are approved afterwards, per listed subscription, so `status` moves from `waiting` to
         `connected` once a private endpoint from a listed subscription connects.
 
-        Returns `403` when the workspace's plan lacks the `private_network` feature, and `422` when the cluster's site
-        has no Azure private link or the subscription IDs are not valid.
+        Returns `403` when the workspace's plan lacks the `private_network` feature, `422` when the cluster's site
+        has no Azure private link or the subscription IDs are not valid, and `409` when turning private link off while
+        public access is off, since the private hostname is then the only way in. Turn public access back on first.
 
         Required scope: `clusters:private-link:write`
       parameters:
@@ -7706,6 +7720,12 @@ paths:
                 $ref: '#/components/schemas/ErrorBody'
         '404':
           description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
           content:
             application/problem+json:
               schema:
@@ -23165,6 +23185,9 @@ components:
             x-oapi-codegen-extra-tags:
               validate: omitnil,max=500
           description: Keycloak feature flags explicitly disabled on this cluster.
+        public_access:
+          type: boolean
+          description: Whether the cluster's public hostname is served. When `false` the cluster is reachable only through its private link hostname.
       description: A Keycloak cluster managed by Skycloak.
     ClusterCredentials:
       type: object
@@ -23304,7 +23327,7 @@ components:
         - ca
         - au
         - eu
-      description: Region where the cluster is hosted.
+      description: Region where the cluster is hosted. `us-west` is open to paid plans, while free trials stay on `us`. `ca` is hosted in Beauharnois, Quebec.
     ClusterLocationInfo:
       type: object
       required:
@@ -23320,6 +23343,28 @@ components:
         available:
           type: boolean
           description: Whether the workspace can create a cluster in this region. Regions the workspace cannot use are still listed, with this field set to false.
+        cloud:
+          type: string
+          description: Cloud provider that hosts the region's default site, e.g. `azure`, `aws`, `ovh` or `akamai`.
+        provider_region:
+          type: string
+          description: The provider's own name for the region, e.g. `eastus2`.
+        city:
+          type: string
+          description: City where the region's default site runs.
+        country_code:
+          type: string
+          description: ISO 3166-1 alpha-2 country code of the region's default site, in lowercase, e.g. `ca`.
+        private_networking:
+          type: array
+          items:
+            type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          description: Private networking options the default site supports, as provider names such as `aws-privatelink`. Empty when it has none.
+        status:
+          type: string
+          description: Whether the default site is `open` or `closed` as a site. This is separate from `available`, which also depends on the workspace's access to the region.
       description: Metadata about a supported deployment region.
     ClusterLog:
       type: object
@@ -28125,6 +28170,9 @@ components:
         auto_upgrade_enabled:
           type: boolean
           description: Enable or disable automatic patch upgrades.
+        public_access:
+          type: boolean
+          description: Turn the cluster's public hostname on or off. Turning it off needs the `private_network` plan feature and is refused with `409` unless Azure private link is enabled and ready on the cluster, because the private hostname is then the only way in. Returns `403` without the plan feature and `422` when the cluster's site has no Azure private link.
       description: Partial update request. At least one field must be provided. `location` and `type` cannot be changed after creation.
       example:
         size: medium
