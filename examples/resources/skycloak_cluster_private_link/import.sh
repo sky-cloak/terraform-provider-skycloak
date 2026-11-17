@@ -1,0 +1,1 @@
+terraform import skycloak_cluster_private_link.example 11111111-1111-1111-1111-111111111111
