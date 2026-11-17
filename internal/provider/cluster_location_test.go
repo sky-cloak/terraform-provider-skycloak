@@ -87,13 +87,14 @@ const testLocationClusterID = "22222222-2222-2222-2222-222222222222"
 // starts reporting a West Coast cluster as us-west instead of us. It records
 // every call that could change a cluster.
 type clusterLocationAPI struct {
-	mu        sync.Mutex
-	exists    bool
-	name      string
-	size      string
-	location  string
-	site      string // site the API reports; empty means none
-	mutations []string
+	mu         sync.Mutex
+	exists     bool
+	name       string
+	size       string
+	location   string
+	site       string  // site the API reports; empty means none
+	createSite *string // when set, the site reported after create instead of the requested one
+	mutations  []string
 }
 
 func newClusterLocationAPI(t *testing.T, location string, exists bool) (*clusterLocationAPI, *httptest.Server) {
@@ -121,6 +122,9 @@ func (a *clusterLocationAPI) serve(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		a.exists, a.name, a.size, a.location = true, body.Name, body.Size, body.Location
 		a.site = body.Site
+		if a.createSite != nil {
+			a.site = *a.createSite
+		}
 		a.write(w, http.StatusCreated)
 	case r.URL.Path == "/clusters/"+testLocationClusterID && a.exists:
 		switch r.Method {

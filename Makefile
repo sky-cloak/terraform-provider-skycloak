@@ -1,7 +1,7 @@
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: build install test testacc lint docs tidy generate
+.PHONY: build install test testacc lint docs tidy generate validate-examples
 
 build: ## Build the provider binary
 	go build -ldflags "$(LDFLAGS)" -o bin/terraform-provider-skycloak
@@ -23,3 +23,6 @@ tidy: ## Tidy modules
 
 generate: ## Regenerate the API client from internal/apiclient/openapi.yaml
 	go generate ./internal/apiclient/...
+
+validate-examples: ## Run terraform validate on the private cluster example (needs terraform and network)
+	cd examples/private-cluster && terraform init -backend=false && terraform validate

@@ -161,10 +161,15 @@ func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	planned := plan.Location.ValueString()
+	plannedSite := plan.Site.ValueString()
 	applyClusterToModel(final, &plan)
 	plan.Location = types.StringValue(reconcileClusterLocation(planned, final.Location, &resp.Diagnostics))
 	resp.Diagnostics.Append(setAPILocation(ctx, resp.Private, final.Location)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if plannedSite != "" && final.Site != plannedSite {
+		resp.Diagnostics.AddError("Cluster created on a different site",
+			fmt.Sprintf("The site %q was requested but the API reports %q. The cluster is saved in state; fix the site or delete the cluster and apply again.", plannedSite, final.Site))
+	}
 }
 
 func (r *clusterResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {

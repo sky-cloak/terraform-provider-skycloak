@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -98,4 +99,24 @@ func TestClusterSiteChangeReplaces(t *testing.T) {
 			},
 		},
 	})
+}
+
+// TestClusterSiteMismatchOnCreate: an API that places the cluster on another
+// site, or on none, than the one requested is reported as an error.
+func TestClusterSiteMismatchOnCreate(t *testing.T) {
+	for name, reported := range map[string]string{"different": "site-b", "none": ""} {
+		t.Run(name, func(t *testing.T) {
+			api, srv := newClusterLocationAPI(t, "eu", false)
+			api.createSite = &reported
+			resource.UnitTest(t, resource.TestCase{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Steps: []resource.TestStep{
+					{
+						Config:      clusterSiteConfig(srv.URL, "site-a"),
+						ExpectError: regexp.MustCompile("Cluster created on a different site"),
+					},
+				},
+			})
+		})
+	}
 }

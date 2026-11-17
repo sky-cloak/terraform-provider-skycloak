@@ -50,6 +50,8 @@ resource "skycloak_realm" "app" {
   frontend_url = "https://login.example.com"
 }
 
+# You must supply the theme JAR: build your own Keycloakify theme and place it
+# at themes/corporate.jar next to this file, or change the source path.
 resource "skycloak_custom_theme" "corporate" {
   cluster_id = skycloak_cluster.private.id
   name       = "corporate"
