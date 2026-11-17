@@ -1,0 +1,1 @@
+terraform import skycloak_cluster_public_access.example 11111111-1111-1111-1111-111111111111
