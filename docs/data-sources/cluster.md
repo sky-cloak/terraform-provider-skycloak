@@ -34,6 +34,7 @@ output "existing_status" {
 - `auto_upgrade_enabled` (Boolean) Whether automatic patch upgrades are enabled.
 - `location` (String) Region (`us` for US East, `us-west` for US West, `ca`, `eu`, `au`).
 - `name` (String) Cluster name.
+- `site` (String) Site hosting the cluster, a code such as `us-east`.
 - `size` (String) Instance size.
 - `status` (String) Lifecycle status.
 - `type` (String) Cluster type.

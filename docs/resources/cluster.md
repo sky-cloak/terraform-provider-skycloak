@@ -20,6 +20,10 @@ resource "skycloak_cluster" "production" {
   version  = "26.1"
   # One of us (US East), us-west (US West), ca, eu, au.
   location = "eu"
+
+  # Optional: a site of the location, such as one with Azure private link.
+  # Leave it out for the location's default site. Changing it replaces the cluster.
+  # site = "azure-north-europe"
 }
 
 output "cluster_url" {
@@ -41,6 +45,7 @@ output "cluster_url" {
 ### Optional
 
 - `auto_upgrade_enabled` (Boolean) Enable automatic patch upgrades, applied inside the cluster's maintenance window. Defaults to `false`.
+- `site` (String) Site hosting the cluster, a code such as `us-east`. Leave it out to use the location's default site; the site the cluster landed on is then read back. Only sites your workspace has been granted can be used. Immutable: changing it replaces the cluster.
 
 ### Read-Only
 
