@@ -7,6 +7,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- `skycloak_cluster_public_access`: manage whether a cluster's public hostname is served. Turning it off needs an Enterprise plan and is refused unless Azure private link is enabled and ready. Import accepts a cluster ID or `cluster_id/public-access`. Destroy turns public access back on, so the private link can be disabled afterwards.
 - `skycloak_cluster_private_link`: manage Azure private link enabled state and allowed subscription IDs, with a computed service alias. Import accepts a cluster ID or `cluster_id/private-link`. Destroy disables the link, preserving subscription IDs; restore public access first if it is off.
 - `skycloak_realm`: new optional `frontend_url` attribute, the public URL a realm serves on behind your own proxy. It is set on create or update, cleared by removing it from the configuration, and read back on refresh and import. Only realms on a dedicated cluster can set it, never the `master` realm and never a realm on a Skycloak custom domain. Changing it changes the realm's issuer, links and passkey origin.
 - `skycloak_custom_theme`: new optional `exact_theme_names` attribute (default `false`) that deploys the theme under the theme folder names found in the archive. It is sent with the upload, read back on refresh and import, and changing it replaces the theme, like `theme_types`. Existing configurations plan no change. The `skycloak_themes` data source exposes `exact_theme_names` on every theme.
