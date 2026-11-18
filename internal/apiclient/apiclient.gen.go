@@ -1078,18 +1078,18 @@ type ClusterId = openapi_types.UUID
 // ClusterLocation Region where the cluster is hosted. `us-west` is open to paid plans, while free trials stay on `us`. `ca` is hosted in Beauharnois, Quebec.
 type ClusterLocation string
 
-// ClusterLocationInfo Metadata about a supported deployment region.
+// ClusterLocationInfo Metadata about a site a workspace may create clusters in. The list has one entry per site: each region's default site, plus any other site your workspace has been granted, so a region can appear more than once.
 type ClusterLocationInfo struct {
 	// Available Whether the workspace can create a cluster in this region. Regions the workspace cannot use are still listed, with this field set to false.
 	Available bool `json:"available"`
 
-	// City City where the region's default site runs.
+	// City City where the site runs.
 	City *string `json:"city,omitempty"`
 
-	// Cloud Cloud provider that hosts the region's default site, e.g. `azure`, `aws`, `ovh` or `akamai`.
+	// Cloud Cloud provider that hosts the site, e.g. `azure`, `aws`, `ovh` or `akamai`.
 	Cloud *string `json:"cloud,omitempty"`
 
-	// CountryCode ISO 3166-1 alpha-2 country code of the region's default site, in lowercase, e.g. `ca`.
+	// CountryCode ISO 3166-1 alpha-2 country code of the site, in lowercase, e.g. `ca`.
 	CountryCode *string `json:"country_code,omitempty"`
 
 	// Location Region where the cluster is hosted. `us-west` is open to paid plans, while free trials stay on `us`. `ca` is hosted in Beauharnois, Quebec.
@@ -1098,13 +1098,19 @@ type ClusterLocationInfo struct {
 	// Name Human-readable region name.
 	Name string `json:"name"`
 
-	// PrivateNetworking Private networking options the default site supports, as provider names such as `aws-privatelink`. Empty when it has none.
+	// PrivateNetworking Private networking options the site supports, as provider names such as `aws-privatelink`. Empty when it has none.
 	PrivateNetworking *[]string `json:"private_networking,omitempty"`
 
 	// ProviderRegion The provider's own name for the region, e.g. `eastus2`.
 	ProviderRegion *string `json:"provider_region,omitempty"`
 
-	// Status Whether the default site is `open` or `closed` as a site. This is separate from `available`, which also depends on the workspace's access to the region.
+	// Region Region the site belongs to, e.g. `eu`. Sites of one region share it and the region stays the label in cluster URLs.
+	Region *string `json:"region,omitempty"`
+
+	// Site Site code, as accepted by the `site` field when creating a cluster, e.g. `eu-dub`. Send it with `location`.
+	Site *string `json:"site,omitempty"`
+
+	// Status Whether the site is `open` or `closed` as a site. This is separate from `available`, which also depends on the workspace's access to the region.
 	Status *string `json:"status,omitempty"`
 }
 
