@@ -23337,6 +23337,12 @@ components:
       properties:
         location:
           $ref: '#/components/schemas/ClusterLocation'
+        region:
+          type: string
+          description: Region the site belongs to, e.g. `eu`. Sites of one region share it and the region stays the label in cluster URLs.
+        site:
+          type: string
+          description: Site code, as accepted by the `site` field when creating a cluster, e.g. `eu-dub`. Send it with `location`.
         name:
           type: string
           description: Human-readable region name.
@@ -23345,27 +23351,27 @@ components:
           description: Whether the workspace can create a cluster in this region. Regions the workspace cannot use are still listed, with this field set to false.
         cloud:
           type: string
-          description: Cloud provider that hosts the region's default site, e.g. `azure`, `aws`, `ovh` or `akamai`.
+          description: Cloud provider that hosts the site, e.g. `azure`, `aws`, `ovh` or `akamai`.
         provider_region:
           type: string
           description: The provider's own name for the region, e.g. `eastus2`.
         city:
           type: string
-          description: City where the region's default site runs.
+          description: City where the site runs.
         country_code:
           type: string
-          description: ISO 3166-1 alpha-2 country code of the region's default site, in lowercase, e.g. `ca`.
+          description: ISO 3166-1 alpha-2 country code of the site, in lowercase, e.g. `ca`.
         private_networking:
           type: array
           items:
             type: string
             x-oapi-codegen-extra-tags:
               validate: omitnil,max=500
-          description: Private networking options the default site supports, as provider names such as `aws-privatelink`. Empty when it has none.
+          description: Private networking options the site supports, as provider names such as `aws-privatelink`. Empty when it has none.
         status:
           type: string
-          description: Whether the default site is `open` or `closed` as a site. This is separate from `available`, which also depends on the workspace's access to the region.
-      description: Metadata about a supported deployment region.
+          description: Whether the site is `open` or `closed` as a site. This is separate from `available`, which also depends on the workspace's access to the region.
+      description: "Metadata about a site a workspace may create clusters in. The list has one entry per site: each region's default site, plus any other site your workspace has been granted, so a region can appear more than once."
     ClusterLog:
       type: object
       required:
