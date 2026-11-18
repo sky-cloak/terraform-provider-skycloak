@@ -23367,7 +23367,7 @@ components:
             type: string
             x-oapi-codegen-extra-tags:
               validate: omitnil,max=500
-          description: Private networking options the site supports, as provider names such as `aws-privatelink`. Empty when it has none.
+          description: Private networking options the site supports. `aws-privatelink` and `azure-private-link` let you reach your cluster privately from your own cloud network, and `tunnel` lets your cluster reach hosts in your private network. Empty when it has none.
         status:
           type: string
           description: Whether the site is `open` or `closed` as a site. This is separate from `available`, which also depends on the workspace's access to the region.

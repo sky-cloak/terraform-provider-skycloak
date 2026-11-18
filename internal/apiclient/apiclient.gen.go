@@ -1098,7 +1098,7 @@ type ClusterLocationInfo struct {
 	// Name Human-readable region name.
 	Name string `json:"name"`
 
-	// PrivateNetworking Private networking options the site supports, as provider names such as `aws-privatelink`. Empty when it has none.
+	// PrivateNetworking Private networking options the site supports. `aws-privatelink` and `azure-private-link` let you reach your cluster privately from your own cloud network, and `tunnel` lets your cluster reach hosts in your private network. Empty when it has none.
 	PrivateNetworking *[]string `json:"private_networking,omitempty"`
 
 	// ProviderRegion The provider's own name for the region, e.g. `eastus2`.
