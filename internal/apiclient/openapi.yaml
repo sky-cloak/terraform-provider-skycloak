@@ -27075,6 +27075,14 @@ components:
           $ref: '#/components/schemas/SIEMHealthStatus'
         failure_count:
           type: integer
+        lag_seconds:
+          type: integer
+          format: int64
+          description: Seconds the destination is behind while events are waiting to be sent; zero when caught up.
+        oldest_undelivered_at:
+          type: string
+          format: date-time
+          description: Time of the last delivered event, the point delivery has reached; the oldest undelivered event follows it. Absent when caught up.
         last_error:
           type: string
           x-oapi-codegen-extra-tags:
@@ -27209,6 +27217,7 @@ components:
         - healthy
         - degraded
         - failed
+        - catching_up
     SIEMS3Config:
       type: object
       required:

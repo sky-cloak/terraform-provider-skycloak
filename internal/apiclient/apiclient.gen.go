@@ -357,9 +357,10 @@ const (
 
 // Defines values for SIEMHealthStatus.
 const (
-	SIEMHealthStatusDegraded SIEMHealthStatus = "degraded"
-	SIEMHealthStatusFailed   SIEMHealthStatus = "failed"
-	SIEMHealthStatusHealthy  SIEMHealthStatus = "healthy"
+	SIEMHealthStatusCatchingUp SIEMHealthStatus = "catching_up"
+	SIEMHealthStatusDegraded   SIEMHealthStatus = "degraded"
+	SIEMHealthStatusFailed     SIEMHealthStatus = "failed"
+	SIEMHealthStatusHealthy    SIEMHealthStatus = "healthy"
 )
 
 // Defines values for SIEMSourceType.
@@ -3001,22 +3002,28 @@ type SIEMBatchMaxIntervalSeconds = int
 
 // SIEMDestination Saved SIEM forwarding destination for a workspace.
 type SIEMDestination struct {
-	Batch           SIEMBatchConfig            `json:"batch"`
-	CreatedAt       time.Time                  `json:"created_at"`
-	Enabled         bool                       `json:"enabled"`
-	FailureCount    int                        `json:"failure_count"`
-	HealthStatus    SIEMHealthStatus           `json:"health_status"`
-	Http            *SIEMHTTPDestinationConfig `json:"http,omitempty"`
-	Id              SIEMDestinationId          `json:"id"`
-	LastError       *string                    `json:"last_error,omitempty" validate:"omitnil,max=500"`
-	LastSentAt      *time.Time                 `json:"last_sent_at,omitempty"`
-	Name            SIEMDestinationName        `json:"name"`
-	S3              *SIEMS3DestinationConfig   `json:"s3,omitempty"`
-	Source          SIEMSourceConfig           `json:"source"`
-	Syslog          *SIEMSyslogConfig          `json:"syslog,omitempty"`
-	TotalBytesSent  int64                      `json:"total_bytes_sent"`
-	TotalEventsSent int64                      `json:"total_events_sent"`
-	TotalLogsSent   int64                      `json:"total_logs_sent"`
+	Batch        SIEMBatchConfig            `json:"batch"`
+	CreatedAt    time.Time                  `json:"created_at"`
+	Enabled      bool                       `json:"enabled"`
+	FailureCount int                        `json:"failure_count"`
+	HealthStatus SIEMHealthStatus           `json:"health_status"`
+	Http         *SIEMHTTPDestinationConfig `json:"http,omitempty"`
+	Id           SIEMDestinationId          `json:"id"`
+
+	// LagSeconds Seconds the destination is behind while events are waiting to be sent; zero when caught up.
+	LagSeconds *int64              `json:"lag_seconds,omitempty"`
+	LastError  *string             `json:"last_error,omitempty" validate:"omitnil,max=500"`
+	LastSentAt *time.Time          `json:"last_sent_at,omitempty"`
+	Name       SIEMDestinationName `json:"name"`
+
+	// OldestUndeliveredAt Time of the last delivered event, the point delivery has reached; the oldest undelivered event follows it. Absent when caught up.
+	OldestUndeliveredAt *time.Time               `json:"oldest_undelivered_at,omitempty"`
+	S3                  *SIEMS3DestinationConfig `json:"s3,omitempty"`
+	Source              SIEMSourceConfig         `json:"source"`
+	Syslog              *SIEMSyslogConfig        `json:"syslog,omitempty"`
+	TotalBytesSent      int64                    `json:"total_bytes_sent"`
+	TotalEventsSent     int64                    `json:"total_events_sent"`
+	TotalLogsSent       int64                    `json:"total_logs_sent"`
 
 	// Type External SIEM destination type.
 	Type      SIEMDestinationType `json:"type"`
