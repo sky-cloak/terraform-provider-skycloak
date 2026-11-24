@@ -10,11 +10,16 @@ import (
 type ClusterPrivateLink struct {
 	Enabled              bool
 	AzureSubscriptionIDs []string
+	Hostnames            []string
 	Alias                *string
 }
 
 func privateLinkFromAPI(link *apiclient.ClusterPrivateLink) *ClusterPrivateLink {
-	return &ClusterPrivateLink{Enabled: link.Enabled, AzureSubscriptionIDs: link.AzureSubscriptionIds, Alias: link.Alias}
+	out := &ClusterPrivateLink{Enabled: link.Enabled, AzureSubscriptionIDs: link.AzureSubscriptionIds, Alias: link.Alias}
+	if link.Hostnames != nil {
+		out.Hostnames = *link.Hostnames
+	}
+	return out
 }
 
 // GetClusterPrivateLink returns a cluster's private link configuration.
@@ -29,11 +34,15 @@ func (c *Client) GetClusterPrivateLink(ctx context.Context, clusterID string) (*
 	return privateLinkFromAPI(resp.JSON200), nil
 }
 
-// UpdateClusterPrivateLink sets enabled state and, when non-nil, replaces the subscription IDs.
-func (c *Client) UpdateClusterPrivateLink(ctx context.Context, clusterID string, enabled bool, subscriptionIDs []string) (*ClusterPrivateLink, error) {
+// UpdateClusterPrivateLink sets enabled state and, when non-nil, replaces the subscription IDs and the hostnames.
+// An empty non-nil hostnames slice clears the stored hostnames.
+func (c *Client) UpdateClusterPrivateLink(ctx context.Context, clusterID string, enabled bool, subscriptionIDs, hostnames []string) (*ClusterPrivateLink, error) {
 	body := apiclient.UpdateClusterPrivateLinkJSONRequestBody{Enabled: enabled}
 	if subscriptionIDs != nil {
 		body.AzureSubscriptionIds = &subscriptionIDs
+	}
+	if hostnames != nil {
+		body.Hostnames = &hostnames
 	}
 	resp, err := c.gen.UpdateClusterPrivateLinkWithResponse(ctx, cid(clusterID), &apiclient.UpdateClusterPrivateLinkParams{APIVersion: c.ver()}, body)
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -41,6 +42,9 @@ func privateLinkState(t *testing.T, m clusterPrivateLinkModel) tfsdk.State {
 	if m.AzureSubscriptionIDs.ElementType(context.Background()) == nil {
 		m.AzureSubscriptionIDs = types.SetNull(types.StringType)
 	}
+	if m.Hostnames.ElementType(context.Background()) == nil {
+		m.Hostnames = types.SetNull(types.StringType)
+	}
 	state := tfsdk.State{Schema: s, Raw: tftypes.NewValue(s.Type().TerraformType(context.Background()), nil)}
 	if diags := state.Set(context.Background(), m); diags.HasError() {
 		t.Fatal(diags)
@@ -61,6 +65,7 @@ func TestClusterPrivateLinkResourceLifecycle(t *testing.T) {
 	ctx := context.Background()
 	enabled := false
 	ids := []string{}
+	hosts := []string{}
 	calls := []string{}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls = append(calls, r.Method)
@@ -71,6 +76,7 @@ func TestClusterPrivateLinkResourceLifecycle(t *testing.T) {
 			var body struct {
 				Enabled bool      `json:"enabled"`
 				IDs     *[]string `json:"azure_subscription_ids"`
+				Hosts   *[]string `json:"hostnames"`
 			}
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 				t.Error(err)
@@ -79,10 +85,13 @@ func TestClusterPrivateLinkResourceLifecycle(t *testing.T) {
 			if body.IDs != nil {
 				ids = *body.IDs
 			}
+			if body.Hosts != nil {
+				hosts = *body.Hosts
+			}
 		} else if r.Method != http.MethodGet {
 			t.Errorf("method = %s", r.Method)
 		}
-		result := map[string]any{"enabled": enabled, "azure_subscription_ids": ids, "status": "disabled"}
+		result := map[string]any{"enabled": enabled, "azure_subscription_ids": ids, "hostnames": hosts, "status": "disabled"}
 		if enabled {
 			result["alias"] = "example.alias"
 			result["status"] = "waiting"
@@ -98,7 +107,8 @@ func TestClusterPrivateLinkResourceLifecycle(t *testing.T) {
 	if diags.HasError() {
 		t.Fatal(diags)
 	}
-	m := clusterPrivateLinkModel{ClusterID: types.StringValue(privateLinkClusterID), Enabled: types.BoolValue(true), AzureSubscriptionIDs: set, ID: types.StringUnknown(), Alias: types.StringUnknown()}
+	hostSet := types.SetValueMust(types.StringType, []attr.Value{types.StringValue("console.example.com")})
+	m := clusterPrivateLinkModel{ClusterID: types.StringValue(privateLinkClusterID), Enabled: types.BoolValue(true), AzureSubscriptionIDs: set, Hostnames: hostSet, ID: types.StringUnknown(), Alias: types.StringUnknown()}
 	planned := privateLinkState(t, m)
 	create := resource.CreateResponse{State: privateLinkState(t, clusterPrivateLinkModel{})}
 	r.Create(ctx, resource.CreateRequest{Plan: tfsdk.Plan(planned)}, &create)
@@ -106,7 +116,7 @@ func TestClusterPrivateLinkResourceLifecycle(t *testing.T) {
 		t.Fatal(create.Diagnostics)
 	}
 	m = privateLinkModel(t, create.State)
-	if m.ID.ValueString() != privateLinkClusterID+"/private-link" || m.Alias.ValueString() != "example.alias" || !m.Enabled.ValueBool() || !m.AzureSubscriptionIDs.Equal(set) {
+	if m.ID.ValueString() != privateLinkClusterID+"/private-link" || m.Alias.ValueString() != "example.alias" || !m.Enabled.ValueBool() || !m.AzureSubscriptionIDs.Equal(set) || !m.Hostnames.Equal(hostSet) || len(hosts) != 1 {
 		t.Fatalf("unexpected create: %+v", m)
 	}
 	read := resource.ReadResponse{State: create.State}
@@ -129,7 +139,7 @@ func TestClusterPrivateLinkResourceLifecycle(t *testing.T) {
 			t.Fatal(refreshed.Diagnostics)
 		}
 		got := privateLinkModel(t, refreshed.State)
-		if !got.ID.Equal(m.ID) || !got.ClusterID.Equal(m.ClusterID) || !got.Enabled.Equal(m.Enabled) || !got.Alias.Equal(m.Alias) || !got.AzureSubscriptionIDs.Equal(m.AzureSubscriptionIDs) {
+		if !got.ID.Equal(m.ID) || !got.ClusterID.Equal(m.ClusterID) || !got.Enabled.Equal(m.Enabled) || !got.Alias.Equal(m.Alias) || !got.AzureSubscriptionIDs.Equal(m.AzureSubscriptionIDs) || !got.Hostnames.Equal(m.Hostnames) {
 			t.Fatalf("import = %+v", got)
 		}
 	}
@@ -139,11 +149,12 @@ func TestClusterPrivateLinkResourceLifecycle(t *testing.T) {
 	if deleted.Diagnostics.HasError() {
 		t.Fatal(deleted.Diagnostics)
 	}
-	if enabled || len(ids) != 1 || ids[0] != privateLinkSubscriptionID {
+	if enabled || len(ids) != 1 || ids[0] != privateLinkSubscriptionID || len(hosts) != 1 {
 		t.Fatalf("destroy: enabled=%v ids=%v", enabled, ids)
 	}
 	m.Enabled = types.BoolValue(false)
 	m.AzureSubscriptionIDs = types.SetValueMust(types.StringType, nil)
+	m.Hostnames = types.SetNull(types.StringType)
 	m.Alias = types.StringUnknown()
 	planned = privateLinkState(t, m)
 	updated := resource.UpdateResponse{State: read.State}
@@ -152,7 +163,7 @@ func TestClusterPrivateLinkResourceLifecycle(t *testing.T) {
 		t.Fatal(updated.Diagnostics)
 	}
 	m = privateLinkModel(t, updated.State)
-	if m.Enabled.ValueBool() || !m.Alias.IsNull() || m.AzureSubscriptionIDs.IsNull() || len(m.AzureSubscriptionIDs.Elements()) != 0 || len(ids) != 0 {
+	if m.Enabled.ValueBool() || !m.Alias.IsNull() || m.AzureSubscriptionIDs.IsNull() || len(m.AzureSubscriptionIDs.Elements()) != 0 || len(ids) != 0 || !m.Hostnames.IsNull() || len(hosts) != 0 {
 		t.Fatalf("unexpected update: %+v", m)
 	}
 	if len(calls) != 6 {
@@ -296,5 +307,31 @@ func TestPrivateLinkComputedValues(t *testing.T) {
 	}
 	if !m.AzureSubscriptionIDs.Equal(reordered) {
 		t.Fatal("subscription order must not cause a diff")
+	}
+}
+
+func TestPrivateLinkHostnamesRead(t *testing.T) {
+	ctx := context.Background()
+	empty := types.SetValueMust(types.StringType, []attr.Value{})
+	for name, tc := range map[string]struct {
+		before   types.Set
+		hosts    []string
+		wantNull bool
+		wantLen  int
+	}{
+		"none stays null":             {types.SetNull(types.StringType), nil, true, 0},
+		"none clears a stale value":   {types.SetValueMust(types.StringType, []attr.Value{types.StringValue("old.example.com")}), nil, true, 0},
+		"none keeps a configured set": {empty, []string{}, false, 0},
+		"values are read back":        {types.SetNull(types.StringType), []string{"a.example.com", "b.example.com"}, false, 2},
+	} {
+		t.Run(name, func(t *testing.T) {
+			m := clusterPrivateLinkModel{ClusterID: types.StringValue(privateLinkClusterID), Hostnames: tc.before}
+			if diags := applyPrivateLinkToModel(ctx, &skycloak.ClusterPrivateLink{Hostnames: tc.hosts}, &m); diags.HasError() {
+				t.Fatal(diags)
+			}
+			if m.Hostnames.IsNull() != tc.wantNull || len(m.Hostnames.Elements()) != tc.wantLen {
+				t.Fatalf("hostnames = %v", m.Hostnames)
+			}
+		})
 	}
 }

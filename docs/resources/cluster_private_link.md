@@ -3,12 +3,12 @@
 page_title: "skycloak_cluster_private_link Resource - skycloak"
 subcategory: ""
 description: |-
-  Manages Azure private link for a cluster. Only one resource should manage a cluster's private link. Requires an Enterprise plan with private networking and a site that supports Azure private link. Destroy disables private link and keeps the subscription IDs. Restore public access before destroying this resource; the API refuses to disable private link while public access is off. The API key needs clusters:private-link:read and clusters:private-link:write scopes.
+  Manages Azure private link for a cluster. Only one resource should manage a cluster's private link. Requires an Enterprise plan with private networking and a site that supports Azure private link. Destroy disables private link and keeps the subscription IDs and hostnames. Restore public access before destroying this resource; the API refuses to disable private link while public access is off. The API key needs clusters:private-link:read and clusters:private-link:write scopes.
 ---
 
 # skycloak_cluster_private_link (Resource)
 
-Manages Azure private link for a cluster. Only one resource should manage a cluster's private link. Requires an Enterprise plan with private networking and a site that supports Azure private link. Destroy disables private link and keeps the subscription IDs. Restore public access before destroying this resource; the API refuses to disable private link while public access is off. The API key needs `clusters:private-link:read` and `clusters:private-link:write` scopes.
+Manages Azure private link for a cluster. Only one resource should manage a cluster's private link. Requires an Enterprise plan with private networking and a site that supports Azure private link. Destroy disables private link and keeps the subscription IDs and hostnames. Restore public access before destroying this resource; the API refuses to disable private link while public access is off. The API key needs `clusters:private-link:read` and `clusters:private-link:write` scopes.
 
 ## Example Usage
 
@@ -18,6 +18,9 @@ resource "skycloak_cluster_private_link" "example" {
   cluster_id             = skycloak_cluster.example.id
   enabled                = true
   azure_subscription_ids = ["11111111-1111-1111-1111-111111111111"]
+
+  # Optional: bare hosts you reach the cluster on through your own proxy or DNS.
+  hostnames = ["auth.example.com"]
 }
 
 output "private_link_alias" {
@@ -35,6 +38,10 @@ output "private_link_alias" {
 - `azure_subscription_ids` (Set of String) Azure subscription IDs allowed to connect, as lowercase GUIDs (at most 20). At least one is required when enabled. An empty set clears the stored IDs.
 - `cluster_id` (String) Cluster ID. Immutable.
 - `enabled` (Boolean) Whether Azure private link is enabled.
+
+### Optional
+
+- `hostnames` (Set of String) Hostnames you reach the cluster on through your own proxy or DNS, as bare hosts: no scheme, port, path, query or credentials (at most 5). A host must be a DNS name with at least two labels. IP addresses, `localhost`, Skycloak domains and hosts another workspace already uses are refused. Values are lowercased and deduplicated. Removing this attribute clears the stored hostnames. They stay stored while private link is disabled.
 
 ### Read-Only
 

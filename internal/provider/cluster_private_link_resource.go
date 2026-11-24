@@ -32,6 +32,7 @@ type clusterPrivateLinkModel struct {
 	ClusterID            types.String `tfsdk:"cluster_id"`
 	Enabled              types.Bool   `tfsdk:"enabled"`
 	AzureSubscriptionIDs types.Set    `tfsdk:"azure_subscription_ids"`
+	Hostnames            types.Set    `tfsdk:"hostnames"`
 	Alias                types.String `tfsdk:"alias"`
 }
 
@@ -43,7 +44,7 @@ func (r *clusterPrivateLinkResource) Schema(_ context.Context, _ resource.Schema
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Manages Azure private link for a cluster. Only one resource should manage a cluster's private link. " +
 			"Requires an Enterprise plan with private networking and a site that supports Azure private link. " +
-			"Destroy disables private link and keeps the subscription IDs. Restore public access before destroying this resource; " +
+			"Destroy disables private link and keeps the subscription IDs and hostnames. Restore public access before destroying this resource; " +
 			"the API refuses to disable private link while public access is off. " +
 			"The API key needs `clusters:private-link:read` and `clusters:private-link:write` scopes.",
 		Attributes: map[string]schema.Attribute{
@@ -62,6 +63,11 @@ func (r *clusterPrivateLinkResource) Schema(_ context.Context, _ resource.Schema
 				Required:            true,
 				ElementType:         types.StringType,
 				MarkdownDescription: "Azure subscription IDs allowed to connect, as lowercase GUIDs (at most 20). At least one is required when enabled. An empty set clears the stored IDs.",
+			},
+			"hostnames": schema.SetAttribute{
+				Optional:            true,
+				ElementType:         types.StringType,
+				MarkdownDescription: "Hostnames you reach the cluster on through your own proxy or DNS, as bare hosts: no scheme, port, path, query or credentials (at most 5). A host must be a DNS name with at least two labels. IP addresses, `localhost`, Skycloak domains and hosts another workspace already uses are refused. Values are lowercased and deduplicated. Removing this attribute clears the stored hostnames. They stay stored while private link is disabled.",
 			},
 			"alias": schema.StringAttribute{
 				Computed:            true,
@@ -96,6 +102,17 @@ func applyPrivateLinkToModel(ctx context.Context, link *skycloak.ClusterPrivateL
 	}
 	var diags diag.Diagnostics
 	m.AzureSubscriptionIDs, diags = types.SetValueFrom(ctx, types.StringType, ids)
+	if diags.HasError() {
+		return diags
+	}
+	// No hostnames reads as null, except where the configuration holds an explicit empty set.
+	if len(link.Hostnames) == 0 {
+		if m.Hostnames.IsNull() || m.Hostnames.IsUnknown() || len(m.Hostnames.Elements()) != 0 {
+			m.Hostnames = types.SetNull(types.StringType)
+		}
+		return diags
+	}
+	m.Hostnames, diags = types.SetValueFrom(ctx, types.StringType, link.Hostnames)
 	return diags
 }
 
@@ -109,7 +126,15 @@ func (r *clusterPrivateLinkResource) set(ctx context.Context, m *clusterPrivateL
 	if ids == nil {
 		ids = []string{}
 	}
-	link, err := r.client.UpdateClusterPrivateLink(ctx, m.ClusterID.ValueString(), m.Enabled.ValueBool(), ids)
+	// A missing hostnames attribute sends an empty list, which clears what is stored.
+	hostnames := []string{}
+	if !m.Hostnames.IsNull() && !m.Hostnames.IsUnknown() {
+		diags.Append(m.Hostnames.ElementsAs(ctx, &hostnames, false)...)
+		if diags.HasError() {
+			return diags
+		}
+	}
+	link, err := r.client.UpdateClusterPrivateLink(ctx, m.ClusterID.ValueString(), m.Enabled.ValueBool(), ids, hostnames)
 	if err != nil {
 		diags.AddError("Unable to set cluster private link", err.Error())
 		return diags
@@ -172,8 +197,8 @@ func (r *clusterPrivateLinkResource) Delete(ctx context.Context, req resource.De
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	// Omitting subscription IDs preserves the stored list when disabling the link.
-	if _, err := r.client.UpdateClusterPrivateLink(ctx, state.ClusterID.ValueString(), false, nil); err != nil && !skycloak.IsNotFound(err) {
+	// Omitting subscription IDs and hostnames preserves the stored lists when disabling the link.
+	if _, err := r.client.UpdateClusterPrivateLink(ctx, state.ClusterID.ValueString(), false, nil, nil); err != nil && !skycloak.IsNotFound(err) {
 		resp.Diagnostics.AddError("Unable to disable cluster private link", err.Error())
 	}
 }

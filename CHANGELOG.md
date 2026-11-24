@@ -7,6 +7,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- `skycloak_cluster_private_link`: new optional `hostnames` set, up to 5 bare hosts you reach the cluster on through your own proxy or DNS. IP addresses, `localhost`, Skycloak domains and hosts another workspace already uses are refused, and the API error is shown on apply. Removing the attribute clears the stored hostnames, and they are read back on refresh and import.
 - `skycloak_cluster`: new optional, computed `site` attribute, a site code such as `us-east`, sent on create and read back. Leave it out for the location's default site. Changing it replaces the cluster, and the `us-west` location is still accepted. The `skycloak_cluster` data source exposes `site`. `examples/private-cluster` holds one complete configuration for a private cluster: a cluster on a site, private link, public access off, a realm `frontend_url` and a theme JAR.
 - `skycloak_cluster_public_access`: manage whether a cluster's public hostname is served. Turning it off needs an Enterprise plan and is refused unless Azure private link is enabled and ready. Import accepts a cluster ID or `cluster_id/public-access`. Destroy turns public access back on, so the private link can be disabled afterwards.
 - `skycloak_cluster_private_link`: manage Azure private link enabled state and allowed subscription IDs, with a computed service alias. Import accepts a cluster ID or `cluster_id/private-link`. Destroy disables the link, preserving subscription IDs; restore public access first if it is off.
