@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/sky-cloak/terraform-provider-skycloak/internal/skycloak"
@@ -67,7 +68,8 @@ func (r *clusterPrivateLinkResource) Schema(_ context.Context, _ resource.Schema
 			"hostnames": schema.SetAttribute{
 				Optional:            true,
 				ElementType:         types.StringType,
-				MarkdownDescription: "Hostnames you reach the cluster on through your own proxy or DNS, as bare hosts: no scheme, port, path, query or credentials (at most 5). A host must be a DNS name with at least two labels. IP addresses, `localhost`, Skycloak domains and hosts another workspace already uses are refused. Values are lowercased and deduplicated. Removing this attribute clears the stored hostnames. They stay stored while private link is disabled.",
+				Validators:          []validator.Set{normalizedHostnamesValidator{}},
+				MarkdownDescription: "Hostnames you reach the cluster on through your own proxy or DNS, as bare hosts: no scheme, port, path, query or credentials (at most 5). A host must be a DNS name with at least two labels. IP addresses, `localhost`, Skycloak domains and hosts another workspace already uses are refused. Write each host in lowercase with no surrounding spaces; other forms are refused at plan time. Removing this attribute clears the stored hostnames. They stay stored while private link is disabled.",
 			},
 			"alias": schema.StringAttribute{
 				Computed:            true,
@@ -87,6 +89,34 @@ func (r *clusterPrivateLinkResource) Configure(_ context.Context, req resource.C
 		return
 	}
 	r.client = client
+}
+
+// normalizedHostnamesValidator refuses hosts the API would lowercase or trim, because
+// the value read back would then differ from the planned one.
+type normalizedHostnamesValidator struct{}
+
+func (normalizedHostnamesValidator) Description(context.Context) string {
+	return "each host must be lowercase with no surrounding whitespace"
+}
+
+func (v normalizedHostnamesValidator) MarkdownDescription(ctx context.Context) string {
+	return v.Description(ctx)
+}
+
+func (normalizedHostnamesValidator) ValidateSet(_ context.Context, req validator.SetRequest, resp *validator.SetResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	for _, el := range req.ConfigValue.Elements() {
+		s, ok := el.(types.String)
+		if !ok || s.IsNull() || s.IsUnknown() {
+			continue
+		}
+		if v := s.ValueString(); v != strings.ToLower(strings.TrimSpace(v)) {
+			resp.Diagnostics.AddAttributeError(req.Path, "Invalid hostname",
+				fmt.Sprintf("Host %q must be lowercase with no surrounding whitespace.", v))
+		}
+	}
 }
 
 func applyPrivateLinkToModel(ctx context.Context, link *skycloak.ClusterPrivateLink, m *clusterPrivateLinkModel) diag.Diagnostics {

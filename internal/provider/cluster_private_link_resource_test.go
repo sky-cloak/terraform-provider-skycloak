@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -14,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
@@ -331,6 +333,46 @@ func TestPrivateLinkHostnamesRead(t *testing.T) {
 			}
 			if m.Hostnames.IsNull() != tc.wantNull || len(m.Hostnames.Elements()) != tc.wantLen {
 				t.Fatalf("hostnames = %v", m.Hostnames)
+			}
+		})
+	}
+}
+
+func TestPrivateLinkHostnamesValidator(t *testing.T) {
+	for host, bad := range map[string]bool{"auth.example.com": false, "Auth.Example.com": true, " auth.example.com": true} {
+		resp := validator.SetResponse{}
+		normalizedHostnamesValidator{}.ValidateSet(context.Background(), validator.SetRequest{
+			Path:        path.Root("hostnames"),
+			ConfigValue: types.SetValueMust(types.StringType, []attr.Value{types.StringValue(host)}),
+		}, &resp)
+		if resp.Diagnostics.HasError() != bad {
+			t.Fatalf("%q: diagnostics %v", host, resp.Diagnostics)
+		}
+	}
+}
+
+func TestClusterPrivateLinkHostnamesRefusalMessage(t *testing.T) {
+	for status, msg := range map[int]string{400: "host bad.example is not valid", 409: "host is already in use"} {
+		t.Run(fmt.Sprint(status), func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/problem+json")
+				w.WriteHeader(status)
+				_, _ = fmt.Fprintf(w, `{"title":"refused","detail":%q,"status":%d}`, msg, status)
+			}))
+			defer srv.Close()
+			r := &clusterPrivateLinkResource{client: skycloak.New(srv.URL, "", "")}
+			state := privateLinkState(t, clusterPrivateLinkModel{
+				ID: types.StringValue(privateLinkClusterID + "/private-link"), ClusterID: types.StringValue(privateLinkClusterID),
+				Enabled: types.BoolValue(true), AzureSubscriptionIDs: types.SetValueMust(types.StringType, nil),
+				Hostnames: types.SetValueMust(types.StringType, []attr.Value{types.StringValue("bad.example")}), Alias: types.StringValue("example.alias"),
+			})
+			create := resource.CreateResponse{State: state}
+			r.Create(context.Background(), resource.CreateRequest{Plan: tfsdk.Plan(state)}, &create)
+			if !create.Diagnostics.HasError() {
+				t.Fatal("create must report the refusal")
+			}
+			if got := create.Diagnostics.Errors()[0].Detail(); !strings.Contains(got, msg) {
+				t.Fatalf("error detail %q lacks API message %q", got, msg)
 			}
 		})
 	}

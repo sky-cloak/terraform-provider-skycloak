@@ -41,7 +41,7 @@ output "private_link_alias" {
 
 ### Optional
 
-- `hostnames` (Set of String) Hostnames you reach the cluster on through your own proxy or DNS, as bare hosts: no scheme, port, path, query or credentials (at most 5). A host must be a DNS name with at least two labels. IP addresses, `localhost`, Skycloak domains and hosts another workspace already uses are refused. Values are lowercased and deduplicated. Removing this attribute clears the stored hostnames. They stay stored while private link is disabled.
+- `hostnames` (Set of String) Hostnames you reach the cluster on through your own proxy or DNS, as bare hosts: no scheme, port, path, query or credentials (at most 5). A host must be a DNS name with at least two labels. IP addresses, `localhost`, Skycloak domains and hosts another workspace already uses are refused. Write each host in lowercase with no surrounding spaces; other forms are refused at plan time. Removing this attribute clears the stored hostnames. They stay stored while private link is disabled.
 
 ### Read-Only
 
