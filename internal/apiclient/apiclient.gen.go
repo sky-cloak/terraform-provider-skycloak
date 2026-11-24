@@ -21888,6 +21888,7 @@ type UpdateClusterPrivateLinkResponse struct {
 	Body                      []byte
 	HTTPResponse              *http.Response
 	JSON200                   *ClusterPrivateLink
+	ApplicationproblemJSON400 *ErrorBody
 	ApplicationproblemJSON401 *ErrorBody
 	ApplicationproblemJSON403 *ErrorBody
 	ApplicationproblemJSON404 *ErrorBody
@@ -31412,6 +31413,13 @@ func ParseUpdateClusterPrivateLinkResponse(rsp *http.Response) (*UpdateClusterPr
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest ErrorBody
