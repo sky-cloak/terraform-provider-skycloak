@@ -13,6 +13,7 @@ import (
 
 func TestClusterPrivateLinkLifecycle(t *testing.T) {
 	ids := []string{"22222222-2222-2222-2222-222222222222"}
+	hosts := []string{"console.example.com"}
 	calls := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls++
@@ -31,7 +32,7 @@ func TestClusterPrivateLinkLifecycle(t *testing.T) {
 		if r.Header.Get("Accept") != "application/json" {
 			t.Error("missing JSON accept header")
 		}
-		result := map[string]any{"enabled": true, "azure_subscription_ids": ids, "alias": "example.alias", "status": "waiting"}
+		result := map[string]any{"enabled": true, "azure_subscription_ids": ids, "alias": "example.alias", "hostnames": hosts, "status": "waiting"}
 		switch calls {
 		case 1:
 			if r.Method != http.MethodGet {
@@ -61,13 +62,26 @@ func TestClusterPrivateLinkLifecycle(t *testing.T) {
 				if !reflect.DeepEqual(sent, ids) {
 					t.Errorf("subscriptions = %v", sent)
 				}
+				var sentHosts []string
+				if err := json.Unmarshal(body["hostnames"], &sentHosts); err != nil {
+					t.Error(err)
+				}
+				if !reflect.DeepEqual(sentHosts, hosts) {
+					t.Errorf("hostnames = %v", sentHosts)
+				}
 			case 3:
 				if string(body["azure_subscription_ids"]) != "[]" {
 					t.Error("empty IDs must clear the list")
 				}
+				if string(body["hostnames"]) != "[]" {
+					t.Error("empty hostnames must clear the list")
+				}
 			case 4:
 				if _, ok := body["azure_subscription_ids"]; ok {
 					t.Error("disable must omit IDs to preserve them")
+				}
+				if _, ok := body["hostnames"]; ok {
+					t.Error("disable must omit hostnames to preserve them")
 				}
 			}
 			result["enabled"] = enabled
@@ -88,14 +102,15 @@ func TestClusterPrivateLinkLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !link.Enabled || !reflect.DeepEqual(link.AzureSubscriptionIDs, ids) || link.Alias == nil || *link.Alias != "example.alias" {
+	if !link.Enabled || !reflect.DeepEqual(link.AzureSubscriptionIDs, ids) || link.Alias == nil || *link.Alias != "example.alias" || !reflect.DeepEqual(link.Hostnames, hosts) {
 		t.Fatalf("unexpected link: %+v", link)
 	}
 	for _, tc := range []struct {
 		enabled bool
 		ids     []string
-	}{{true, ids}, {false, []string{}}, {false, nil}} {
-		link, err = client.UpdateClusterPrivateLink(context.Background(), cuid, tc.enabled, tc.ids)
+		hosts   []string
+	}{{true, ids, hosts}, {false, []string{}, []string{}}, {false, nil, nil}} {
+		link, err = client.UpdateClusterPrivateLink(context.Background(), cuid, tc.enabled, tc.ids, tc.hosts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -128,7 +143,7 @@ func TestClusterPrivateLinkErrors(t *testing.T) {
 				if method == http.MethodGet {
 					_, err = client.GetClusterPrivateLink(context.Background(), cuid)
 				} else {
-					_, err = client.UpdateClusterPrivateLink(context.Background(), cuid, false, nil)
+					_, err = client.UpdateClusterPrivateLink(context.Background(), cuid, false, nil, nil)
 				}
 				var apiErr *APIError
 				if !errors.As(err, &apiErr) {

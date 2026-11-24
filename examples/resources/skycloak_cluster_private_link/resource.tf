@@ -3,6 +3,9 @@ resource "skycloak_cluster_private_link" "example" {
   cluster_id             = skycloak_cluster.example.id
   enabled                = true
   azure_subscription_ids = ["11111111-1111-1111-1111-111111111111"]
+
+  # Optional: bare hosts you reach the cluster on through your own proxy or DNS.
+  hostnames = ["auth.example.com"]
 }
 
 output "private_link_alias" {

@@ -23468,6 +23468,11 @@ components:
         dns_name:
           type: string
           description: Private hostname to create in your private DNS zone. Only present while private link is enabled.
+        hostnames:
+          type: array
+          items:
+            type: string
+          description: Hostnames you reach the cluster on through your own proxy or DNS, as bare lowercase hosts. They stay stored while private link is off.
         status:
           $ref: '#/components/schemas/PrivateLinkStatus'
         connections:
@@ -28148,6 +28153,11 @@ components:
             x-oapi-codegen-extra-tags:
               validate: omitnil,max=500
           description: Azure subscription IDs (GUIDs, at most 20) allowed to connect. Replaces the stored list; an empty list clears it. When omitted the stored list is kept. At least one is required to enable.
+        hostnames:
+          type: array
+          items:
+            type: string
+          description: 'Hostnames (at most 5) you reach the cluster on, as bare hosts with no scheme, port, path, query or credentials. A host must be a DNS name with at least two labels: IP addresses, localhost and Skycloak domains are refused, and so is a host another workspace already uses. Values are lowercased, trimmed and deduplicated. Replaces the stored list; an empty list clears it. When omitted the stored list is kept.'
       description: Turns a cluster's Azure private link on or off and sets its subscription IDs.
     UpdateClusterRequest:
       type: object
