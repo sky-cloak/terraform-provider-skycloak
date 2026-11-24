@@ -7706,6 +7706,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClusterPrivateLink'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
         '401':
           description: Access is unauthorized.
           content:
@@ -23472,6 +23478,8 @@ components:
           type: array
           items:
             type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
           description: Hostnames you reach the cluster on through your own proxy or DNS, as bare lowercase hosts. They stay stored while private link is off.
         status:
           $ref: '#/components/schemas/PrivateLinkStatus'
@@ -28157,6 +28165,8 @@ components:
           type: array
           items:
             type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
           description: 'Hostnames (at most 5) you reach the cluster on, as bare hosts with no scheme, port, path, query or credentials. A host must be a DNS name with at least two labels: IP addresses, localhost and Skycloak domains are refused, and so is a host another workspace already uses. Values are lowercased, trimmed and deduplicated. Replaces the stored list; an empty list clears it. When omitted the stored list is kept.'
       description: Turns a cluster's Azure private link on or off and sets its subscription IDs.
     UpdateClusterRequest:
