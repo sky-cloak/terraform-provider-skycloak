@@ -31,6 +31,7 @@ tags:
   - name: Login Branding
   - name: Email Branding
   - name: Themes
+  - name: Password Blacklists
   - name: Extensions
   - name: Cluster Extensions
   - name: Exports
@@ -7564,6 +7565,531 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - openfga:write
+  /clusters/{cluster_id}/password-blacklist-files:
+    get:
+      operationId: listPasswordBlacklistFiles
+      summary: List password blacklist files
+      description: |-
+        Returns the password blacklist files kept for the cluster, with the status of each.
+
+        Required scope: `clusters:password-blacklists:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PasswordBlacklistFile'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Password Blacklists
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:password-blacklists:read
+    post:
+      operationId: uploadPasswordBlacklistFile
+      summary: Upload a password blacklist file
+      description: |-
+        Uploads a password blacklist file to a dedicated cluster, for Keycloak's `passwordBlacklist(<name>)` realm password policy.
+        Shared trial realms need a dedicated cluster first.
+
+        The first file on a cluster adds a small persistent folder to the Keycloak pods, which takes a restart. By default the restart
+        waits for the cluster's maintenance window and the file shows `waiting_for_restart` until then. Set `apply_now` to restart at once.
+        Later files on a cluster that already has the folder need no restart.
+
+        Files cannot be changed after upload: new content needs a new name. A cluster holds at most 10 files of up to 25 MB each.
+        Maximum body size is 25 MB plus the multipart overhead.
+
+        Once the file is `ready`, set the realm password policy `passwordBlacklist(<name>)` to use it.
+
+        Required scope: `clusters:password-blacklists:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordBlacklistFile'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '413':
+          description: The file is larger than the upload limit.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Password Blacklists
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  x-oapi-codegen-extra-tags:
+                    validate: required,max=255
+                  description: Name of the file on the cluster. Letters, digits, dot, dash and underscore only, up to 255 characters, and unique on the cluster.
+                apply_now:
+                  type: boolean
+                  description: When `true`, the restart that adds the folder runs at once instead of in the maintenance window. Sent as a plain-text multipart field (`true` or `false`). Defaults to `false`. It only matters for the first file on a cluster, or while an earlier file is still waiting for the restart. It is refused with 422 when applying now is not available for the cluster.
+                file:
+                  type: string
+                  format: binary
+                  description: The file content, one password per line. Up to 25 MB.
+              required:
+                - name
+                - file
+            encoding:
+              apply_now:
+                contentType: text/plain
+              file:
+                contentType: application/octet-stream, text/plain
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:password-blacklists:write
+  /clusters/{cluster_id}/password-blacklist-files/{name}:
+    get:
+      operationId: getPasswordBlacklistFile
+      summary: Get a password blacklist file
+      description: |-
+        Returns one file with its status: `waiting_for_restart`, `delivering`, `ready` or `failed`.
+
+        Required scope: `clusters:password-blacklists:read`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/PasswordBlacklistFileName'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordBlacklistFile'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Password Blacklists
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:password-blacklists:read
+    delete:
+      operationId: deletePasswordBlacklistFile
+      summary: Delete a password blacklist file
+      description: |-
+        Removes the file from storage and from the cluster. It is refused with 409 while a realm password policy on the cluster names the file as `passwordBlacklist(<name>)`; change the policy first.
+
+        Required scope: `clusters:password-blacklists:write`
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - name: name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/PasswordBlacklistFileName'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '204':
+          description: There is no content to send for this request, but the headers may be useful.
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Password Blacklists
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:password-blacklists:write
   /clusters/{cluster_id}/private-link:
     get:
       operationId: getClusterPrivateLink
@@ -8091,7 +8617,9 @@ paths:
       description: |-
         Imports a realm (configuration, users, and credentials) into the cluster via the Keycloak Admin
         API. Preflight validates the target Keycloak version, refuses a name collision, and blocks on
-        missing password-hash providers. Poll `GET /realm-imports/{import_id}` until `status` is
+        missing password-hash providers.
+        An `upload_s3_key` whose object was never uploaded, or whose upload did not finish, is refused
+        with 422 on `/upload_s3_key`. Poll `GET /realm-imports/{import_id}` until `status` is
         `completed` or `failed`.
 
         Required scope: `clusters:imports:write`
@@ -23309,6 +23837,12 @@ components:
         preview:
           type: boolean
           description: Whether this feature is currently in preview and may change.
+        experimental:
+          type: boolean
+          description: Whether Keycloak marks this feature experimental. Experimental features may change or be removed between releases.
+        dangerous:
+          type: boolean
+          description: Whether turning this feature on has security implications that need explicit confirmation.
         min_version:
           type: string
           allOf:
@@ -23912,6 +24446,9 @@ components:
           allOf:
             - $ref: '#/components/schemas/KeycloakVersion'
           description: Version of the step in progress. Absent when no step is running. The version the cluster runs is `reached_version`.
+        cancel_requested:
+          type: boolean
+          description: Set once a cancel was accepted while a step is in progress. `status` stays `running` until that step ends, then usually becomes `cancelled`, or `failed` if that step fails. The field stays set on the ended path.
         steps:
           type: array
           items:
@@ -26191,6 +26728,49 @@ components:
     PaginationHeaders:
       type: object
       description: RFC 8288 pagination headers.
+    PasswordBlacklistFile:
+      type: object
+      required:
+        - name
+        - size
+        - sha256
+        - status
+        - created_at
+        - updated_at
+      properties:
+        name:
+          $ref: '#/components/schemas/PasswordBlacklistFileName'
+        size:
+          type: integer
+          format: int64
+          description: Size of the file in bytes.
+        sha256:
+          type: string
+          x-oapi-codegen-extra-tags:
+            validate: omitnil,max=500
+          description: Hex-encoded SHA-256 of the file content.
+        status:
+          $ref: '#/components/schemas/PasswordBlacklistFileStatus'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      description: 'A password blacklist file kept for a dedicated cluster. Files cannot be changed: new content needs a new name.'
+    PasswordBlacklistFileName:
+      type: string
+      minLength: 1
+      maxLength: 255
+      pattern: ^([A-Za-z0-9_][A-Za-z0-9._-]*|\.[A-Za-z0-9_-][A-Za-z0-9._-]*|\.\.[A-Za-z0-9._-]+)$
+      description: 'Name of a password blacklist file: letters, digits, dot, dash and underscore, up to 255 characters. It is the name a realm password policy refers to, as in `passwordBlacklist(<name>)`.'
+    PasswordBlacklistFileStatus:
+      type: string
+      enum:
+        - waiting_for_restart
+        - delivering
+        - ready
+        - failed
     PerformanceMetrics:
       type: object
       required:
