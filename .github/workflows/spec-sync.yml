@@ -27,6 +27,8 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    env:
+      VERIFY_ATTEMPTS: 3
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -68,11 +70,32 @@ jobs:
       - name: Regenerate the API client
         run: make generate
 
+      # The plan-level tests drive the provider through the Terraform CLI. Install
+      # it here (same as test.yml) so they find it on PATH instead of downloading
+      # it at test time, where one 502 failed a run. Not fatal: if the install
+      # blips, the retried tests fall back to downloading the CLI themselves, so
+      # the install alone can't fail the run.
+      - uses: hashicorp/setup-terraform@v3
+        continue-on-error: true
+        with:
+          terraform_wrapper: false
+
+      # Retried because a network blip is transient; a compile or test error
+      # fails every attempt and still ends red.
       - name: Build & test against the new client
         id: verify
         continue-on-error: true
         run: |
-          go vet ./... && go build ./... && go test ./...
+          for attempt in $(seq 1 "$VERIFY_ATTEMPTS"); do
+            if go vet ./... && go build ./... && go test ./...; then
+              exit 0
+            fi
+            if [ "$attempt" -lt "$VERIFY_ATTEMPTS" ]; then
+              echo "::warning::Build/test attempt $attempt of $VERIFY_ATTEMPTS failed; retrying in $((attempt * 15))s"
+              sleep $((attempt * 15))
+            fi
+          done
+          exit 1
 
       - name: Compute API coverage report
         id: coverage
@@ -105,7 +128,7 @@ jobs:
             Automated sync from app `${{ steps.ref.outputs.ref }}`.
 
             - Build & tests after regeneration: **${{ steps.verify.outcome }}**
-              (if `failure`, the spec changed in a way that needs the generated-code consumers updated).
+              (if `failure`, check the run log: fix the generated-code consumers here, or re-run the job if it was a download/network error).
 
             ### API operation coverage
             ```
@@ -135,8 +158,14 @@ jobs:
           PR: ${{ steps.pr.outputs.pull-request-number }}
         run: gh pr merge "$PR" --disable-auto || true
 
-      - name: Fail the run when the regenerated client breaks the build
-        if: steps.verify.outcome == 'failure'
+      # Only fails when a sync PR exists. With no spec change there is nothing to
+      # fix or release, so a verify failure must not turn the run red.
+      - name: Fail the run when the sync PR does not build or test
+        if: steps.pr.outputs.pull-request-number != '' && steps.verify.outcome == 'failure'
         run: |
-          echo "::error::Spec sync broke build/test; fix the generated-code consumers on the sync PR, then merge it by hand; it releases once merged."
+          echo "::error::Build/test failed after regeneration (after $VERIFY_ATTEMPTS attempts). If the log shows a compile or test error, fix the generated-code consumers on the sync PR, then merge it by hand; it releases once merged. If it shows a download/network error, re-run the job."
           exit 1
+
+      - name: Warn when build/test failed but the spec did not change
+        if: steps.pr.outputs.pull-request-number == '' && steps.verify.outcome == 'failure'
+        run: echo "::warning::Build/test failed after regeneration (after $VERIFY_ATTEMPTS attempts), but the spec did not change so there is no sync PR and nothing to release. If the log shows a download/network error, re-run the job."
