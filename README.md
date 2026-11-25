@@ -75,6 +75,7 @@ honor the `Retry-After` header.
 | `skycloak_login_branding` | Login-page branding for a realm |
 | `skycloak_email_branding` | Email-template branding for a realm |
 | `skycloak_custom_theme` | Uploads a custom theme archive to a cluster (a new archive is deployed in place) |
+| `skycloak_password_blacklist_file` | Uploads a password blacklist file to a dedicated cluster (new content needs a new name) |
 | `skycloak_theme_assignment` | Realm-level custom theme per Keycloak theme type |
 | `skycloak_client_theme_assignment` | Per-client login-theme override |
 | `skycloak_cluster_extension` | A marketplace extension installed on a cluster |
