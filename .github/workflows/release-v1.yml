@@ -1,0 +1,66 @@
+name: release-v1
+
+# Publishes v1.0.0 by tagging main. Run by hand only; nothing triggers it. The
+# tag is pushed with the releaser app token, because a tag pushed with
+# GITHUB_TOKEN would not start release.yml, which builds and signs the release.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: release-v1
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      VERSION: v1.0.0
+    steps:
+      # No persisted credentials: the push below uses the app token.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check that v1.0.0 can be published from this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "::error::$VERSION already exists; a published release is never retagged"
+            exit 1
+          fi
+          # Published only from a commit whose tests passed.
+          passed=$(gh run list --workflow test --commit "$GITHUB_SHA" --status success --json databaseId --jq 'length')
+          if [ "$passed" -lt 1 ]; then
+            echo "::error::the test workflow has no successful run for $GITHUB_SHA"
+            exit 1
+          fi
+          # The changelog entry is the release's record, so it must be there.
+          if ! grep -q '^## \[1\.0\.0\]' CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no 1.0.0 entry"
+            exit 1
+          fi
+
+      - name: Mint the releaser app token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.RELEASER_APP_ID }}
+          private-key: ${{ secrets.RELEASER_PRIVATE_KEY }}
+
+      - name: Tag the release
+        env:
+          TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "skycloak-releaser-bot[bot]"
+          git config user.email "skycloak-releaser-bot[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "$VERSION"
+          git push "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "refs/tags/$VERSION"
