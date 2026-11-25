@@ -338,3 +338,113 @@ func TestPasswordBlacklistFileImportState(t *testing.T) {
 		}
 	}
 }
+
+func runBlacklistUpdate(t *testing.T, endpoint string, state, plan passwordBlacklistFileResourceModel) (passwordBlacklistFileResourceModel, resource.UpdateResponse) {
+	t.Helper()
+	s := blacklistSchema(t)
+	r := &passwordBlacklistFileResource{client: skycloak.New(endpoint, "sk_sc_test_aaa_bbb", "")}
+	req := resource.UpdateRequest{
+		State: tfsdk.State{Schema: s, Raw: blacklistRaw(t, s, state)},
+		Plan:  tfsdk.Plan{Schema: s, Raw: blacklistRaw(t, s, plan)},
+	}
+	resp := resource.UpdateResponse{State: tfsdk.State{Schema: s, Raw: blacklistRaw(t, s, state)}}
+	r.Update(context.Background(), req, &resp)
+	var out passwordBlacklistFileResourceModel
+	if !resp.State.Raw.IsNull() {
+		resp.State.Get(context.Background(), &out)
+	}
+	return out, resp
+}
+
+// TestPasswordBlacklistFileUpdateKnownValues runs Update with the computed
+// size and status unknown, as Terraform plans them, and checks the state
+// written has known values read back from the API.
+func TestPasswordBlacklistFileUpdateKnownValues(t *testing.T) {
+	oldPath, _ := blacklistFile(t, "pass")
+	movedPath, sum := blacklistFile(t, "pass")
+
+	cases := map[string]struct {
+		state passwordBlacklistFileResourceModel
+		plan  func(m passwordBlacklistFileResourceModel) passwordBlacklistFileResourceModel
+	}{
+		"first apply after import": {
+			state: passwordBlacklistFileResourceModel{
+				ID: types.StringValue("common"), ClusterID: types.StringValue(testBlacklistClusterID), Name: types.StringValue("common"),
+				Source: types.StringNull(), ApplyNow: types.BoolValue(false), ContentSHA256: types.StringValue(sum),
+				Size: types.Int64Value(4), Status: types.StringValue("ready"),
+			},
+			plan: func(m passwordBlacklistFileResourceModel) passwordBlacklistFileResourceModel { return m },
+		},
+		"source path moved": {
+			state: blacklistModel(oldPath, "common", sum),
+			plan: func(m passwordBlacklistFileResourceModel) passwordBlacklistFileResourceModel {
+				m.Source = types.StringValue(movedPath)
+				return m
+			},
+		},
+		"apply_now toggled": {
+			state: blacklistModel(movedPath, "common", sum),
+			plan: func(m passwordBlacklistFileResourceModel) passwordBlacklistFileResourceModel {
+				m.ApplyNow = types.BoolValue(true)
+				return m
+			},
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			api := &blacklistAPI{statuses: []string{"ready"}, sha: sum}
+			srv := api.server(t)
+			defer srv.Close()
+
+			plan := tc.plan(unknownComputed(blacklistModel(movedPath, "common", sum)))
+			plan.Source = tc.plan(tc.state).Source
+			if plan.Source.IsNull() {
+				plan.Source = types.StringValue(movedPath)
+			}
+			plan.ApplyNow = tc.plan(tc.state).ApplyNow
+			plan.ContentSHA256 = types.StringValue(sum)
+			plan.ID = types.StringValue("common")
+
+			got, resp := runBlacklistUpdate(t, srv.URL, tc.state, plan)
+			if resp.Diagnostics.HasError() {
+				t.Fatalf("diagnostics: %v", resp.Diagnostics)
+			}
+			if got.Size.IsUnknown() || got.Status.IsUnknown() || got.Size.ValueInt64() != 4 || got.Status.ValueString() != "ready" {
+				t.Errorf("state = %+v, want known size and status from the API", got)
+			}
+			if got.Source.ValueString() != plan.Source.ValueString() || got.ApplyNow.ValueBool() != plan.ApplyNow.ValueBool() {
+				t.Errorf("source and apply_now must follow the plan: %+v", got)
+			}
+		})
+	}
+}
+
+func TestPasswordBlacklistFileModifyPlanLimitsAndCluster(t *testing.T) {
+	oldPath, oldSHA := blacklistFile(t, "old\n")
+	newPath, _ := blacklistFile(t, "new\n")
+
+	t.Run("oversized file is refused", func(t *testing.T) {
+		big := filepath.Join(t.TempDir(), "big.txt")
+		f, err := os.Create(big)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := f.Truncate(passwordBlacklistMaxBytes + 1); err != nil {
+			t.Fatal(err)
+		}
+		f.Close()
+		resp := runBlacklistModifyPlan(t, nil, blacklistModel(big, "common", ""))
+		if !resp.Diagnostics.HasError() {
+			t.Fatal("expected an error for a file over 25 MB")
+		}
+	})
+
+	t.Run("new content on another cluster is a replacement", func(t *testing.T) {
+		state := blacklistModel(oldPath, "common", oldSHA)
+		plan := blacklistModel(newPath, "common", oldSHA)
+		plan.ClusterID = types.StringValue("22222222-2222-2222-2222-222222222222")
+		if resp := runBlacklistModifyPlan(t, &state, plan); resp.Diagnostics.HasError() {
+			t.Fatalf("diagnostics: %v", resp.Diagnostics)
+		}
+	})
+}

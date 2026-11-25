@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -21,6 +22,9 @@ import (
 // the cluster. It covers the restart that adds the blacklist folder when
 // apply_now is set, so it is longer than a theme deploy.
 const passwordBlacklistWaitTimeout = 15 * time.Minute
+
+// passwordBlacklistMaxBytes is the largest file the API accepts.
+const passwordBlacklistMaxBytes = 25 * 1024 * 1024
 
 var (
 	_ resource.Resource                = (*passwordBlacklistFileResource)(nil)
@@ -73,7 +77,7 @@ func (r *passwordBlacklistFileResource) Schema(_ context.Context, _ resource.Sch
 			"source": schema.StringAttribute{Required: true, MarkdownDescription: "Path to the file to upload, one password per line, up to 25 MB."},
 			"apply_now": schema.BoolAttribute{
 				Optional: true, Computed: true, Default: booldefault.StaticBool(false),
-				MarkdownDescription: "Restart the cluster at once to add the blacklist folder instead of waiting for the maintenance window, and wait for the file to be `ready`. Defaults to `false`. It only matters for the first file on a cluster, or while an earlier file is still waiting for the restart. It is not stored by the API, so it reads as `false` after an import.",
+				MarkdownDescription: "Restart the cluster at once to add the blacklist folder instead of waiting for the maintenance window, and wait for the file to be `ready`. Defaults to `false`. It only matters when the file is created, for the first file on a cluster, or while an earlier file is still waiting for the restart. Changing it on an existing file does nothing. It is not stored by the API, so it reads as `false` after an import.",
 			},
 			"content_sha256": schema.StringAttribute{
 				Computed:            true,
@@ -109,6 +113,16 @@ func (r *passwordBlacklistFileResource) ModifyPlan(ctx context.Context, req reso
 	if resp.Diagnostics.HasError() || plan.Source.IsUnknown() || plan.Source.IsNull() {
 		return
 	}
+	info, err := os.Stat(plan.Source.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to read password blacklist file", err.Error())
+		return
+	}
+	if info.Size() > passwordBlacklistMaxBytes {
+		resp.Diagnostics.AddAttributeError(path.Root("source"), "Password blacklist file is too large",
+			fmt.Sprintf("The file is %d bytes; a password blacklist file can be at most 25 MB.", info.Size()))
+		return
+	}
 	hash, err := fileSHA256(plan.Source.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read password blacklist file", err.Error())
@@ -124,7 +138,7 @@ func (r *passwordBlacklistFileResource) ModifyPlan(ctx context.Context, req reso
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if state.Name.Equal(plan.Name) && state.ContentSHA256.ValueString() != hash {
+	if state.ClusterID.Equal(plan.ClusterID) && state.Name.Equal(plan.Name) && state.ContentSHA256.ValueString() != hash {
 		resp.Diagnostics.AddAttributeError(path.Root("source"), "Password blacklist files cannot be changed",
 			fmt.Sprintf("The content of %q differs from the file already on the cluster. Files are immutable: set a new name to upload the new content.", plan.Name.ValueString()))
 	}
@@ -200,13 +214,20 @@ func (r *passwordBlacklistFileResource) Read(ctx context.Context, req resource.R
 
 // Update only records configuration the API does not own: the local source path
 // and apply_now. Content and name changes never reach it, because the first is
-// refused at plan time and the second replaces the file.
+// refused at plan time and the second replaces the file. The computed fields
+// are unknown in the plan, so they are read back from the API.
 func (r *passwordBlacklistFileResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan passwordBlacklistFileResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	file, err := r.client.GetPasswordBlacklistFile(ctx, plan.ClusterID.ValueString(), plan.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to read password blacklist file", err.Error())
+		return
+	}
+	applyPasswordBlacklistFileToModel(file, &plan)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 

@@ -49,7 +49,7 @@ resource "skycloak_password_blacklist_file" "common" {
 
 ### Optional
 
-- `apply_now` (Boolean) Restart the cluster at once to add the blacklist folder instead of waiting for the maintenance window, and wait for the file to be `ready`. Defaults to `false`. It only matters for the first file on a cluster, or while an earlier file is still waiting for the restart. It is not stored by the API, so it reads as `false` after an import.
+- `apply_now` (Boolean) Restart the cluster at once to add the blacklist folder instead of waiting for the maintenance window, and wait for the file to be `ready`. Defaults to `false`. It only matters when the file is created, for the first file on a cluster, or while an earlier file is still waiting for the restart. Changing it on an existing file does nothing. It is not stored by the API, so it reads as `false` after an import.
 
 ### Read-Only
 
