@@ -74,8 +74,11 @@ To try the provider by hand, build it and point Terraform at the local binary wi
 - **State compatibility:** never remove/rename an attribute without a state-upgrade path; new attributes are `Optional`/`Computed`.
 - **API surface** is pinned via the `api_version` provider argument (`API-Version` header), independent of the provider version.
 - **Conventional commits** (`feat:`/`fix:`/`docs:`…) drive release notes.
-- **Releasing:** releases are cut by pushing a `vX.Y.Z` tag; the repo no longer tags itself. Move `## [Unreleased]` under a new version heading, then push the tag:
-  ```bash
-  git tag vX.Y.Z && git push origin vX.Y.Z
-  ```
-  The `release` workflow runs on every `v*` tag push: `goreleaser` builds the provider, GPG-signs the checksums, and publishes the GitHub release. The Terraform Registry picks up new signed `vX.Y.Z` tags once the provider is listed.
+- **Releasing:** the repo does not tag itself; a release is a `vX.Y.Z` tag, and the `release` workflow runs on every `v*` tag push: `goreleaser` builds the provider, GPG-signs the checksums, and publishes the GitHub release. The Terraform Registry picks up new signed tags once the provider is listed. Two lines exist (see [ADR 0005](docs/adr/0005-release-lines-and-v1-gate.md)):
+  - `release-0.x` carries managed Keycloak only and takes fixes and spec syncs until v1.0.0. Move `## [Unreleased]` under a new version heading, then tag from that branch:
+    ```bash
+    git tag v0.X.Y && git push origin v0.X.Y
+    ```
+  - `main` publishes no release until v1.0.0 exists. v1.0.0 is published by running the `release-v1` workflow by hand on `main`; it needs a passing `test` run for the commit and a `## [1.0.0]` changelog entry, and its environment requires an owner's approval. After that, 1.x tags are pushed from `main`.
+
+  The `release` workflow refuses a `v0.*` tag that is not on `release-0.x` and any `v1.*` tag before v1.0.0 exists.

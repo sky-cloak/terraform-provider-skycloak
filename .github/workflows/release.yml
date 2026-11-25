@@ -14,6 +14,10 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      # A pushed tag is published only from its own line: v0.* from release-0.x,
+      # v1.* and later from main, and no v1.* before v1.0.0.
+      - name: Check the tag is on its release line
+        run: scripts/release/check-release-tag.sh "$GITHUB_REF_NAME"
       - uses: actions/setup-go@v6
         with:
           go-version: "1.25"

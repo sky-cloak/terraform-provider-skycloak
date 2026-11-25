@@ -1,6 +1,7 @@
 name: spec-sync
 
-# Regenerates the API client from the app release prod serves and opens a PR. A
+# Regenerates the API client from the app release prod serves and opens a PR on
+# main and, until v1.0.0 exists, on release-0.x. A
 # sync that builds and tests cleanly merges itself once its checks pass, and
 # ships with the next release. Runs when app releases or rolls back
 # (repository_dispatch: openapi-updated, carrying the tag), or by hand with a
@@ -25,12 +26,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The branches to sync: main, and release-0.x until v1.0.0 exists.
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      branches: ${{ steps.branches.outputs.branches }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: List the branches to sync
+        id: branches
+        run: |
+          set -euo pipefail
+          branches=$(scripts/release/spec-sync-branches.sh)
+          echo "branches=$branches" >> "$GITHUB_OUTPUT"
+
   sync:
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJSON(needs.plan.outputs.branches) }}
     runs-on: ubuntu-latest
     env:
       VERIFY_ATTEMPTS: 3
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ matrix.branch }}
       - uses: actions/setup-go@v6
         with:
           go-version: "1.25"
@@ -120,7 +142,8 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ steps.app-token.outputs.token }}
-          branch: chore/openapi-sync
+          branch: chore/openapi-sync-${{ matrix.branch }}
+          base: ${{ matrix.branch }}
           title: "chore: sync OpenAPI spec from app ${{ steps.ref.outputs.ref }}"
           commit-message: "chore: sync OpenAPI spec from app ${{ steps.ref.outputs.ref }}"
           delete-branch: true

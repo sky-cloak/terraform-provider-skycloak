@@ -15,8 +15,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Fails loudly off main, so a run from another branch never looks like a quiet
+  # success.
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require main
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [ "$REF" != refs/heads/main ]; then
+            echo "::error::release-v1 runs on main only; this run is on $REF"
+            exit 1
+          fi
+
   tag:
-    if: github.ref == 'refs/heads/main'
+    needs: guard
+    # Protected environment: set required reviewers on it, so only an owner
+    # approves the publish.
+    environment: release-v1
     runs-on: ubuntu-latest
     env:
       VERSION: v1.0.0
@@ -30,23 +47,7 @@ jobs:
       - name: Check that v1.0.0 can be published from this commit
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
-            echo "::error::$VERSION already exists; a published release is never retagged"
-            exit 1
-          fi
-          # Published only from a commit whose tests passed.
-          passed=$(gh run list --workflow test --commit "$GITHUB_SHA" --status success --json databaseId --jq 'length')
-          if [ "$passed" -lt 1 ]; then
-            echo "::error::the test workflow has no successful run for $GITHUB_SHA"
-            exit 1
-          fi
-          # The changelog entry is the release's record, so it must be there.
-          if ! grep -q '^## \[1\.0\.0\]' CHANGELOG.md; then
-            echo "::error::CHANGELOG.md has no 1.0.0 entry"
-            exit 1
-          fi
+        run: scripts/release/check-v1-release.sh "$VERSION" "$GITHUB_SHA"
 
       - name: Mint the releaser app token
         id: app-token
