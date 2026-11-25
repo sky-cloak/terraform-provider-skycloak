@@ -432,7 +432,9 @@ func TestPasswordBlacklistFileModifyPlanLimitsAndCluster(t *testing.T) {
 		if err := f.Truncate(passwordBlacklistMaxBytes + 1); err != nil {
 			t.Fatal(err)
 		}
-		f.Close()
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
 		resp := runBlacklistModifyPlan(t, nil, blacklistModel(big, "common", ""))
 		if !resp.Diagnostics.HasError() {
 			t.Fatal("expected an error for a file over 25 MB")
