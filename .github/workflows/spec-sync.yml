@@ -2,7 +2,7 @@ name: spec-sync
 
 # Regenerates the API client from the app release prod serves and opens a PR. A
 # sync that builds and tests cleanly merges itself once its checks pass, and
-# auto-release.yml tags it. Runs when app releases or rolls back
+# ships with the next release. Runs when app releases or rolls back
 # (repository_dispatch: openapi-updated, carrying the tag), or by hand with a
 # tag. No schedule: guessing the latest release would sync past a rollback.
 on:
@@ -163,7 +163,7 @@ jobs:
       - name: Fail the run when the sync PR does not build or test
         if: steps.pr.outputs.pull-request-number != '' && steps.verify.outcome == 'failure'
         run: |
-          echo "::error::Build/test failed after regeneration (after $VERIFY_ATTEMPTS attempts). If the log shows a compile or test error, fix the generated-code consumers on the sync PR, then merge it by hand; it releases once merged. If it shows a download/network error, re-run the job."
+          echo "::error::Build/test failed after regeneration (after $VERIFY_ATTEMPTS attempts). If the log shows a compile or test error, fix the generated-code consumers on the sync PR, then merge it by hand; it ships with the next release. If it shows a download/network error, re-run the job."
           exit 1
 
       - name: Warn when build/test failed but the spec did not change
