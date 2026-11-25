@@ -72,8 +72,11 @@ jobs:
 
       # The plan-level tests drive the provider through the Terraform CLI. Install
       # it here (same as test.yml) so they find it on PATH instead of downloading
-      # it at test time, where one 502 failed a run.
+      # it at test time, where one 502 failed a run. Not fatal: if the install
+      # blips, the retried tests fall back to downloading the CLI themselves, so
+      # the install alone can't fail the run.
       - uses: hashicorp/setup-terraform@v3
+        continue-on-error: true
         with:
           terraform_wrapper: false
 
