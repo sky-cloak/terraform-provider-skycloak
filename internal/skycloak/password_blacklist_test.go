@@ -62,7 +62,7 @@ func TestUploadPasswordBlacklistFileOmitsApplyNowByDefault(t *testing.T) {
 }
 
 func TestUploadPasswordBlacklistFileRefused(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusConflict, `{"title":"Conflict","status":409,"detail":"name exists"}`)
 	}))
 	defer srv.Close()
@@ -101,7 +101,7 @@ func TestGetAndDeletePasswordBlacklistFile(t *testing.T) {
 }
 
 func TestDeletePasswordBlacklistFileInUse(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusConflict, `{"title":"Conflict","status":409,"detail":"a realm policy names the file"}`)
 	}))
 	defer srv.Close()
@@ -133,7 +133,7 @@ func TestWaitForPasswordBlacklistFile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gets := 0
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				s := tt.statuses[min(gets, len(tt.statuses)-1)]
 				gets++
 				writeJSON(w, http.StatusOK, blacklistBody(s))
