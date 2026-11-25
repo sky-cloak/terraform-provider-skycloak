@@ -119,6 +119,7 @@ func (p *skycloakProvider) Resources(_ context.Context) []func() resource.Resour
 		NewClusterExtensionResource,
 		NewExportResource,
 		NewCustomThemeResource,
+		NewPasswordBlacklistFileResource,
 		NewCustomExtensionResource,
 		NewClusterSecurityResource,
 		NewRealmRoleResource,
