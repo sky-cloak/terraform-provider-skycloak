@@ -74,6 +74,7 @@ g tag -f v0.9.1 main >/dev/null
 g checkout -q main
 git clone -q "$origin" "$tmp/clone"
 git -C "$tmp/clone" fetch -q origin release-0.x:refs/remotes/origin/release-0.x
+# shellcheck disable=SC2329 # called through expect
 run() { (cd "$tmp/clone" && "$here/check-release-tag.sh" "$1"); }
 expect "a v0 tag on release-0.x is accepted" 0 "" -- run v0.9.0
 expect "a v0 tag on main is refused" 1 "" -- run v0.9.1
