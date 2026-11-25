@@ -74,8 +74,8 @@ To try the provider by hand, build it and point Terraform at the local binary wi
 - **State compatibility:** never remove/rename an attribute without a state-upgrade path; new attributes are `Optional`/`Computed`.
 - **API surface** is pinned via the `api_version` provider argument (`API-Version` header), independent of the provider version.
 - **Conventional commits** (`feat:`/`fix:`/`docs:`…) drive release notes.
-- **Releasing:** move `## [Unreleased]` under a new version heading, then tag:
+- **Releasing:** releases are cut by pushing a `vX.Y.Z` tag; the repo no longer tags itself. Move `## [Unreleased]` under a new version heading, then push the tag:
   ```bash
-  git tag v0.1.0 && git push origin v0.1.0
+  git tag vX.Y.Z && git push origin vX.Y.Z
   ```
-  The `release` workflow runs `goreleaser`, GPG-signs the checksums, and publishes the GitHub release. The Terraform Registry picks up new signed `vX.Y.Z` tags once the provider is listed.
+  The `release` workflow runs on every `v*` tag push: `goreleaser` builds the provider, GPG-signs the checksums, and publishes the GitHub release. The Terraform Registry picks up new signed `vX.Y.Z` tags once the provider is listed.
