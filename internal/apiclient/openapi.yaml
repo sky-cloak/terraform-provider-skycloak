@@ -5785,7 +5785,12 @@ paths:
     get:
       operationId: getClusterFeatures
       summary: Get the cluster's feature flags
-      description: Returns the enabled feature flags and any change still rolling out.
+      description: |-
+        Returns the Keycloak feature flags enabled on the cluster and any change still rolling out: `pending` until the
+        cluster's maintenance window, or `applying` while Keycloak restarts. A cluster that is updating for another reason, such as a resize or an upgrade, is also reported as `applying`. Flags that only Skycloak can set are not
+        listed. See `GET /cluster-features` for the flags you can enable.
+
+        Required scope: `clusters:read`
       parameters:
         - name: cluster_id
           in: path
@@ -5888,7 +5893,20 @@ paths:
     put:
       operationId: replaceClusterFeatures
       summary: Replace the cluster's feature flags
-      description: Replaces all customer-managed enabled feature flags. Changes restart Keycloak.
+      description: |-
+        Replaces the cluster's whole set of enabled feature flags; flags left out are turned off. Flags that only
+        Skycloak can set are left as they are. A change restarts Keycloak, and the response says so.
+
+        When the cluster has a maintenance window the change stays `pending` until the window opens. Set `apply_now`
+        to restart at once. A cluster without a maintenance window applies the change at once. A request that leaves
+        the set as it was restarts nothing, unless a change is still pending: the response then reports that change, and
+        `apply_now` restarts at once. A cluster that is updating for another reason is reported the same way.
+
+        Returns `422` when a flag is unknown or the cluster's Keycloak version is below the flag's minimum version,
+        `403` when a trial workspace has not been approved to change flags, and `409` when the cluster is not
+        `available`.
+
+        Required scope: `clusters:write`
       parameters:
         - name: cluster_id
           in: path
@@ -24061,14 +24079,14 @@ components:
         next_window:
           type: string
           format: date-time
+          description: When the maintenance window next opens. Present for a `pending` change whose window could be resolved.
+      description: A feature flag change that has not finished rolling out.
     ClusterFeatureChangeState:
       type: string
       enum:
         - pending
         - applying
-      x-enum-varnames:
-        - ClusterFeatureChangeStatePending
-        - ClusterFeatureChangeStateApplying
+      description: Where a Keycloak feature flag change stands.
     ClusterFeatureInfo:
       type: object
       required:
@@ -24120,8 +24138,14 @@ components:
           type: array
           items:
             type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          description: Enabled feature flags. While a change is pending or applying this is the requested set, which Keycloak runs once the change finishes.
         change:
-          $ref: '#/components/schemas/ClusterFeatureChange'
+          allOf:
+            - $ref: '#/components/schemas/ClusterFeatureChange'
+          description: The change still rolling out. Absent when nothing is pending.
+      description: The Keycloak feature flags you manage on a cluster. Flags that only Skycloak can set are not listed and are never changed through this API.
     ClusterFeatureUpdate:
       type: object
       required:
@@ -24132,12 +24156,20 @@ components:
           type: array
           items:
             type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          description: The enabled feature flags after the change.
         restarts_keycloak:
           type: boolean
+          description: True when the change restarts Keycloak, including a change from an earlier request that is still pending. False when the request left the set as it was and nothing is pending.
         change:
-          $ref: '#/components/schemas/ClusterFeatureChange'
+          allOf:
+            - $ref: '#/components/schemas/ClusterFeatureChange'
+          description: Whether the restart is `pending` for the maintenance window or `applying` now. Absent when nothing restarts.
         impact:
           type: string
+          description: Customer-facing description of how disruptive the restart is for this cluster's size. Absent when nothing restarts.
+      description: Outcome of replacing a cluster's feature flags.
     ClusterId:
       type: string
       format: uuid
@@ -27802,9 +27834,18 @@ components:
           type: array
           items:
             type: string
+            x-oapi-codegen-extra-tags:
+              validate: omitnil,max=500
+          description: The complete set of enabled feature flags. Flags missing from the list are turned off. Flags that only Skycloak can set and that are already on the cluster are ignored; other flags outside the list from `GET /cluster-features` are refused.
         apply_now:
           type: boolean
+          description: Restart Keycloak at once instead of waiting for the cluster's maintenance window. Has no effect on a cluster without a maintenance window, which always applies at once. Defaults to `false`.
           default: false
+      description: Replaces the cluster's whole set of enabled feature flags.
+      example:
+        features:
+          - token-exchange
+        apply_now: false
     ResponseTimeMetrics:
       type: object
       required:

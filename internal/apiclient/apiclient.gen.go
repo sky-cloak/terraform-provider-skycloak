@@ -519,10 +519,10 @@ const (
 
 // Defines values for ThemeStatus.
 const (
-	Deployed    ThemeStatus = "deployed"
-	Deploying   ThemeStatus = "deploying"
-	Failed      ThemeStatus = "failed"
-	Undeploying ThemeStatus = "undeploying"
+	ThemeStatusDeployed    ThemeStatus = "deployed"
+	ThemeStatusDeploying   ThemeStatus = "deploying"
+	ThemeStatusFailed      ThemeStatus = "failed"
+	ThemeStatusUndeploying ThemeStatus = "undeploying"
 )
 
 // Defines values for ThemeType.
@@ -1066,13 +1066,16 @@ type ClusterExtension struct {
 // ClusterExtensionStatus defines model for ClusterExtensionStatus.
 type ClusterExtensionStatus string
 
-// ClusterFeatureChange defines model for ClusterFeatureChange.
+// ClusterFeatureChange A feature flag change that has not finished rolling out.
 type ClusterFeatureChange struct {
-	NextWindow *time.Time                `json:"next_window,omitempty"`
-	State      ClusterFeatureChangeState `json:"state"`
+	// NextWindow When the maintenance window next opens. Present for a `pending` change whose window could be resolved.
+	NextWindow *time.Time `json:"next_window,omitempty"`
+
+	// State Where a Keycloak feature flag change stands.
+	State ClusterFeatureChangeState `json:"state"`
 }
 
-// ClusterFeatureChangeState defines model for ClusterFeatureChangeState.
+// ClusterFeatureChangeState Where a Keycloak feature flag change stands.
 type ClusterFeatureChangeState string
 
 // ClusterFeatureInfo Metadata about a Keycloak feature flag available for tenant clusters.
@@ -1102,18 +1105,28 @@ type ClusterFeatureInfo struct {
 	Preview bool `json:"preview"`
 }
 
-// ClusterFeatureSet defines model for ClusterFeatureSet.
+// ClusterFeatureSet The Keycloak feature flags you manage on a cluster. Flags that only Skycloak can set are not listed and are never changed through this API.
 type ClusterFeatureSet struct {
-	Change   *ClusterFeatureChange `json:"change,omitempty"`
-	Features []string              `json:"features"`
+	// Change The change still rolling out. Absent when nothing is pending.
+	Change *ClusterFeatureChange `json:"change,omitempty"`
+
+	// Features Enabled feature flags. While a change is pending or applying this is the requested set, which Keycloak runs once the change finishes.
+	Features []string `json:"features"`
 }
 
-// ClusterFeatureUpdate defines model for ClusterFeatureUpdate.
+// ClusterFeatureUpdate Outcome of replacing a cluster's feature flags.
 type ClusterFeatureUpdate struct {
-	Change           *ClusterFeatureChange `json:"change,omitempty"`
-	Features         []string              `json:"features"`
-	Impact           *string               `json:"impact,omitempty"`
-	RestartsKeycloak bool                  `json:"restarts_keycloak"`
+	// Change Whether the restart is `pending` for the maintenance window or `applying` now. Absent when nothing restarts.
+	Change *ClusterFeatureChange `json:"change,omitempty"`
+
+	// Features The enabled feature flags after the change.
+	Features []string `json:"features"`
+
+	// Impact Customer-facing description of how disruptive the restart is for this cluster's size. Absent when nothing restarts.
+	Impact *string `json:"impact,omitempty"`
+
+	// RestartsKeycloak True when the change restarts Keycloak, including a change from an earlier request that is still pending. False when the request left the set as it was and nothing is pending.
+	RestartsKeycloak bool `json:"restarts_keycloak"`
 }
 
 // ClusterId defines model for ClusterId.
@@ -2994,9 +3007,12 @@ type RegistrationAnalytics struct {
 	TotalRegistrations        int64                  `json:"total_registrations"`
 }
 
-// ReplaceClusterFeaturesRequest defines model for ReplaceClusterFeaturesRequest.
+// ReplaceClusterFeaturesRequest Replaces the cluster's whole set of enabled feature flags.
 type ReplaceClusterFeaturesRequest struct {
-	ApplyNow *bool    `json:"apply_now,omitempty"`
+	// ApplyNow Restart Keycloak at once instead of waiting for the cluster's maintenance window. Has no effect on a cluster without a maintenance window, which always applies at once. Defaults to `false`.
+	ApplyNow *bool `json:"apply_now,omitempty"`
+
+	// Features The complete set of enabled feature flags. Flags missing from the list are turned off. Flags that only Skycloak can set and that are already on the cluster are ignored; other flags outside the list from `GET /cluster-features` are refused.
 	Features []string `json:"features"`
 }
 
