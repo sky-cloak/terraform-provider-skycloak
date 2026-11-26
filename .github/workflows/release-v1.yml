@@ -1,0 +1,68 @@
+name: release-v1
+
+# Publishes v1.0.0 by tagging main. Run by hand only; nothing triggers it. The
+# tag is pushed with the releaser app token, because a tag pushed with
+# GITHUB_TOKEN would not start release.yml, which builds and signs the release.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: release-v1
+  cancel-in-progress: false
+
+jobs:
+  # Fails loudly off main, so a run from another branch never looks like a quiet
+  # success.
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require main
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [ "$REF" != refs/heads/main ]; then
+            echo "::error::release-v1 runs on main only; this run is on $REF"
+            exit 1
+          fi
+
+  tag:
+    needs: guard
+    # Protected environment: create release-v1 with required reviewers before the
+    # first run, because GitHub creates a missing environment with no protection
+    # and the owner approval would silently not apply.
+    environment: release-v1
+    runs-on: ubuntu-latest
+    env:
+      VERSION: v1.0.0
+    steps:
+      # No persisted credentials: the push below uses the app token.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check that v1.0.0 can be published from this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/release/check-v1-release.sh "$VERSION" "$GITHUB_SHA"
+
+      - name: Mint the releaser app token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.RELEASER_APP_ID }}
+          private-key: ${{ secrets.RELEASER_PRIVATE_KEY }}
+
+      - name: Tag the release
+        env:
+          TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "skycloak-releaser-bot[bot]"
+          git config user.email "skycloak-releaser-bot[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "$VERSION"
+          git push "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "refs/tags/$VERSION"

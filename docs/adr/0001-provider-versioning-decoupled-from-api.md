@@ -4,7 +4,7 @@ Date: 2026-07-03
 
 ## Status
 
-Accepted
+Accepted. The v1.0.0 gate is replaced by [ADR 0005](0005-release-lines-and-v1-gate.md); the rest stands.
 
 ## Context
 

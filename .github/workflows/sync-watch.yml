@@ -7,7 +7,7 @@ on:
   workflow_run:
     workflows: [test]
     types: [completed]
-    branches: [chore/openapi-sync]
+    branches: [chore/openapi-sync-main, chore/openapi-sync-release-0.x]
 
 permissions:
   contents: read
@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   assign:
-    # Runs from this repo only: a fork PR can name its branch chore/openapi-sync
+    # Runs from this repo only: a fork PR can name its branch chore/openapi-sync-main
     # and even point at the bot PR's commit.
     if: >-
       github.event.workflow_run.conclusion == 'failure' &&
@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           pulls=$(gh api "repos/$REPO/commits/$SHA/pulls")
-          pr=$(jq -r --arg bot "$BOT" '[.[] | select(.state == "open" and .head.ref == "chore/openapi-sync" and .user.login == $bot)][0].number // empty' <<< "$pulls")
+          pr=$(jq -r --arg bot "$BOT" '[.[] | select(.state == "open" and (.head.ref | startswith("chore/openapi-sync-")) and .user.login == $bot)][0].number // empty' <<< "$pulls")
           if [ -z "$pr" ]; then
             echo "No open bot sync PR for $SHA."
             exit 0
