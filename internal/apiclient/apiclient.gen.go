@@ -100,6 +100,12 @@ const (
 	ClusterExtensionStatusRemoving   ClusterExtensionStatus = "removing"
 )
 
+// Defines values for ClusterFeatureChangeState.
+const (
+	ClusterFeatureChangeStateApplying ClusterFeatureChangeState = "applying"
+	ClusterFeatureChangeStatePending  ClusterFeatureChangeState = "pending"
+)
+
 // Defines values for ClusterLocation.
 const (
 	Au     ClusterLocation = "au"
@@ -1060,6 +1066,15 @@ type ClusterExtension struct {
 // ClusterExtensionStatus defines model for ClusterExtensionStatus.
 type ClusterExtensionStatus string
 
+// ClusterFeatureChange defines model for ClusterFeatureChange.
+type ClusterFeatureChange struct {
+	NextWindow *time.Time                `json:"next_window,omitempty"`
+	State      ClusterFeatureChangeState `json:"state"`
+}
+
+// ClusterFeatureChangeState defines model for ClusterFeatureChangeState.
+type ClusterFeatureChangeState string
+
 // ClusterFeatureInfo Metadata about a Keycloak feature flag available for tenant clusters.
 type ClusterFeatureInfo struct {
 	// Dangerous Whether turning this feature on has security implications that need explicit confirmation.
@@ -1085,6 +1100,20 @@ type ClusterFeatureInfo struct {
 
 	// Preview Whether this feature is currently in preview and may change.
 	Preview bool `json:"preview"`
+}
+
+// ClusterFeatureSet defines model for ClusterFeatureSet.
+type ClusterFeatureSet struct {
+	Change   *ClusterFeatureChange `json:"change,omitempty"`
+	Features []string              `json:"features"`
+}
+
+// ClusterFeatureUpdate defines model for ClusterFeatureUpdate.
+type ClusterFeatureUpdate struct {
+	Change           *ClusterFeatureChange `json:"change,omitempty"`
+	Features         []string              `json:"features"`
+	Impact           *string               `json:"impact,omitempty"`
+	RestartsKeycloak bool                  `json:"restarts_keycloak"`
 }
 
 // ClusterId defines model for ClusterId.
@@ -2965,6 +2994,12 @@ type RegistrationAnalytics struct {
 	TotalRegistrations        int64                  `json:"total_registrations"`
 }
 
+// ReplaceClusterFeaturesRequest defines model for ReplaceClusterFeaturesRequest.
+type ReplaceClusterFeaturesRequest struct {
+	ApplyNow *bool    `json:"apply_now,omitempty"`
+	Features []string `json:"features"`
+}
+
 // ResponseTimeMetrics Response time statistics for authentication endpoints.
 type ResponseTimeMetrics struct {
 	Average MetricSeries `json:"average"`
@@ -4270,6 +4305,16 @@ type UpgradeClusterExtensionParams struct {
 	APIVersion CommonParameters `json:"API-Version"`
 }
 
+// GetClusterFeaturesParams defines parameters for GetClusterFeatures.
+type GetClusterFeaturesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
+// ReplaceClusterFeaturesParams defines parameters for ReplaceClusterFeatures.
+type ReplaceClusterFeaturesParams struct {
+	APIVersion CommonParameters `json:"API-Version"`
+}
+
 // GetClusterInsightsAuthenticationParams defines parameters for GetClusterInsightsAuthentication.
 type GetClusterInsightsAuthenticationParams struct {
 	// Realm Restrict metrics to a specific realm.
@@ -5117,6 +5162,9 @@ type CreateExportJSONRequestBody = CreateExportRequest
 // InstallExtensionJSONRequestBody defines body for InstallExtension for application/json ContentType.
 type InstallExtensionJSONRequestBody = InstallExtensionRequest
 
+// ReplaceClusterFeaturesJSONRequestBody defines body for ReplaceClusterFeatures for application/json ContentType.
+type ReplaceClusterFeaturesJSONRequestBody = ReplaceClusterFeaturesRequest
+
 // SetClusterMaintenanceWindowJSONRequestBody defines body for SetClusterMaintenanceWindow for application/json ContentType.
 type SetClusterMaintenanceWindowJSONRequestBody = MaintenanceWindow
 
@@ -5483,6 +5531,14 @@ type ClientInterface interface {
 
 	// UpgradeClusterExtension request
 	UpgradeClusterExtension(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, params *UpgradeClusterExtensionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetClusterFeatures request
+	GetClusterFeatures(ctx context.Context, clusterId ClusterId, params *GetClusterFeaturesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ReplaceClusterFeaturesWithBody request with any body
+	ReplaceClusterFeaturesWithBody(ctx context.Context, clusterId ClusterId, params *ReplaceClusterFeaturesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ReplaceClusterFeatures(ctx context.Context, clusterId ClusterId, params *ReplaceClusterFeaturesParams, body ReplaceClusterFeaturesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClusterInsightsAuthentication request
 	GetClusterInsightsAuthentication(ctx context.Context, clusterId ClusterId, params *GetClusterInsightsAuthenticationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -6635,6 +6691,42 @@ func (c *Client) UninstallExtension(ctx context.Context, clusterId ClusterId, ex
 
 func (c *Client) UpgradeClusterExtension(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, params *UpgradeClusterExtensionParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpgradeClusterExtensionRequest(c.Server, clusterId, extensionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClusterFeatures(ctx context.Context, clusterId ClusterId, params *GetClusterFeaturesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClusterFeaturesRequest(c.Server, clusterId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ReplaceClusterFeaturesWithBody(ctx context.Context, clusterId ClusterId, params *ReplaceClusterFeaturesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewReplaceClusterFeaturesRequestWithBody(c.Server, clusterId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ReplaceClusterFeatures(ctx context.Context, clusterId ClusterId, params *ReplaceClusterFeaturesParams, body ReplaceClusterFeaturesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewReplaceClusterFeaturesRequest(c.Server, clusterId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -11562,6 +11654,113 @@ func NewUpgradeClusterExtensionRequest(server string, clusterId ClusterId, exten
 	if err != nil {
 		return nil, err
 	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetClusterFeaturesRequest generates requests for GetClusterFeatures
+func NewGetClusterFeaturesRequest(server string, clusterId ClusterId, params *GetClusterFeaturesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/features", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "API-Version", runtime.ParamLocationHeader, params.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("API-Version", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewReplaceClusterFeaturesRequest calls the generic ReplaceClusterFeatures builder with application/json body
+func NewReplaceClusterFeaturesRequest(server string, clusterId ClusterId, params *ReplaceClusterFeaturesParams, body ReplaceClusterFeaturesJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewReplaceClusterFeaturesRequestWithBody(server, clusterId, params, "application/json", bodyReader)
+}
+
+// NewReplaceClusterFeaturesRequestWithBody generates requests for ReplaceClusterFeatures with any type of body
+func NewReplaceClusterFeaturesRequestWithBody(server string, clusterId ClusterId, params *ReplaceClusterFeaturesParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/features", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	if params != nil {
 
@@ -20072,6 +20271,14 @@ type ClientWithResponsesInterface interface {
 	// UpgradeClusterExtensionWithResponse request
 	UpgradeClusterExtensionWithResponse(ctx context.Context, clusterId ClusterId, extensionId ExtensionId, params *UpgradeClusterExtensionParams, reqEditors ...RequestEditorFn) (*UpgradeClusterExtensionResponse, error)
 
+	// GetClusterFeaturesWithResponse request
+	GetClusterFeaturesWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterFeaturesParams, reqEditors ...RequestEditorFn) (*GetClusterFeaturesResponse, error)
+
+	// ReplaceClusterFeaturesWithBodyWithResponse request with any body
+	ReplaceClusterFeaturesWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *ReplaceClusterFeaturesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReplaceClusterFeaturesResponse, error)
+
+	ReplaceClusterFeaturesWithResponse(ctx context.Context, clusterId ClusterId, params *ReplaceClusterFeaturesParams, body ReplaceClusterFeaturesJSONRequestBody, reqEditors ...RequestEditorFn) (*ReplaceClusterFeaturesResponse, error)
+
 	// GetClusterInsightsAuthenticationWithResponse request
 	GetClusterInsightsAuthenticationWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterInsightsAuthenticationParams, reqEditors ...RequestEditorFn) (*GetClusterInsightsAuthenticationResponse, error)
 
@@ -21825,6 +22032,64 @@ func (r UpgradeClusterExtensionResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpgradeClusterExtensionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClusterFeaturesResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *ClusterFeatureSet
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClusterFeaturesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClusterFeaturesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ReplaceClusterFeaturesResponse struct {
+	Body                      []byte
+	HTTPResponse              *http.Response
+	JSON200                   *ClusterFeatureUpdate
+	ApplicationproblemJSON400 *ErrorBody
+	ApplicationproblemJSON401 *ErrorBody
+	ApplicationproblemJSON403 *ErrorBody
+	ApplicationproblemJSON404 *ErrorBody
+	ApplicationproblemJSON409 *ErrorBody
+	ApplicationproblemJSON422 *ValidationErrorBody
+	ApplicationproblemJSON429 *ErrorBody
+	ApplicationproblemJSON500 *ErrorBody
+	ApplicationproblemJSON501 *ErrorBody
+}
+
+// Status returns HTTPResponse.Status
+func (r ReplaceClusterFeaturesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ReplaceClusterFeaturesResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -26142,6 +26407,32 @@ func (c *ClientWithResponses) UpgradeClusterExtensionWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseUpgradeClusterExtensionResponse(rsp)
+}
+
+// GetClusterFeaturesWithResponse request returning *GetClusterFeaturesResponse
+func (c *ClientWithResponses) GetClusterFeaturesWithResponse(ctx context.Context, clusterId ClusterId, params *GetClusterFeaturesParams, reqEditors ...RequestEditorFn) (*GetClusterFeaturesResponse, error) {
+	rsp, err := c.GetClusterFeatures(ctx, clusterId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClusterFeaturesResponse(rsp)
+}
+
+// ReplaceClusterFeaturesWithBodyWithResponse request with arbitrary body returning *ReplaceClusterFeaturesResponse
+func (c *ClientWithResponses) ReplaceClusterFeaturesWithBodyWithResponse(ctx context.Context, clusterId ClusterId, params *ReplaceClusterFeaturesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReplaceClusterFeaturesResponse, error) {
+	rsp, err := c.ReplaceClusterFeaturesWithBody(ctx, clusterId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseReplaceClusterFeaturesResponse(rsp)
+}
+
+func (c *ClientWithResponses) ReplaceClusterFeaturesWithResponse(ctx context.Context, clusterId ClusterId, params *ReplaceClusterFeaturesParams, body ReplaceClusterFeaturesJSONRequestBody, reqEditors ...RequestEditorFn) (*ReplaceClusterFeaturesResponse, error) {
+	rsp, err := c.ReplaceClusterFeatures(ctx, clusterId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseReplaceClusterFeaturesResponse(rsp)
 }
 
 // GetClusterInsightsAuthenticationWithResponse request returning *GetClusterInsightsAuthenticationResponse
@@ -30839,6 +31130,156 @@ func ParseUpgradeClusterExtensionResponse(rsp *http.Response) (*UpgradeClusterEx
 			return nil, err
 		}
 		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClusterFeaturesResponse parses an HTTP response from a GetClusterFeaturesWithResponse call
+func ParseGetClusterFeaturesResponse(rsp *http.Response) (*GetClusterFeaturesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClusterFeaturesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClusterFeatureSet
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseReplaceClusterFeaturesResponse parses an HTTP response from a ReplaceClusterFeaturesWithResponse call
+func ParseReplaceClusterFeaturesResponse(rsp *http.Response) (*ReplaceClusterFeaturesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ReplaceClusterFeaturesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClusterFeatureUpdate
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ValidationErrorBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
 		var dest ErrorBody

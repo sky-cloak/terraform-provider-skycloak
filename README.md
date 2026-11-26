@@ -58,6 +58,7 @@ honor the `Retry-After` header.
 | `skycloak_cluster_private_link` | Azure private link, allowed subscriptions and service alias |
 | `skycloak_cluster_public_access` | Whether the cluster's public hostname is served |
 | `skycloak_cluster_maintenance_window` | The cluster's upgrade/maintenance window |
+| `skycloak_cluster_features` | The cluster's enabled Keycloak feature flags |
 | `skycloak_cluster_security` | Edge security: IP allow-listing, rate limiting, WAF, geo-blocking, bot management, CAPTCHA |
 | `skycloak_captcha_domain` | A hostname registered for CAPTCHA protection |
 | `skycloak_domain` | A custom domain on a cluster |
