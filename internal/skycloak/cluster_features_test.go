@@ -2,12 +2,14 @@ package skycloak
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestClusterFeaturesRequests(t *testing.T) {
@@ -82,5 +84,27 @@ func TestWaitForClusterFeaturesFailedRestart(t *testing.T) {
 	err := newTestClient(srv.URL).WaitForClusterFeatures(context.Background(), cuid, []string{"cimd"})
 	if err == nil || !strings.Contains(err.Error(), "entered failed state") {
 		t.Fatalf("expected restart failure, got %v", err)
+	}
+}
+
+func TestWaitForClusterFeaturesTimeout(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/clusters/" + cuid + "/features":
+			writeJSON(w, 200, `{"features":["cimd"]}`)
+		case "/clusters/" + cuid:
+			writeJSON(w, 200, `{"status":"provisioning"}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
+	defer cancel()
+
+	err := newTestClient(srv.URL).WaitForClusterFeatures(ctx, cuid, []string{"cimd"})
+	if !errors.Is(err, context.DeadlineExceeded) || !strings.Contains(err.Error(), `last status "provisioning"`) {
+		t.Fatalf("expected deadline error with last cluster status, got %v", err)
 	}
 }

@@ -2,6 +2,7 @@ package skycloak
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"time"
@@ -14,6 +15,9 @@ const (
 	ClusterFeatureChangePending  = "pending"
 	ClusterFeatureChangeApplying = "applying"
 )
+
+// ClusterFeaturesPollInterval is how often the feature rollout is checked. Tests may shorten it.
+var ClusterFeaturesPollInterval = 10 * time.Second
 
 // ClusterFeatures is the requested set of customer-managed enabled flags.
 type ClusterFeatures struct {
@@ -60,11 +64,18 @@ func (c *Client) ReplaceClusterFeatures(ctx context.Context, clusterID string, f
 }
 
 // WaitForClusterFeatures waits for the requested flags to finish rolling out.
-func (c *Client) WaitForClusterFeatures(ctx context.Context, clusterID string, features []string) error {
-	ticker := time.NewTicker(10 * time.Second)
+func (c *Client) WaitForClusterFeatures(ctx context.Context, clusterID string, features []string) (err error) {
+	ticker := time.NewTicker(ClusterFeaturesPollInterval)
 	defer ticker.Stop()
 	want := slices.Clone(features)
 	slices.Sort(want)
+
+	var lastStatus string
+	defer func() {
+		if errors.Is(err, context.DeadlineExceeded) && ctx.Err() == context.DeadlineExceeded && lastStatus != "" {
+			err = fmt.Errorf("cluster %s feature rollout timed out with last status %q: %w", clusterID, lastStatus, err)
+		}
+	}()
 
 	for {
 		current, err := c.GetClusterFeatures(ctx, clusterID)
@@ -81,12 +92,15 @@ func (c *Client) WaitForClusterFeatures(ctx context.Context, clusterID string, f
 			if err != nil {
 				return err
 			}
+			lastStatus = cluster.Status
 			switch cluster.Status {
 			case "available":
 				return nil
-			case "failed", "stopped", "deleting":
+			case "failed", "stopped", "deleting", "degraded":
 				return fmt.Errorf("cluster %s entered %s state during the feature rollout", clusterID, cluster.Status)
 			}
+		} else {
+			lastStatus = current.Change
 		}
 		select {
 		case <-ctx.Done():

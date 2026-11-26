@@ -10,7 +10,9 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -19,6 +21,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+
+	"github.com/sky-cloak/terraform-provider-skycloak/internal/skycloak"
 )
 
 const (
@@ -58,6 +62,7 @@ func TestClusterFeaturesModifyPlan(t *testing.T) {
 		warning     bool
 	}{
 		{"create", absent, original, true},
+		{"create with no flags", absent, rawModel([]string{}, false), true},
 		{"remove a flag", original, rawModel([]string{"cimd"}, false), true},
 		{"reorder flags", original, rawModel([]string{"resource-indicators", "cimd"}, false), false},
 		{"apply pending changes now", original, rawModel([]string{"cimd", "resource-indicators"}, true), true},
@@ -77,8 +82,87 @@ func TestClusterFeaturesModifyPlan(t *testing.T) {
 			if (len(warnings) > 0) != tc.warning {
 				t.Fatalf("warnings = %v, want warning %v", warnings, tc.warning)
 			}
-			if tc.warning && !strings.Contains(warnings[0].Summary(), "restart Keycloak") {
+			if tc.warning && !strings.Contains(warnings[0].Summary(), "can restart Keycloak") {
 				t.Fatalf("unexpected warning: %s", warnings[0].Summary())
+			}
+		})
+	}
+}
+
+func TestClusterFeaturesReplace(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		applyNow      bool
+		response      string
+		clusterStatus string
+		wantError     string
+	}{
+		{
+			name:      "scheduled despite apply now",
+			applyNow:  true,
+			response:  `{"features":["cimd"],"change":{"state":"pending"}}`,
+			wantError: "the API scheduled the restart for the maintenance window instead of starting it immediately",
+		},
+		{
+			name:      "different flags returned",
+			response:  `{"features":["resource-indicators"]}`,
+			wantError: "the API returned a different set of enabled flags than requested",
+		},
+		{
+			name:          "applying without apply now",
+			response:      `{"features":["cimd"],"change":{"state":"applying"}}`,
+			clusterStatus: "available",
+		},
+		{
+			name:          "restart fails after flags are saved",
+			applyNow:      true,
+			response:      `{"features":["cimd"],"change":{"state":"applying"}}`,
+			clusterStatus: "degraded",
+			wantError:     "the API saved the requested feature flags. Waiting for Keycloak restart failed",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var readinessChecks atomic.Int32
+			clusterPath := "/clusters/" + testFeaturesClusterID
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				switch {
+				case req.Method == http.MethodPut && req.URL.Path == clusterPath+"/features":
+					var input struct {
+						Features []string `json:"features"`
+						ApplyNow *bool    `json:"apply_now"`
+					}
+					if err := json.NewDecoder(req.Body).Decode(&input); err != nil {
+						t.Error(err)
+					} else if !slices.Equal(input.Features, []string{"cimd"}) || input.ApplyNow == nil || *input.ApplyNow != tc.applyNow {
+						t.Error("unexpected feature replacement request")
+					}
+					_, _ = io.WriteString(w, tc.response)
+				case tc.clusterStatus != "" && req.Method == http.MethodGet && req.URL.Path == clusterPath+"/features":
+					_, _ = io.WriteString(w, `{"features":["cimd"]}`)
+				case tc.clusterStatus != "" && req.Method == http.MethodGet && req.URL.Path == clusterPath:
+					readinessChecks.Add(1)
+					_, _ = fmt.Fprintf(w, `{"status":%q}`, tc.clusterStatus)
+				default:
+					t.Errorf("unexpected request: %s %s", req.Method, req.URL.Path)
+					http.NotFound(w, req)
+				}
+			}))
+			defer server.Close()
+
+			r := &clusterFeaturesResource{client: skycloak.New(server.URL, "unused", "")}
+			ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
+			defer cancel()
+			err := r.replace(ctx, testFeaturesClusterID, []string{"cimd"}, tc.applyNow)
+			if tc.wantError == "" {
+				if err != nil {
+					t.Fatal(err)
+				}
+			} else if err == nil || !strings.Contains(err.Error(), tc.wantError) {
+				t.Fatalf("replace error = %v, want %q", err, tc.wantError)
+			}
+			if tc.clusterStatus != "" && readinessChecks.Load() != 1 {
+				t.Fatalf("readiness checks = %d, want 1", readinessChecks.Load())
 			}
 		})
 	}
@@ -95,6 +179,10 @@ resource "skycloak_cluster_features" "test" {
 }
 
 func TestClusterFeaturesResource(t *testing.T) {
+	oldInterval := skycloak.ClusterFeaturesPollInterval
+	skycloak.ClusterFeaturesPollInterval = time.Millisecond
+	t.Cleanup(func() { skycloak.ClusterFeaturesPollInterval = oldInterval })
+
 	type featureRequest struct {
 		Features []string `json:"features"`
 		ApplyNow bool     `json:"apply_now"`

@@ -111,8 +111,8 @@ func (r *clusterFeaturesResource) ModifyPlan(ctx context.Context, req resource.M
 		return
 	}
 
-	resp.Diagnostics.AddWarning("Cluster feature changes restart Keycloak",
-		"Changing the enabled feature flags restarts Keycloak. With apply_now enabled, the restart can occur outside the maintenance window.")
+	resp.Diagnostics.AddWarning("Cluster feature changes can restart Keycloak",
+		"Keycloak restarts if the enabled feature flags change or a pending change is applied. With apply_now enabled, the restart can occur outside the maintenance window.")
 }
 
 func (r *clusterFeaturesResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -219,7 +219,7 @@ func (r *clusterFeaturesResource) replace(ctx context.Context, clusterID string,
 		waitCtx, cancel := context.WithTimeout(ctx, clusterFeaturesRestartTimeout)
 		defer cancel()
 		if err := r.client.WaitForClusterFeatures(waitCtx, clusterID, features); err != nil {
-			return fmt.Errorf("waiting for Keycloak restart: %w", err)
+			return fmt.Errorf("the API saved the requested feature flags. Waiting for Keycloak restart failed: %w", err)
 		}
 	}
 	return nil
