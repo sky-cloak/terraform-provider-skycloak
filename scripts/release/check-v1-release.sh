@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: check-v1-release.sh <version> <commit>
 # Refuses (exit 1) unless <version> can be published from <commit>: the tag does
-# not exist yet, the test workflow has a successful run for the commit, and the
+# not exist yet, the test workflow has a successful run on main for the commit, and the
 # changelog has an entry for the version. Needs GH_TOKEN for gh.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
@@ -19,9 +19,9 @@ if [[ "$exists" == yes ]]; then
 fi
 
 # Published only from a commit whose tests passed.
-passed=$("${GH_BIN:-gh}" run list --workflow test --commit "$sha" --status success --json databaseId --jq 'length')
+passed=$("${GH_BIN:-gh}" run list --workflow test --branch main --commit "$sha" --status success --json databaseId --jq 'length')
 if [[ "$passed" -lt 1 ]]; then
-  echo "the test workflow has no successful run for $sha" >&2
+  echo "the test workflow has no successful run on main for $sha" >&2
   exit 1
 fi
 

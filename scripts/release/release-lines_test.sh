@@ -21,9 +21,10 @@ expect() {
   fi
 }
 
-# Stub git whose ls-remote exits with LS_CODE.
+# Stub git whose ls-remote exits with LS_CODE for tags and HEADS_CODE for branches.
 cat > "$tmp/git-stub" <<'STUB'
 #!/usr/bin/env bash
+if [[ " $* " == *" --heads "* ]]; then exit "${HEADS_CODE:-0}"; fi
 exit "${LS_CODE:-0}"
 STUB
 # Stub gh printing RUNS as the count of successful runs.
@@ -56,6 +57,8 @@ expect "a malformed version is refused" 64 "" -- env LS_CODE=2 RUNS=1 CHANGELOG=
 expect "before v1.0.0 the sync serves both lines" 0 '["main","release-0.x"]' -- env LS_CODE=2 "$here/spec-sync-branches.sh"
 expect "after v1.0.0 the sync serves main only" 0 '["main"]' -- env LS_CODE=0 "$here/spec-sync-branches.sh"
 expect "a failed lookup stops the sync plan" 1 "" -- env LS_CODE=128 "$here/spec-sync-branches.sh"
+expect "a missing release-0.x is left out of the plan" 0 '["main"]' -- env LS_CODE=2 HEADS_CODE=2 "$here/spec-sync-branches.sh"
+expect "a failed branch lookup stops the sync plan" 1 "" -- env LS_CODE=2 HEADS_CODE=128 "$here/spec-sync-branches.sh"
 
 # check-release-tag, on a real clone with both lines
 unset GIT_BIN
@@ -75,13 +78,17 @@ g checkout -q main
 git clone -q "$origin" "$tmp/clone"
 git -C "$tmp/clone" fetch -q origin release-0.x:refs/remotes/origin/release-0.x
 # shellcheck disable=SC2329 # called through expect
-run() { (cd "$tmp/clone" && "$here/check-release-tag.sh" "$1"); }
-expect "a v0 tag on release-0.x is accepted" 0 "" -- run v0.9.0
-expect "a v0 tag on main is refused" 1 "" -- run v0.9.1
-expect "v1.0.0 on main is accepted" 0 "" -- run v1.0.0
+run() { (cd "$tmp/clone" && "$here/check-release-tag.sh" "$1" "${2:-}"); }
+bot="skycloak-releaser-bot[bot]"
+expect "v1.0.0 on main pushed by the release bot is accepted" 0 "" -- run v1.0.0 "$bot"
+expect "v1.0.0 pushed by anyone else is refused" 1 "" -- run v1.0.0 someone
+expect "v1.0.0 with no actor is refused" 1 "" -- run v1.0.0
 expect "v1.1.0 after v1.0.0 on main is accepted" 0 "" -- run v1.1.0
+expect "a v0 tag once v1.0.0 exists is refused" 1 "" -- run v0.9.0
 git -C "$tmp/clone" tag -d v1.0.0 >/dev/null
 expect "a v1 tag before v1.0.0 exists is refused" 1 "" -- run v1.1.0
+expect "a v0 tag on release-0.x is accepted" 0 "" -- run v0.9.0
+expect "a v0 tag on main is refused" 1 "" -- run v0.9.1
 expect "a non release tag is refused" 2 "" -- run latest
 
 exit $fail

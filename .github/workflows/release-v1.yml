@@ -31,8 +31,9 @@ jobs:
 
   tag:
     needs: guard
-    # Protected environment: set required reviewers on it, so only an owner
-    # approves the publish.
+    # Protected environment: create release-v1 with required reviewers before the
+    # first run, because GitHub creates a missing environment with no protection
+    # and the owner approval would silently not apply.
     environment: release-v1
     runs-on: ubuntu-latest
     env:
