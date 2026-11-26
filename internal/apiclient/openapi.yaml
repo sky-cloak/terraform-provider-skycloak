@@ -5781,6 +5781,243 @@ paths:
         - ApiKeyAuth: []
       x-scopes:
         - clusters:extensions:write
+  /clusters/{cluster_id}/features:
+    get:
+      operationId: getClusterFeatures
+      summary: Get the cluster's feature flags
+      description: Returns the enabled feature flags and any change still rolling out.
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterFeatureSet'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Operations
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:read
+    put:
+      operationId: replaceClusterFeatures
+      summary: Replace the cluster's feature flags
+      description: Replaces all customer-managed enabled feature flags. Changes restart Keycloak.
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClusterId'
+        - $ref: '#/components/parameters/CommonParameters'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterFeatureUpdate'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '422':
+          description: Client error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorBody'
+        '429':
+          description: Client error
+          headers:
+            Retry-After:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Limit:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              required: false
+              schema:
+                type: integer
+            RateLimit-Reset:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Second:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Minute:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Hour:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Limit-Day:
+              required: false
+              schema:
+                type: integer
+            X-RateLimit-Remaining-Day:
+              required: false
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '500':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+        '501':
+          description: Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorBody'
+      tags:
+        - Cluster Operations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceClusterFeaturesRequest'
+      security:
+        - ApiKeyAuth: []
+      x-scopes:
+        - clusters:write
   /clusters/{cluster_id}/insights/authentication:
     get:
       operationId: getClusterInsightsAuthentication
@@ -23814,6 +24051,24 @@ components:
         - active
         - failed
         - removing
+    ClusterFeatureChange:
+      type: object
+      required:
+        - state
+      properties:
+        state:
+          $ref: '#/components/schemas/ClusterFeatureChangeState'
+        next_window:
+          type: string
+          format: date-time
+    ClusterFeatureChangeState:
+      type: string
+      enum:
+        - pending
+        - applying
+      x-enum-varnames:
+        - ClusterFeatureChangeStatePending
+        - ClusterFeatureChangeStateApplying
     ClusterFeatureInfo:
       type: object
       required:
@@ -23856,6 +24111,33 @@ components:
           nullable: true
           description: Maximum cluster version this feature is available on.
       description: Metadata about a Keycloak feature flag available for tenant clusters.
+    ClusterFeatureSet:
+      type: object
+      required:
+        - features
+      properties:
+        features:
+          type: array
+          items:
+            type: string
+        change:
+          $ref: '#/components/schemas/ClusterFeatureChange'
+    ClusterFeatureUpdate:
+      type: object
+      required:
+        - features
+        - restarts_keycloak
+      properties:
+        features:
+          type: array
+          items:
+            type: string
+        restarts_keycloak:
+          type: boolean
+        change:
+          $ref: '#/components/schemas/ClusterFeatureChange'
+        impact:
+          type: string
     ClusterId:
       type: string
       format: uuid
@@ -27511,6 +27793,18 @@ components:
           items:
             $ref: '#/components/schemas/EventTimeSeriesPoint'
       description: User registration analytics.
+    ReplaceClusterFeaturesRequest:
+      type: object
+      required:
+        - features
+      properties:
+        features:
+          type: array
+          items:
+            type: string
+        apply_now:
+          type: boolean
+          default: false
     ResponseTimeMetrics:
       type: object
       required:

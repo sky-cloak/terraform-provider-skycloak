@@ -129,6 +129,7 @@ func (p *skycloakProvider) Resources(_ context.Context) []func() resource.Resour
 		NewRealmGroupMembershipResource,
 		NewApplicationRoleAssignmentResource,
 		NewClusterMaintenanceWindowResource,
+		NewClusterFeaturesResource,
 		NewClusterPrivateLinkResource,
 		NewClusterPublicAccessResource,
 		NewCAPTCHADomainResource,
