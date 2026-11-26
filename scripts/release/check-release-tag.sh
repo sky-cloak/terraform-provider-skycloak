@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: check-release-tag.sh <tag> [<pushing actor>]
 # Run in a full clone. Refuses (exit 1) a release tag that is on the wrong line:
-#   v0.*  must be on release-0.x, and is refused once v1.0.0 exists
+#   v0.*  must be on main or release-0.x, and is refused once v1.0.0 exists
 #   v1.0.0 must be pushed by the release bot (the release-v1 workflow), on main
 #   v2+ must be on main
 #   v1.*  other than v1.0.0 needs the v1.0.0 tag first, and must be on main
@@ -22,11 +22,11 @@ on_branch() {
 
 if [[ "$major" == 0 ]]; then
   if "$git" rev-parse -q --verify "refs/tags/v1.0.0" >/dev/null; then
-    echo "refusing $tag: v1.0.0 exists, so release-0.x gets no further releases" >&2
+    echo "refusing $tag: v1.0.0 exists, so v0.* gets no further releases" >&2
     exit 1
   fi
-  if ! on_branch release-0.x; then
-    echo "refusing $tag: its commit is not on release-0.x" >&2
+  if ! on_branch main && ! on_branch release-0.x; then
+    echo "refusing $tag: its commit is on neither main nor release-0.x" >&2
     exit 1
   fi
   exit 0
