@@ -15,8 +15,8 @@ The managed Keycloak API is still beta, so the provider has to say what a 1.x ve
 ## Decision
 
 - v1.0.0 is no longer gated on the API's first non-beta date. It is published by a manually run workflow on `main` (`release-v1.yml`) and by nothing else.
-- Until a `v1.0.0` tag exists, `main` publishes no release. After it, `main` releases 1.x.
-- The 0.x line lives on the `release-0.x` branch. It carries managed Keycloak only and takes fixes and spec syncs for the managed Keycloak API. After v1.0.0 it gets no further releases.
+- Until a `v1.0.0` tag exists, `main` releases 0.x. After it, `main` releases 1.x.
+- Until v1.0.0, a `v0.*` tag is accepted when its commit is on `main` or on the `release-0.x` branch. `release-0.x` stays available as a hotfix line. It carries managed Keycloak only and takes fixes and spec syncs for the managed Keycloak API. After v1.0.0 no `v0.*` tag is accepted, whichever branch it is on.
 - While the managed Keycloak API is beta, 1.x promises:
   - every managed Keycloak resource, data source, action and attribute of the last 0.x release keeps its name, type and behaviour, and a configuration that plans cleanly on 0.x plans with no changes on 1.0.0;
   - API changes are absorbed by the provider, through the facade and optional attributes, and are not passed on as breaking changes;
@@ -27,4 +27,4 @@ The managed Keycloak API is still beta, so the provider has to say what a 1.x ve
 
 - The v1.0.0 date is the owner's call and is no longer tied to an API announcement.
 - If the beta API changes shape in a way the provider cannot absorb without breaking a managed Keycloak configuration, the fix is a 2.0.0 release, not a quiet change in 1.x.
-- Fixes for managed Keycloak users need no 1.x upgrade before v1.0.0: they ship from `release-0.x`.
+- Fixes for managed Keycloak users need no 1.x upgrade before v1.0.0: they ship as 0.x releases from `main` or `release-0.x`.

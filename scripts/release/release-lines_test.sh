@@ -75,6 +75,11 @@ g commit -q --allow-empty -m on-0x
 g tag v0.9.0
 g tag -f v0.9.1 main >/dev/null
 g checkout -q main
+g branch side
+g checkout -q side
+g commit -q --allow-empty -m on-side
+g tag v0.9.2
+g checkout -q main
 git clone -q "$origin" "$tmp/clone"
 git -C "$tmp/clone" fetch -q origin release-0.x:refs/remotes/origin/release-0.x
 # shellcheck disable=SC2329 # called through expect
@@ -85,10 +90,15 @@ expect "v1.0.0 pushed by anyone else is refused" 1 "" -- run v1.0.0 someone
 expect "v1.0.0 with no actor is refused" 1 "" -- run v1.0.0
 expect "v1.1.0 after v1.0.0 on main is accepted" 0 "" -- run v1.1.0
 expect "a v0 tag once v1.0.0 exists is refused" 1 "" -- run v0.9.0
+expect "a v0 tag on main once v1.0.0 exists is refused" 1 "" -- run v0.9.1
 git -C "$tmp/clone" tag -d v1.0.0 >/dev/null
 expect "a v1 tag before v1.0.0 exists is refused" 1 "" -- run v1.1.0
 expect "a v0 tag on release-0.x is accepted" 0 "" -- run v0.9.0
-expect "a v0 tag on main is refused" 1 "" -- run v0.9.1
+expect "a v0 tag on main is accepted" 0 "" -- run v0.9.1
+expect "a v0 tag on neither main nor release-0.x is refused" 1 "" -- run v0.9.2
+git -C "$tmp/clone" update-ref -d refs/remotes/origin/release-0.x
+expect "a v0 tag on main is accepted when release-0.x is absent" 0 "" -- run v0.9.1
+expect "a v0 tag on neither branch is refused when release-0.x is absent" 1 "" -- run v0.9.2
 expect "a non release tag is refused" 2 "" -- run latest
 
 exit $fail
