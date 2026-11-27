@@ -38,6 +38,8 @@ provider "skycloak" {
   # api_key is read from the SKYCLOAK_API_KEY environment variable (recommended).
   # endpoint defaults to https://api.skycloak.io
   # api_version defaults to the current API version.
+  # platform_api_key is read from SKYCLOAK_PLATFORM_API_KEY, and
+  # platform_endpoint defaults to https://api.skycloak.io, for Platform resources.
 }
 
 # Provision a managed Keycloak cluster as code.
@@ -55,6 +57,8 @@ resource "skycloak_cluster" "main" {
 
 ### Optional
 
-- `api_key` (String, Sensitive) Skycloak API key (`sk_sc_{env}_..._...`). Prefer the `SKYCLOAK_API_KEY` env var. Minted in the dashboard.
+- `api_key` (String, Sensitive) Skycloak API key (`sk_sc_{env}_..._...`). Prefer the `SKYCLOAK_API_KEY` env var. Minted in the dashboard. Needed only by managed Keycloak resources, data sources and actions.
 - `api_version` (String) Date-based API version, e.g. `2026-06-01.beta` (env `SKYCLOAK_API_VERSION`). Defaults to the version this provider release was built against.
 - `endpoint` (String) Public API base URL. Defaults to `https://api.skycloak.io` (env `SKYCLOAK_ENDPOINT`).
+- `platform_api_key` (String, Sensitive) Skycloak Platform API key. Prefer the `SKYCLOAK_PLATFORM_API_KEY` env var. Needed only by Platform resources and data sources.
+- `platform_endpoint` (String) Platform API base URL. Defaults to `https://api.skycloak.io` (env `SKYCLOAK_PLATFORM_ENDPOINT`).

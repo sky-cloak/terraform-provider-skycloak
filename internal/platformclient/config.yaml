@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/HEAD/configuration-schema.json
+package: platformclient
+generate:
+  models: true
+  client: true
+output: platformclient.gen.go
+output-options:
+  nullable-type: true
+  exclude-tags:
+    - Staff

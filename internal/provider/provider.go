@@ -40,14 +40,16 @@ func (p *skycloakProvider) Metadata(_ context.Context, _ provider.MetadataReques
 }
 
 type providerModel struct {
-	Endpoint   types.String `tfsdk:"endpoint"`
-	APIKey     types.String `tfsdk:"api_key"`
-	APIVersion types.String `tfsdk:"api_version"`
+	Endpoint         types.String `tfsdk:"endpoint"`
+	APIKey           types.String `tfsdk:"api_key"`
+	APIVersion       types.String `tfsdk:"api_version"`
+	PlatformEndpoint types.String `tfsdk:"platform_endpoint"`
+	PlatformAPIKey   types.String `tfsdk:"platform_api_key"`
 }
 
 func (p *skycloakProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manage your Skycloak managed-Keycloak environment as code.",
+		MarkdownDescription: "Manage your Skycloak managed Keycloak and Platform projects as code. Each product has its own API key; set the key for the products you use.",
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
 				Optional:            true,
@@ -56,11 +58,20 @@ func (p *skycloakProvider) Schema(_ context.Context, _ provider.SchemaRequest, r
 			"api_key": schema.StringAttribute{
 				Optional:            true,
 				Sensitive:           true,
-				MarkdownDescription: "Skycloak API key (`sk_sc_{env}_..._...`). Prefer the `SKYCLOAK_API_KEY` env var. Minted in the dashboard.",
+				MarkdownDescription: "Skycloak API key (`sk_sc_{env}_..._...`). Prefer the `SKYCLOAK_API_KEY` env var. Minted in the dashboard. Needed only by managed Keycloak resources, data sources and actions.",
 			},
 			"api_version": schema.StringAttribute{
 				Optional:            true,
 				MarkdownDescription: "Date-based API version, e.g. `2026-06-01.beta` (env `SKYCLOAK_API_VERSION`). Defaults to the version this provider release was built against.",
+			},
+			"platform_endpoint": schema.StringAttribute{
+				Optional:            true,
+				MarkdownDescription: "Platform API base URL. Defaults to `https://api.skycloak.io` (env `SKYCLOAK_PLATFORM_ENDPOINT`).",
+			},
+			"platform_api_key": schema.StringAttribute{
+				Optional:            true,
+				Sensitive:           true,
+				MarkdownDescription: "Skycloak Platform API key. Prefer the `SKYCLOAK_PLATFORM_API_KEY` env var. Needed only by Platform resources and data sources.",
 			},
 		},
 	}
@@ -76,16 +87,8 @@ func (p *skycloakProvider) Configure(ctx context.Context, req provider.Configure
 	endpoint := firstNonEmpty(cfg.Endpoint.ValueString(), os.Getenv("SKYCLOAK_ENDPOINT"))
 	apiKey := firstNonEmpty(cfg.APIKey.ValueString(), os.Getenv("SKYCLOAK_API_KEY"))
 	apiVersion := firstNonEmpty(cfg.APIVersion.ValueString(), os.Getenv("SKYCLOAK_API_VERSION"))
-
-	if apiKey == "" {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("api_key"),
-			"Missing Skycloak API key",
-			"Set the api_key provider argument or the SKYCLOAK_API_KEY environment variable. "+
-				"Keys are minted in the Skycloak dashboard (the public API cannot yet issue keys).",
-		)
-		return
-	}
+	platformEndpoint := firstNonEmpty(cfg.PlatformEndpoint.ValueString(), os.Getenv("SKYCLOAK_PLATFORM_ENDPOINT"))
+	platformAPIKey := firstNonEmpty(cfg.PlatformAPIKey.ValueString(), os.Getenv("SKYCLOAK_PLATFORM_API_KEY"))
 
 	if apiVersion != "" && apiVersion != skycloak.DefaultAPIVersion {
 		resp.Diagnostics.AddAttributeWarning(
@@ -96,14 +99,23 @@ func (p *skycloakProvider) Configure(ctx context.Context, req provider.Configure
 		)
 	}
 
-	client := skycloak.New(endpoint, apiKey, apiVersion, skycloak.WithUserAgent("terraform-provider-skycloak/"+p.version))
-	resp.ResourceData = client
-	resp.DataSourceData = client
-	resp.ActionData = client
+	// A missing key is not an error here: a configuration may use one product
+	// only. Resources fail at plan when the key they need is missing.
+	userAgent := skycloak.WithUserAgent("terraform-provider-skycloak/" + p.version)
+	clients := &providerClients{}
+	if apiKey != "" {
+		clients.keycloak = skycloak.New(endpoint, apiKey, apiVersion, userAgent)
+	}
+	if platformAPIKey != "" {
+		clients.platform = skycloak.NewPlatform(platformEndpoint, platformAPIKey, userAgent)
+	}
+	resp.ResourceData = clients
+	resp.DataSourceData = clients
+	resp.ActionData = clients
 }
 
 func (p *skycloakProvider) Resources(_ context.Context) []func() resource.Resource {
-	return []func() resource.Resource{
+	return gateAll(keycloakProduct, gateResource, []func() resource.Resource{
 		NewClusterResource,
 		NewRealmResource,
 		NewApplicationResource,
@@ -138,21 +150,21 @@ func (p *skycloakProvider) Resources(_ context.Context) []func() resource.Resour
 		NewRealmExportResource,
 		NewRealmImportResource,
 		NewOpenFGAInstanceResource,
-	}
+	})
 }
 
 func (p *skycloakProvider) Actions(_ context.Context) []func() action.Action {
-	return []func() action.Action{
+	return gateAll(keycloakProduct, gateAction, []func() action.Action{
 		NewTestSMTPAction,
 		NewTestIdentityProviderAction,
 		NewCancelClusterUpgradeAction,
 		NewTestSIEMDestinationAction,
 		NewTestWebhookSubscriptionAction,
-	}
+	})
 }
 
 func (p *skycloakProvider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{
+	return gateAll(keycloakProduct, gateDataSource, []func() datasource.DataSource{
 		NewClusterDataSource,
 		NewClusterLocationsDataSource,
 		NewClusterTypesDataSource,
@@ -182,7 +194,7 @@ func (p *skycloakProvider) DataSources(_ context.Context) []func() datasource.Da
 		NewWebhookSubscriptionsDataSource,
 		NewWebhookEventTypesDataSource,
 		NewOpenFGAInstanceDataSource,
-	}
+	})
 }
 
 func firstNonEmpty(vals ...string) string {
