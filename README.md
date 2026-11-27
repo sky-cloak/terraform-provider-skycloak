@@ -46,9 +46,14 @@ honor the `Retry-After` header.
 
 | Argument | Env var | Default |
 |---|---|---|
-| `api_key` | `SKYCLOAK_API_KEY` | — (required) |
+| `api_key` | `SKYCLOAK_API_KEY` | none (needed by managed Keycloak resources, data sources and actions) |
 | `endpoint` | `SKYCLOAK_ENDPOINT` | `https://api.skycloak.io` |
 | `api_version` | `SKYCLOAK_API_VERSION` | current API version |
+| `platform_api_key` | `SKYCLOAK_PLATFORM_API_KEY` | none (needed by Platform resources and data sources) |
+| `platform_endpoint` | `SKYCLOAK_PLATFORM_ENDPOINT` | `https://api.skycloak.io` |
+
+Both keys are optional. Set the key for each product you use: a resource whose key is
+missing fails at plan with an error naming the argument and the environment variable.
 
 ## Resources & data sources
 
@@ -139,16 +144,19 @@ make test       # unit tests
 make testacc    # acceptance tests (creates real resources; needs SKYCLOAK_API_KEY)
 make lint       # golangci-lint
 make docs       # regenerate docs from schema + examples
-make generate   # regenerate the API client from the OpenAPI spec
+make generate   # regenerate the API clients from the OpenAPI specs
 ```
 
 The API client under `internal/apiclient` is generated from the Skycloak OpenAPI
 specification with [oapi-codegen](https://github.com/oapi-codegen/oapi-codegen);
 run `make generate` after updating `internal/apiclient/openapi.yaml`.
 
+The Platform API client under `internal/platformclient` is generated the same way from
+`internal/platformclient/openapi.yaml`. `tools/gen-version` reads the Skycloak spec only.
+
 ## Keeping in sync with the API
 
-The client in `internal/apiclient` is generated from `internal/apiclient/openapi.yaml` with [oapi-codegen](https://github.com/oapi-codegen/oapi-codegen) — run `make generate` to refresh it. CI fails if the committed generated code drifts from the spec. Requests are retried on `429`/`5xx` responses with `Retry-After`-aware backoff.
+The client in `internal/apiclient` is generated from `internal/apiclient/openapi.yaml` with [oapi-codegen](https://github.com/oapi-codegen/oapi-codegen) — run `make generate` to refresh it. The Platform client in `internal/platformclient` is generated from its own spec in the same way. CI fails if the committed generated code drifts from the spec. Requests are retried on `429`/`5xx` responses with `Retry-After`-aware backoff.
 
 ## Contributing
 

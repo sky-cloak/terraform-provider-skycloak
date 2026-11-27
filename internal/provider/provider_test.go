@@ -39,3 +39,25 @@ func TestProviderSchema(t *testing.T) {
 		}
 	}
 }
+
+func TestProviderKeysAreOptionalAndSecretsSensitive(t *testing.T) {
+	p := New("test")()
+
+	var resp provider.SchemaResponse
+	p.Schema(context.Background(), provider.SchemaRequest{}, &resp)
+
+	for _, attr := range []string{"endpoint", "api_key", "api_version", "platform_endpoint", "platform_api_key"} {
+		a, ok := resp.Schema.Attributes[attr]
+		if !ok {
+			t.Fatalf("missing provider attribute %q", attr)
+		}
+		if a.IsRequired() {
+			t.Errorf("%s must be optional", attr)
+		}
+	}
+	for _, attr := range []string{"api_key", "platform_api_key"} {
+		if !resp.Schema.Attributes[attr].IsSensitive() {
+			t.Errorf("%s must be sensitive", attr)
+		}
+	}
+}

@@ -21,5 +21,5 @@ docs: ## Generate provider docs from schema + examples
 tidy: ## Tidy modules
 	go mod tidy
 
-generate: ## Regenerate the API client from internal/apiclient/openapi.yaml
-	go generate ./internal/apiclient/...
+generate: ## Regenerate the API clients from internal/apiclient/openapi.yaml and internal/platformclient/openapi.yaml
+	go generate ./internal/apiclient/... ./internal/platformclient/...
