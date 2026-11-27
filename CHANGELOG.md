@@ -23,6 +23,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `skycloak_custom_theme`: a new theme archive is now applied as an in-place update through the theme content endpoint instead of forcing a destroy/create. The theme keeps its ID and name, and the realms and application clients assigned to it stay assigned, so the sign-in page is no longer left unbranded mid-apply. Configurations using the rename plus `create_before_destroy` workaround keep working and can drop it; no state migration is required. `theme_types` and `cluster_id` still force replacement.
 
 ### Fixed
+- `skycloak_cluster`: a `version` lower than the one the cluster runs now fails at plan time with an error naming both versions, instead of planning an update the API refuses at apply. This includes a cluster that automatic upgrades moved above the configured version. Equal or higher versions, versions that are not dotted numbers, new clusters and imports are not affected.
 - `skycloak_custom_theme`: changing the archive's bytes at an unchanged `source` path no longer fails the apply with "Provider produced inconsistent result after apply" on `file_size` and `deployed_at`, although the theme was uploaded and deployed. The plan now shows `file_size`, `deployed_at` and `status` as known after apply when the archive changes, and no diff when it does not.
 
 ## [0.5.1] - 2026-09-04
