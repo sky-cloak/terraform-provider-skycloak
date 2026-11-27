@@ -40,7 +40,7 @@ output "cluster_url" {
 - `name` (String) Human-readable cluster name.
 - `size` (String) Instance size (`small`, `medium`, `large`).
 - `type` (String) Cluster type (`keycloak` or `tidecloak`). Immutable — changing it replaces the cluster.
-- `version` (String) Keycloak version, e.g. `26.1`.
+- `version` (String) Keycloak version, e.g. `26.1`. A version lower than the one the cluster runs is refused at plan time, because a Keycloak version cannot be downgraded. This includes a cluster that automatic upgrades moved above the configured version: set the version to the current one or higher.
 
 ### Optional
 

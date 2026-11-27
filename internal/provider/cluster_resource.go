@@ -75,7 +75,7 @@ func (r *clusterResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			},
 			"version": schema.StringAttribute{
 				Required:            true,
-				MarkdownDescription: "Keycloak version, e.g. `26.1`.",
+				MarkdownDescription: "Keycloak version, e.g. `26.1`. A version lower than the one the cluster runs is refused at plan time, because a Keycloak version cannot be downgraded. This includes a cluster that automatic upgrades moved above the configured version: set the version to the current one or higher.",
 			},
 			"location": schema.StringAttribute{
 				Required: true,
