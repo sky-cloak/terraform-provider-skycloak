@@ -85,20 +85,41 @@ git -C "$tmp/clone" fetch -q origin release-0.x:refs/remotes/origin/release-0.x
 # shellcheck disable=SC2329 # called through expect
 run() { (cd "$tmp/clone" && "$here/check-release-tag.sh" "$1" "${2:-}"); }
 bot="skycloak-releaser-bot[bot]"
+
+# expect_message NAME WANT_EXIT WANT_TEXT -- COMMAND...: stderr must contain the text
+expect_message() {
+  local name=$1 want_code=$2 want=$3
+  shift 4
+  local err code
+  err=$("$@" 2>&1 >/dev/null)
+  code=$?
+  if [[ $code -ne $want_code || "$err" != *"$want"* ]]; then
+    echo "FAIL $name: got '$err' (exit $code), want exit $want_code containing '$want'"
+    fail=1
+  else
+    echo "ok   $name"
+  fi
+}
+
 expect "v1.0.0 on main pushed by the release bot is accepted" 0 "" -- run v1.0.0 "$bot"
 expect "v1.0.0 pushed by anyone else is refused" 1 "" -- run v1.0.0 someone
 expect "v1.0.0 with no actor is refused" 1 "" -- run v1.0.0
 expect "v1.1.0 after v1.0.0 on main is accepted" 0 "" -- run v1.1.0
 expect "a v0 tag once v1.0.0 exists is refused" 1 "" -- run v0.9.0
+expect_message "a v0 tag once v1.0.0 exists is refused for that reason" 1 "v1.0.0 exists" -- run v0.9.0
 expect "a v0 tag on main once v1.0.0 exists is refused" 1 "" -- run v0.9.1
 git -C "$tmp/clone" tag -d v1.0.0 >/dev/null
 expect "a v1 tag before v1.0.0 exists is refused" 1 "" -- run v1.1.0
 expect "a v0 tag on release-0.x is accepted" 0 "" -- run v0.9.0
 expect "a v0 tag on main is accepted" 0 "" -- run v0.9.1
 expect "a v0 tag on neither main nor release-0.x is refused" 1 "" -- run v0.9.2
+expect_message "a v0 tag on neither branch is refused naming both branches" 1 "neither main nor release-0.x" -- run v0.9.2
 git -C "$tmp/clone" update-ref -d refs/remotes/origin/release-0.x
 expect "a v0 tag on main is accepted when release-0.x is absent" 0 "" -- run v0.9.1
 expect "a v0 tag on neither branch is refused when release-0.x is absent" 1 "" -- run v0.9.2
+expect_message "a v0 tag on neither branch is refused naming both branches when release-0.x is absent" 1 "neither main nor release-0.x" -- run v0.9.2
+git -C "$tmp/clone" tag v1.0.0 main
+expect "a v0 tag on main once v1.0.0 exists is refused when release-0.x is absent" 1 "" -- run v0.9.1
 expect "a non release tag is refused" 2 "" -- run latest
 
 exit $fail
