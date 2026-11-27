@@ -89,7 +89,7 @@ var (
 
 func (g *gatedResource) typeName(ctx context.Context) string {
 	var resp resource.MetadataResponse
-	g.Resource.Metadata(ctx, resource.MetadataRequest{ProviderTypeName: "skycloak"}, &resp)
+	g.Metadata(ctx, resource.MetadataRequest{ProviderTypeName: "skycloak"}, &resp)
 	return resp.TypeName
 }
 
@@ -146,7 +146,7 @@ func (g *gatedDataSource) Configure(ctx context.Context, req datasource.Configur
 		return
 	}
 	var meta datasource.MetadataResponse
-	g.DataSource.Metadata(ctx, datasource.MetadataRequest{ProviderTypeName: "skycloak"}, &meta)
+	g.Metadata(ctx, datasource.MetadataRequest{ProviderTypeName: "skycloak"}, &meta)
 	client, summary, detail := resolve(req.ProviderData, g.product, meta.TypeName)
 	if client == nil {
 		resp.Diagnostics.AddError(summary, detail)
@@ -175,7 +175,7 @@ func (g *gatedAction) Configure(ctx context.Context, req action.ConfigureRequest
 		return
 	}
 	var meta action.MetadataResponse
-	g.Action.Metadata(ctx, action.MetadataRequest{ProviderTypeName: "skycloak"}, &meta)
+	g.Metadata(ctx, action.MetadataRequest{ProviderTypeName: "skycloak"}, &meta)
 	client, summary, detail := resolve(req.ProviderData, g.product, meta.TypeName)
 	if client == nil {
 		resp.Diagnostics.AddError(summary, detail)
