@@ -23,6 +23,8 @@ jobs:
         run: bash scripts/release/resolve-spec-ref_test.sh
       - name: Test the release line scripts
         run: bash scripts/release/release-lines_test.sh
+      - name: Test the release tag check
+        run: bash scripts/release/check-release-tag_test.sh
       - name: Shellcheck the release scripts
         run: shellcheck scripts/release/*.sh
   build:
